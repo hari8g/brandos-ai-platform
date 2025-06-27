@@ -1,0 +1,4 @@
+# MLflow tracking server configuration
+backend_store_uri: sqlite:///mlflow.db
+default_artifact_root: ./mlflow/artifacts
+serve_artifacts: true

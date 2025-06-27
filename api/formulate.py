@@ -1,7 +1,6 @@
 """
-Vercel serverless function for BrandOS AI Platform API
+Vercel serverless function for formulation generation
 """
-import os
 import json
 
 def assess_query_quality_simple(query: str, category: str | None = None):
@@ -113,7 +112,7 @@ def generate_formulation_simple(query: str, category: str | None = None, locatio
     }
 
 def handler(request):
-    """Vercel serverless function handler"""
+    """Vercel serverless function handler for formulation generation"""
     # Set CORS headers
     headers = {
         'Access-Control-Allow-Origin': '*',
@@ -131,73 +130,29 @@ def handler(request):
         }
     
     try:
-        # Get the path from the request
-        path = getattr(request, 'path', None)
-        if not path:
-            path = request.url.split('?')[0] if hasattr(request, 'url') else '/'
+        # Parse request body
+        body = getattr(request, 'body', None)
+        if not body:
+            content_length = int(request.headers.get('Content-Length', 0))
+            body = request.rfile.read(content_length).decode('utf-8')
         
-        if path == '/api/v1/health' and request.method == 'GET':
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps({
-                    "status": "healthy",
-                    "service": "brandos-ai-platform"
-                })
-            }
+        if isinstance(body, bytes):
+            body = body.decode('utf-8')
         
-        elif path == '/api/v1/query/assess' and request.method == 'POST':
-            # Parse request body
-            body = getattr(request, 'body', None)
-            if not body:
-                content_length = int(request.headers.get('Content-Length', 0))
-                body = request.rfile.read(content_length).decode('utf-8')
-            
-            if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            
-            data = json.loads(body)
-            
-            # Assess query quality
-            result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
-            
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps(result)
-            }
+        data = json.loads(body)
         
-        elif path == '/api/v1/formulation/generate' and request.method == 'POST':
-            # Parse request body
-            body = getattr(request, 'body', None)
-            if not body:
-                content_length = int(request.headers.get('Content-Length', 0))
-                body = request.rfile.read(content_length).decode('utf-8')
-            
-            if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            
-            data = json.loads(body)
-            
-            # Generate formulation
-            result = generate_formulation_simple(
-                data.get('text', ''),
-                data.get('category'),
-                data.get('location')
-            )
-            
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps(result)
-            }
+        # Generate formulation
+        result = generate_formulation_simple(
+            data.get('text', ''),
+            data.get('category'),
+            data.get('location')
+        )
         
-        else:
-            return {
-                'statusCode': 404,
-                'headers': headers,
-                'body': json.dumps({"error": "Endpoint not found", "path": path})
-            }
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps(result)
+        }
     
     except Exception as e:
         import traceback

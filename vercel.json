@@ -9,22 +9,30 @@
       }
     },
     {
-      "src": "api/index.py",
+      "src": "api/test.py",
       "use": "@vercel/python"
     },
     {
-      "src": "api/query_assess.py",
+      "src": "api/assess.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/formulate.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/v1/query/assess",
-      "dest": "/api/query_assess.py"
+      "src": "/api/test",
+      "dest": "/api/test.py"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "src": "/api/v1/query/assess",
+      "dest": "/api/assess.py"
+    },
+    {
+      "src": "/api/v1/formulation/generate",
+      "dest": "/api/formulate.py"
     },
     {
       "src": "/(.*)",

@@ -114,118 +114,76 @@ def generate_formulation_simple(query: str, category: str | None = None, locatio
         "improvement_suggestions": improvement_suggestions
     }
 
-class handler(BaseHTTPRequestHandler):
-    """Vercel serverless function handler"""
-    
-    def do_OPTIONS(self):
-        """Handle preflight requests"""
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
-    
-    def do_GET(self):
-        """Handle GET requests"""
-        parsed_path = urlparse(self.path)
-        path = parsed_path.path
+def create_response(status_code, data):
+    """Create a standardized response"""
+    return {
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        },
+        'body': json.dumps(data)
+    }
+
+def app(request):
+    """Vercel serverless function handler - simplified version"""
+    try:
+        # Get request method and path
+        method = request.method
+        path = request.path if hasattr(request, 'path') else '/'
         
-        if path == '/api/v1/health':
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            response = {
-                "status": "healthy",
-                "service": "brandos-ai-platform"
-            }
-            self.wfile.write(json.dumps(response).encode())
-        else:
-            self.send_response(404)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            response = {"error": "Endpoint not found", "path": path}
-            self.wfile.write(json.dumps(response).encode())
-    
-    def do_POST(self):
-        """Handle POST requests"""
-        parsed_path = urlparse(self.path)
-        path = parsed_path.path
+        # Handle OPTIONS (CORS preflight)
+        if method == 'OPTIONS':
+            return create_response(200, {})
         
-        print(f"🔍 POST request to path: {path}")
+        # Handle GET requests
+        if method == 'GET':
+            if path == '/api/v1/health':
+                return create_response(200, {
+                    "status": "healthy",
+                    "service": "brandos-ai-platform"
+                })
+            else:
+                return create_response(404, {"error": "Endpoint not found", "path": path})
         
-        try:
+        # Handle POST requests
+        if method == 'POST':
             # Read request body
-            content_length = int(self.headers.get('Content-Length', 0))
-            print(f"🔍 Content length: {content_length}")
-            
-            body = self.rfile.read(content_length).decode('utf-8')
-            print(f"🔍 Request body: {body}")
+            body = request.body
+            if isinstance(body, bytes):
+                body = body.decode('utf-8')
             
             # Parse JSON
             try:
                 data = json.loads(body)
-                print(f"🔍 Parsed data: {data}")
-            except json.JSONDecodeError as e:
-                print(f"🔍 JSON decode error: {e}")
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode())
-                return
+            except json.JSONDecodeError:
+                return create_response(400, {"error": "Invalid JSON"})
             
-            # Process request based on path
+            # Route to appropriate handler
             if path == '/api/v1/query/assess':
-                print(f"🔍 Processing query assessment for: {data.get('text', '')}")
                 result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
-                print(f"🔍 Assessment result: {result}")
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                response_json = json.dumps(result)
-                print(f"🔍 Sending response: {response_json}")
-                self.wfile.write(response_json.encode())
-                
+                return create_response(200, result)
+            
             elif path == '/api/v1/formulation/generate':
-                print(f"🚀 Processing formulation generation for: {data.get('text', '')}")
                 result = generate_formulation_simple(
                     data.get('text', ''),
                     data.get('category'),
                     data.get('location')
                 )
-                print(f"🚀 Formulation result: {result}")
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                response_json = json.dumps(result)
-                print(f"🚀 Sending response: {response_json}")
-                self.wfile.write(response_json.encode())
-                
+                return create_response(200, result)
+            
             else:
-                print(f"🔍 Unknown path: {path}")
-                self.send_response(404)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                result = {"error": "Endpoint not found", "path": path}
-                self.wfile.write(json.dumps(result).encode())
-                
-        except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
-            print(f"🔍 Exception occurred: {e}")
-            print(f"🔍 Error details: {error_details}")
-            self.send_response(500)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            error_response = {
-                "error": f"Internal server error: {str(e)}",
-                "details": error_details
-            }
-            print(f"🔍 Sending error response: {error_response}")
-            self.wfile.write(json.dumps(error_response).encode()) 
+                return create_response(404, {"error": "Endpoint not found", "path": path})
+        
+        # Default response for unsupported methods
+        return create_response(405, {"error": "Method not allowed"})
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        return create_response(500, {
+            "error": f"Internal server error: {str(e)}",
+            "details": error_details
+        }) 

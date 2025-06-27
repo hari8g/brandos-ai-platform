@@ -1,0 +1,12 @@
+{
+  "name": "brandos-ai-platform",
+  "version": "1.0.0",
+  "description": "AI-powered formulation generation and optimization platform",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cp -r dist ../",
+    "dev": "cd frontend && npm run dev"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

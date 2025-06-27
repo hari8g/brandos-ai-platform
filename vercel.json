@@ -9,51 +9,18 @@
       }
     },
     {
-      "src": "api/app.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/hello.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/test.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/assess.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "api/formulate.py",
+      "src": "api/basic.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/app",
-      "dest": "/api/app.py"
-    },
-    {
-      "src": "/api/hello",
-      "dest": "/api/hello.py"
-    },
-    {
-      "src": "/api/test",
-      "dest": "/api/test.py"
-    },
-    {
-      "src": "/api/v1/query/assess",
-      "dest": "/api/assess.py"
-    },
-    {
-      "src": "/api/v1/formulation/generate",
-      "dest": "/api/formulate.py"
+      "src": "/api/basic",
+      "dest": "/api/basic.py"
     },
     {
       "src": "/(.*)",
       "dest": "/dist/$1"
     }
-  ],
-  "buildCommand": "./build.sh"
+  ]
 } 

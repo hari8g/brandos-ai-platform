@@ -3,14 +3,12 @@ Vercel serverless function for BrandOS AI Platform API
 """
 import os
 import json
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
-
-# Import OpenAI
-import openai
 
 def assess_query_quality_simple(query: str, category: str = None):
     """Simple query quality assessment"""
+    if not query:
+        query = ""
+    
     query_lower = query.lower()
     score = 3
     
@@ -55,6 +53,13 @@ def assess_query_quality_simple(query: str, category: str = None):
 
 def generate_formulation_simple(query: str, category: str = None, location: str = None):
     """Simple formulation generation"""
+    if not query:
+        query = ""
+    if not category:
+        category = "General"
+    if not location:
+        location = "India"
+    
     # Assess query quality
     quality_assessment = assess_query_quality_simple(query, category)
     quality_score = quality_assessment["score"]
@@ -69,7 +74,7 @@ def generate_formulation_simple(query: str, category: str = None, location: str 
             "percent": 70.0,
             "cost_per_100ml": 10.0,
             "suppliers": [
-                {"name": "Local Supplier", "location": location or "India", "url": "N/A", "price_per_100ml": 10.0}
+                {"name": "Local Supplier", "location": location, "url": "N/A", "price_per_100ml": 10.0}
             ],
             "alternatives": [
                 {"name": "Distilled Water", "price_impact": 5.0, "reasoning": "Purer, but more expensive"}
@@ -80,7 +85,7 @@ def generate_formulation_simple(query: str, category: str = None, location: str 
             "percent": 5.0,
             "cost_per_100ml": 30.0,
             "suppliers": [
-                {"name": "Chemical Supply Co", "location": location or "India", "url": "www.chemicalsupplyco.in", "price_per_100ml": 30.0}
+                {"name": "Chemical Supply Co", "location": location, "url": "www.chemicalsupplyco.in", "price_per_100ml": 30.0}
             ],
             "alternatives": [
                 {"name": "Propylene Glycol", "price_impact": -5.0, "reasoning": "Cheaper, but may cause skin irritation"}
@@ -95,7 +100,7 @@ def generate_formulation_simple(query: str, category: str = None, location: str 
         "predicted_ph": 5.5,
         "reasoning": "A simple, safe moisturizer with cost-effective ingredients suitable for general use.",
         "safety_notes": ["Patch test before use", "Store in a cool place"],
-        "category": category or "General",
+        "category": category,
         "pricing": {
             "small_batch": 250.0,
             "medium_scale": 120.0,
@@ -109,10 +114,6 @@ def generate_formulation_simple(query: str, category: str = None, location: str 
 
 def handler(request):
     """Vercel serverless function handler"""
-    # Parse the request
-    parsed_url = urlparse(request.url)
-    path = parsed_url.path
-    
     # Set CORS headers
     headers = {
         'Access-Control-Allow-Origin': '*',
@@ -130,6 +131,11 @@ def handler(request):
         }
     
     try:
+        # Get the path from the request
+        path = getattr(request, 'path', None)
+        if not path:
+            path = request.url.split('?')[0] if hasattr(request, 'url') else '/'
+        
         if path == '/api/v1/health' and request.method == 'GET':
             return {
                 'statusCode': 200,
@@ -142,8 +148,14 @@ def handler(request):
         
         elif path == '/api/v1/query/assess' and request.method == 'POST':
             # Parse request body
-            content_length = int(request.headers.get('Content-Length', 0))
-            body = request.rfile.read(content_length).decode('utf-8')
+            body = getattr(request, 'body', None)
+            if not body:
+                content_length = int(request.headers.get('Content-Length', 0))
+                body = request.rfile.read(content_length).decode('utf-8')
+            
+            if isinstance(body, bytes):
+                body = body.decode('utf-8')
+            
             data = json.loads(body)
             
             # Assess query quality
@@ -157,8 +169,14 @@ def handler(request):
         
         elif path == '/api/v1/formulation/generate' and request.method == 'POST':
             # Parse request body
-            content_length = int(request.headers.get('Content-Length', 0))
-            body = request.rfile.read(content_length).decode('utf-8')
+            body = getattr(request, 'body', None)
+            if not body:
+                content_length = int(request.headers.get('Content-Length', 0))
+                body = request.rfile.read(content_length).decode('utf-8')
+            
+            if isinstance(body, bytes):
+                body = body.decode('utf-8')
+            
             data = json.loads(body)
             
             # Generate formulation
@@ -178,12 +196,17 @@ def handler(request):
             return {
                 'statusCode': 404,
                 'headers': headers,
-                'body': json.dumps({"error": "Endpoint not found"})
+                'body': json.dumps({"error": "Endpoint not found", "path": path})
             }
     
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         return {
             'statusCode': 500,
             'headers': headers,
-            'body': json.dumps({"error": f"Internal server error: {str(e)}"})
+            'body': json.dumps({
+                "error": f"Internal server error: {str(e)}",
+                "details": error_details
+            })
         } 

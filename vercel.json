@@ -11,9 +11,17 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/query_assess.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/api/v1/query/assess",
+      "dest": "/api/query_assess.py"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.py"

@@ -3,8 +3,6 @@ Vercel serverless function for BrandOS AI Platform API
 """
 import os
 import json
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
 
 def assess_query_quality_simple(query: str, category: str | None = None):
     """Simple query quality assessment"""
@@ -114,76 +112,101 @@ def generate_formulation_simple(query: str, category: str | None = None, locatio
         "improvement_suggestions": improvement_suggestions
     }
 
-def create_response(status_code, data):
-    """Create a standardized response"""
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-        },
-        'body': json.dumps(data)
+def handler(request):
+    """Vercel serverless function handler"""
+    # Set CORS headers
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
     }
-
-def app(request):
-    """Vercel serverless function handler - simplified version"""
+    
+    # Handle preflight requests
+    if request.method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': ''
+        }
+    
     try:
-        # Get request method and path
-        method = request.method
-        path = request.path if hasattr(request, 'path') else '/'
+        # Get the path from the request
+        path = getattr(request, 'path', None)
+        if not path:
+            path = request.url.split('?')[0] if hasattr(request, 'url') else '/'
         
-        # Handle OPTIONS (CORS preflight)
-        if method == 'OPTIONS':
-            return create_response(200, {})
-        
-        # Handle GET requests
-        if method == 'GET':
-            if path == '/api/v1/health':
-                return create_response(200, {
+        if path == '/api/v1/health' and request.method == 'GET':
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps({
                     "status": "healthy",
                     "service": "brandos-ai-platform"
                 })
-            else:
-                return create_response(404, {"error": "Endpoint not found", "path": path})
+            }
         
-        # Handle POST requests
-        if method == 'POST':
-            # Read request body
-            body = request.body
+        elif path == '/api/v1/query/assess' and request.method == 'POST':
+            # Parse request body
+            body = getattr(request, 'body', None)
+            if not body:
+                content_length = int(request.headers.get('Content-Length', 0))
+                body = request.rfile.read(content_length).decode('utf-8')
+            
             if isinstance(body, bytes):
                 body = body.decode('utf-8')
             
-            # Parse JSON
-            try:
-                data = json.loads(body)
-            except json.JSONDecodeError:
-                return create_response(400, {"error": "Invalid JSON"})
+            data = json.loads(body)
             
-            # Route to appropriate handler
-            if path == '/api/v1/query/assess':
-                result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
-                return create_response(200, result)
+            # Assess query quality
+            result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
             
-            elif path == '/api/v1/formulation/generate':
-                result = generate_formulation_simple(
-                    data.get('text', ''),
-                    data.get('category'),
-                    data.get('location')
-                )
-                return create_response(200, result)
-            
-            else:
-                return create_response(404, {"error": "Endpoint not found", "path": path})
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(result)
+            }
         
-        # Default response for unsupported methods
-        return create_response(405, {"error": "Method not allowed"})
+        elif path == '/api/v1/formulation/generate' and request.method == 'POST':
+            # Parse request body
+            body = getattr(request, 'body', None)
+            if not body:
+                content_length = int(request.headers.get('Content-Length', 0))
+                body = request.rfile.read(content_length).decode('utf-8')
+            
+            if isinstance(body, bytes):
+                body = body.decode('utf-8')
+            
+            data = json.loads(body)
+            
+            # Generate formulation
+            result = generate_formulation_simple(
+                data.get('text', ''),
+                data.get('category'),
+                data.get('location')
+            )
+            
+            return {
+                'statusCode': 200,
+                'headers': headers,
+                'body': json.dumps(result)
+            }
         
+        else:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({"error": "Endpoint not found", "path": path})
+            }
+    
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        return create_response(500, {
-            "error": f"Internal server error: {str(e)}",
-            "details": error_details
-        }) 
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({
+                "error": f"Internal server error: {str(e)}",
+                "details": error_details
+            })
+        } 

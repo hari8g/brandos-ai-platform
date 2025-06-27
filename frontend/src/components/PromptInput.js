@@ -49,39 +49,69 @@ export default function PromptInput({ onResult, selectedCategory }) {
     }, [selectedCategory]);
 
     const assessQueryQuality = async (query) => {
-        const response = await fetch("/api/v1/query/assess", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                text: query,
-                category: selectedCategory,
-                location: location || undefined
-            }),
-        });
+        console.log("🔍 Making API call to /api/v1/query/assess");
+        console.log("🔍 Request payload:", { text: query, category: selectedCategory, location: location || undefined });
+        
+        try {
+            const response = await fetch("/api/v1/query/assess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: query,
+                    category: selectedCategory,
+                    location: location || undefined
+                }),
+            });
 
-        if (!response.ok) {
-            throw new Error("Failed to assess query quality");
+            console.log("🔍 Response status:", response.status);
+            console.log("🔍 Response headers:", Object.fromEntries(response.headers.entries()));
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("🔍 Error response body:", errorText);
+                throw new Error(`Failed to assess query quality: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log("🔍 API response:", result);
+            return result;
+        } catch (error) {
+            console.error("🔍 API call failed:", error);
+            throw error;
         }
-
-        return await response.json();
     };
 
     const generateFormulation = async (query) => {
-        const response = await fetch("/api/v1/formulation/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                text: query,
-                category: selectedCategory,
-                location: location || undefined
-            }),
-        });
+        console.log("🚀 Making API call to /api/v1/formulation/generate");
+        console.log("🚀 Request payload:", { text: query, category: selectedCategory, location: location || undefined });
+        
+        try {
+            const response = await fetch("/api/v1/formulation/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: query,
+                    category: selectedCategory,
+                    location: location || undefined
+                }),
+            });
 
-        if (!response.ok) {
-            throw new Error("Failed to generate formulation");
+            console.log("🚀 Response status:", response.status);
+            console.log("🚀 Response headers:", Object.fromEntries(response.headers.entries()));
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("🚀 Error response body:", errorText);
+                throw new Error(`Failed to generate formulation: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log("🚀 API response:", result);
+            return result;
+        } catch (error) {
+            console.error("🚀 API call failed:", error);
+            throw error;
         }
-
-        return await response.json();
     };
 
     const handleSubmit = async () => {

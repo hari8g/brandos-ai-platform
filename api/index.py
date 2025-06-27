@@ -153,15 +153,22 @@ class handler(BaseHTTPRequestHandler):
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
+        print(f"🔍 POST request to path: {path}")
+        
         try:
             # Read request body
             content_length = int(self.headers.get('Content-Length', 0))
+            print(f"🔍 Content length: {content_length}")
+            
             body = self.rfile.read(content_length).decode('utf-8')
+            print(f"🔍 Request body: {body}")
             
             # Parse JSON
             try:
                 data = json.loads(body)
-            except json.JSONDecodeError:
+                print(f"🔍 Parsed data: {data}")
+            except json.JSONDecodeError as e:
+                print(f"🔍 JSON decode error: {e}")
                 self.send_response(400)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -171,26 +178,35 @@ class handler(BaseHTTPRequestHandler):
             
             # Process request based on path
             if path == '/api/v1/query/assess':
+                print(f"🔍 Processing query assessment for: {data.get('text', '')}")
                 result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
+                print(f"🔍 Assessment result: {result}")
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
+                response_json = json.dumps(result)
+                print(f"🔍 Sending response: {response_json}")
+                self.wfile.write(response_json.encode())
                 
             elif path == '/api/v1/formulation/generate':
+                print(f"🚀 Processing formulation generation for: {data.get('text', '')}")
                 result = generate_formulation_simple(
                     data.get('text', ''),
                     data.get('category'),
                     data.get('location')
                 )
+                print(f"🚀 Formulation result: {result}")
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
+                response_json = json.dumps(result)
+                print(f"🚀 Sending response: {response_json}")
+                self.wfile.write(response_json.encode())
                 
             else:
+                print(f"🔍 Unknown path: {path}")
                 self.send_response(404)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -201,11 +217,15 @@ class handler(BaseHTTPRequestHandler):
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
+            print(f"🔍 Exception occurred: {e}")
+            print(f"🔍 Error details: {error_details}")
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({
+            error_response = {
                 "error": f"Internal server error: {str(e)}",
                 "details": error_details
-            }).encode()) 
+            }
+            print(f"🔍 Sending error response: {error_response}")
+            self.wfile.write(json.dumps(error_response).encode()) 

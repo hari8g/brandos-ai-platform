@@ -3,8 +3,10 @@ Vercel serverless function for BrandOS AI Platform API
 """
 import os
 import json
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
-def assess_query_quality_simple(query: str, category: str = None):
+def assess_query_quality_simple(query: str, category: str | None = None):
     """Simple query quality assessment"""
     if not query:
         query = ""
@@ -51,7 +53,7 @@ def assess_query_quality_simple(query: str, category: str = None):
         "formulation_warnings": formulation_warnings
     }
 
-def generate_formulation_simple(query: str, category: str = None, location: str = None):
+def generate_formulation_simple(query: str, category: str | None = None, location: str | None = None):
     """Simple formulation generation"""
     if not query:
         query = ""
@@ -112,101 +114,82 @@ def generate_formulation_simple(query: str, category: str = None, location: str 
         "improvement_suggestions": improvement_suggestions
     }
 
-def handler(request):
+class handler(BaseHTTPRequestHandler):
     """Vercel serverless function handler"""
-    # Set CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    }
     
-    # Handle preflight requests
-    if request.method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': headers,
-            'body': ''
-        }
+    def do_OPTIONS(self):
+        """Handle preflight requests"""
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
     
-    try:
-        # Get the path from the request
-        path = getattr(request, 'path', None)
-        if not path:
-            path = request.url.split('?')[0] if hasattr(request, 'url') else '/'
+    def do_GET(self):
+        """Handle GET requests"""
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
         
-        if path == '/api/v1/health' and request.method == 'GET':
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps({
-                    "status": "healthy",
-                    "service": "brandos-ai-platform"
-                })
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
+        if path == '/api/v1/health':
+            response = {
+                "status": "healthy",
+                "service": "brandos-ai-platform"
             }
-        
-        elif path == '/api/v1/query/assess' and request.method == 'POST':
-            # Parse request body
-            body = getattr(request, 'body', None)
-            if not body:
-                content_length = int(request.headers.get('Content-Length', 0))
-                body = request.rfile.read(content_length).decode('utf-8')
-            
-            if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            
-            data = json.loads(body)
-            
-            # Assess query quality
-            result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
-            
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps(result)
-            }
-        
-        elif path == '/api/v1/formulation/generate' and request.method == 'POST':
-            # Parse request body
-            body = getattr(request, 'body', None)
-            if not body:
-                content_length = int(request.headers.get('Content-Length', 0))
-                body = request.rfile.read(content_length).decode('utf-8')
-            
-            if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            
-            data = json.loads(body)
-            
-            # Generate formulation
-            result = generate_formulation_simple(
-                data.get('text', ''),
-                data.get('category'),
-                data.get('location')
-            )
-            
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps(result)
-            }
-        
         else:
-            return {
-                'statusCode': 404,
-                'headers': headers,
-                'body': json.dumps({"error": "Endpoint not found", "path": path})
-            }
+            response = {"error": "Endpoint not found", "path": path}
+            self.send_response(404)
+        
+        self.wfile.write(json.dumps(response).encode())
     
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        return {
-            'statusCode': 500,
-            'headers': headers,
-            'body': json.dumps({
+    def do_POST(self):
+        """Handle POST requests"""
+        parsed_path = urlparse(self.path)
+        path = parsed_path.path
+        
+        # Read request body
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length).decode('utf-8')
+        
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Invalid JSON"}).encode())
+            return
+        
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
+        try:
+            if path == '/api/v1/query/assess':
+                result = assess_query_quality_simple(data.get('text', ''), data.get('category'))
+            elif path == '/api/v1/formulation/generate':
+                result = generate_formulation_simple(
+                    data.get('text', ''),
+                    data.get('category'),
+                    data.get('location')
+                )
+            else:
+                result = {"error": "Endpoint not found", "path": path}
+                self.send_response(404)
+            
+            self.wfile.write(json.dumps(result).encode())
+            
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            self.send_response(500)
+            self.wfile.write(json.dumps({
                 "error": f"Internal server error: {str(e)}",
                 "details": error_details
-            })
-        } 
+            }).encode()) 

@@ -1,18 +1,23 @@
+// frontend/tsconfig.json
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    "target": "ESNext",                   // modern JS output
+    "module": "ESNext",                   // native ESM
+    "moduleResolution": "Node",           // match Node/Vite resolution
+    "lib": ["DOM", "ESNext"],             // include browser + latest syntax
+    "jsx": "react-jsx",                   // automatic JSX runtime
+    "strict": true,                       // all strict checks
+    "allowSyntheticDefaultImports": true, // smoother interop
     "esModuleInterop": true,
+    "resolveJsonModule": true,            // import JSON files
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react-jsx"
+    "sourceMap": true,                    // enable source maps for debugging
+    "baseUrl": ".",                       // for `paths` below
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src"],                     // compile everything under src
+  "exclude": ["node_modules", "dist"]     // skip these folders
 }

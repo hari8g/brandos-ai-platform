@@ -59,3 +59,7 @@ jspm_packages/
 
 # dotenv environment variables file
 .env 
+# Monorepo cleanup
+/backend/static
+.env
+docker-compose.yml

@@ -1,16 +1,20 @@
+// frontend/tsconfig.node.json
 {
+  "extends": "./tsconfig.json",                  // inherit paths, strictness, etc.
   "compilerOptions": {
-    "composite": true,
+    "composite": true,                           // support incremental builds
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-    "target": "ES2022",
-    "lib": ["ES2023"],
+    "target": "ES2022",                          // match modern Node.js
+    "lib": ["ES2022"],                           // only ECMAScript libs
     "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "strict": true,
+    "moduleResolution": "bundler",               // optimize for Vite/EBSM
+    "types": ["node"],                           // include Node.js globals/types
+    "skipLibCheck": true,                        // faster builds
+    "strict": true,                              // catch more type issues
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true                            // map back in debugger
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts"]                  // only type‐check your Vite config
 }

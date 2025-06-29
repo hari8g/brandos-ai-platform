@@ -1,0 +1,28 @@
+# backend/app/main.py
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from app.core import settings, setup_cors
+
+# 1) instantiate your FastAPI app
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    openapi_prefix=settings.API_PREFIX,  # e.g. "/api" in the docs
+)
+
+# 2) wire up CORS
+setup_cors(app)
+
+# 3) include all your routers under the same /api prefix
+from app.routers.query import router as query_router
+from app.routers.formulation import router as formulation_router
+
+app.include_router(query_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(formulation_router, prefix=settings.API_PREFIX + "/v1")
+
+# 4) serve static files (frontend build)
+try:
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
+except:
+    pass  # static directory might not exist in development

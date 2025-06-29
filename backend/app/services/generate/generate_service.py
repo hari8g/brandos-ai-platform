@@ -48,7 +48,21 @@ def generate_formulation(req: GenerateRequest) -> Formulation:
             "reasoning": "Detailed scientific reasoning for the formulation",
             "estimated_cost": 15.0,
             "safety_notes": ["Safety note 1", "Safety note 2"],
-            "instructions": "Usage instructions"
+            "instructions": "Usage instructions",
+            "packaging": {
+                "type": "Airless pump bottle",
+                "material": "Recycled PET",
+                "size": "30ml",
+                "features": ["UV protection", "Airless dispensing"],
+                "sustainability": "100% recyclable, made from 30% post-consumer recycled material"
+            },
+            "marketing_inspiration": {
+                "tagline": "Transform your skin with science-backed natural ingredients",
+                "key_benefits": ["Hydrates for 24 hours", "Suitable for sensitive skin", "Vegan and cruelty-free"],
+                "target_audience": "Women aged 25-45 with sensitive, dry skin",
+                "brand_positioning": "Luxury natural skincare that combines science with sustainability",
+                "social_media_hooks": ["#CleanBeauty", "#SustainableSkincare", "#SensitiveSkinSolutions"]
+            }
         }
         
         Guidelines:
@@ -59,6 +73,8 @@ def generate_formulation(req: GenerateRequest) -> Formulation:
         - Provide detailed scientific reasoning
         - Include safety considerations
         - Use ingredients appropriate for the product type
+        - Suggest sustainable packaging options
+        - Create compelling marketing messaging that resonates with the target audience
         """
 
         user_prompt = f"""
@@ -66,7 +82,7 @@ def generate_formulation(req: GenerateRequest) -> Formulation:
         Category: {req.category or 'General'}
         Target cost: {req.target_cost or 'Not specified'}
         
-        Please provide a complete, safe, and effective formulation.
+        Please provide a complete, safe, and effective formulation with packaging and marketing inspiration.
         """
 
         # Call OpenAI
@@ -77,7 +93,7 @@ def generate_formulation(req: GenerateRequest) -> Formulation:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=2500
         )
 
         # Parse the response
@@ -103,13 +119,19 @@ def generate_formulation(req: GenerateRequest) -> Formulation:
                     safety_notes=ing_data.get('safety_notes', '')
                 ))
             
+            # Extract packaging and marketing data
+            packaging_data = data.get('packaging', {})
+            marketing_data = data.get('marketing_inspiration', {})
+            
             return Formulation(
                 product_name=data.get('product_name', f"Custom {req.category or 'Product'}"),
                 ingredients=ingredients,
                 reasoning=data.get('reasoning', 'No reasoning provided'),
                 estimated_cost=float(data.get('estimated_cost', 0)),
                 safety_notes=data.get('safety_notes', []),
-                instructions=data.get('instructions', 'Follow standard usage guidelines')
+                instructions=data.get('instructions', 'Follow standard usage guidelines'),
+                packaging=packaging_data,
+                marketing_inspiration=marketing_data
             )
             
         except (json.JSONDecodeError, KeyError, ValueError) as e:
@@ -152,6 +174,24 @@ def _generate_mock_formulation(req: GenerateRequest) -> Formulation:
     
     total_cost = sum(ing.cost_per_100ml * ing.percent / 100 for ing in ingredients)
     
+    # Mock packaging data
+    packaging = {
+        "type": "Airless pump bottle",
+        "material": "Recycled PET",
+        "size": "30ml",
+        "features": ["UV protection", "Airless dispensing", "Travel-friendly"],
+        "sustainability": "100% recyclable, made from 30% post-consumer recycled material"
+    }
+    
+    # Mock marketing inspiration
+    marketing_inspiration = {
+        "tagline": "Transform your skin with science-backed natural ingredients",
+        "key_benefits": ["Hydrates for 24 hours", "Suitable for sensitive skin", "Vegan and cruelty-free"],
+        "target_audience": "Women aged 25-45 with sensitive, dry skin",
+        "brand_positioning": "Luxury natural skincare that combines science with sustainability",
+        "social_media_hooks": ["#CleanBeauty", "#SustainableSkincare", "#SensitiveSkinSolutions"]
+    }
+    
     return Formulation(
         product_name=f"Custom {req.category or 'Product'}",
         ingredients=ingredients,
@@ -162,5 +202,7 @@ def _generate_mock_formulation(req: GenerateRequest) -> Formulation:
             "Keep away from eyes",
             "Store in cool, dry place"
         ],
-        instructions="Apply to clean skin as needed"
+        instructions="Apply to clean skin as needed",
+        packaging=packaging,
+        marketing_inspiration=marketing_inspiration
     ) 

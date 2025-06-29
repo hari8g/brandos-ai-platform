@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class Ingredient(BaseModel):
     name: str
@@ -15,6 +15,8 @@ class Formulation(BaseModel):
     estimated_cost: float
     safety_notes: List[str]
     instructions: Optional[str] = None
+    packaging: Optional[Dict[str, Any]] = None
+    marketing_inspiration: Optional[Dict[str, Any]] = None
 
 class GenerateRequest(BaseModel):
     prompt: str

@@ -147,6 +147,20 @@ interface FormulationData {
   marketing_strategies?: string[];
   competitive_landscape?: CompetitiveLandscape;
   seasonal_trends?: SeasonalTrend[];
+  packaging?: {
+    type: string;
+    material: string;
+    size: string;
+    features: string[];
+    sustainability: string;
+  };
+  marketing_inspiration?: {
+    tagline: string;
+    key_benefits: string[];
+    target_audience: string;
+    brand_positioning: string;
+    social_media_hooks: string[];
+  };
 }
 interface FormulationCardProps {
   data: FormulationData;
@@ -431,7 +445,100 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         onToggle={() => toggleSection("marketing")}
       >
         <div className="mt-4 space-y-4">
-          {/* Packaging & Marketing Inspiration */}
+          {/* Packaging Details */}
+          {data.packaging && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 text-sm mb-3 flex items-center">
+                <span className="mr-2">📦</span>
+                Packaging Details
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700">Type:</span>
+                    <span className="font-medium text-blue-900">{data.packaging.type}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700">Material:</span>
+                    <span className="font-medium text-blue-900">{data.packaging.material}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700">Size:</span>
+                    <span className="font-medium text-blue-900">{data.packaging.size}</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs">
+                    <span className="text-blue-700 font-medium">Features:</span>
+                    <div className="mt-1 space-y-1">
+                      {data.packaging.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-blue-900">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
+                <p className="text-green-800 text-xs font-medium">Sustainability: {data.packaging.sustainability}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Marketing Inspiration */}
+          {data.marketing_inspiration && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+              <h4 className="font-semibold text-purple-800 text-sm mb-3 flex items-center">
+                <span className="mr-2">📢</span>
+                Marketing Inspiration
+              </h4>
+              <div className="space-y-3">
+                <div className="bg-white rounded-lg p-3 border border-purple-200">
+                  <h5 className="font-medium text-purple-900 text-sm mb-1">Tagline</h5>
+                  <p className="text-purple-700 text-sm italic">"{data.marketing_inspiration.tagline}"</p>
+                </div>
+                
+                <div className="bg-white rounded-lg p-3 border border-purple-200">
+                  <h5 className="font-medium text-purple-900 text-sm mb-2">Key Benefits</h5>
+                  <div className="space-y-1">
+                    {data.marketing_inspiration.key_benefits.map((benefit, idx) => (
+                      <div key={idx} className="flex items-center space-x-2">
+                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                        <span className="text-purple-700 text-sm">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white rounded-lg p-3 border border-purple-200">
+                    <h5 className="font-medium text-purple-900 text-sm mb-1">Target Audience</h5>
+                    <p className="text-purple-700 text-sm">{data.marketing_inspiration.target_audience}</p>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-3 border border-purple-200">
+                    <h5 className="font-medium text-purple-900 text-sm mb-1">Brand Positioning</h5>
+                    <p className="text-purple-700 text-sm">{data.marketing_inspiration.brand_positioning}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-purple-200">
+                  <h5 className="font-medium text-purple-900 text-sm mb-2">Social Media Hooks</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {data.marketing_inspiration.social_media_hooks.map((hook, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                        {hook}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Legacy Packaging & Marketing Inspiration */}
           {data.packaging_marketing_inspiration && (
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
               <h4 className="font-semibold text-yellow-800 text-sm mb-2 flex items-center">
@@ -441,6 +548,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               <div className="text-yellow-900 text-base font-medium">{data.packaging_marketing_inspiration}</div>
             </div>
           )}
+          
           {/* Market Trends */}
           {Array.isArray(data.market_trends) && data.market_trends.length > 0 && (
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">

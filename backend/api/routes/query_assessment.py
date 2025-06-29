@@ -62,89 +62,94 @@ class QueryQualityAssessor:
         7. Formulation type clarity
         """
         
+        # Use fast local assessment for better performance
+        return self._generate_fallback_assessment(query, category)
+        
+        # Note: OpenAI assessment is disabled for performance. Uncomment below if needed:
         # Try OpenAI first
-        client = self._get_openai_client()
-        if client:
-            prompt = f"""
-            You are a formulation expert assessing the quality of a product development query.
-            
-            Query: "{query}"
-            Category: {category or "General"}
-            
-            Rate this query on a 7-point scale where:
-            1 = Very poor (vague, lacks essential details)
-            2 = Poor (missing most important details)
-            3 = Below average (some details but insufficient)
-            4 = Average (adequate but could be better)
-            5 = Good (most details present)
-            6 = Very good (comprehensive and clear)
-            7 = Excellent (detailed, specific, and actionable)
-            
-            Consider these factors:
-            - Clarity and specificity of the request
-            - Technical detail level appropriate for formulation
-            - Safety considerations mentioned
-            - Target audience specified
-            - Performance goals stated
-            - Ingredient preferences or restrictions
-            - Formulation type clarity (serum, cream, gel, etc.)
-            
-            Provide your response in this exact JSON format:
-            {{
-                "score": <1-7>,
-                "feedback": "<detailed feedback explaining the score and what's good/bad>",
-                "needs_improvement": <true if score < 5, false otherwise>,
-                "suggestions": [
-                    "<specific actionable suggestion 1>",
-                    "<specific actionable suggestion 2>",
-                    "<specific actionable suggestion 3>"
-                ],
-                "improvement_examples": [
-                    "<example of how to improve the query>",
-                    "<another example>"
-                ],
-                "missing_elements": [
-                    "<missing element 1>",
-                    "<missing element 2>"
-                ],
-                "confidence_level": "<low/medium/high based on query clarity>",
-                "can_generate_formulation": <true/false - can we still generate something useful>,
-                "formulation_warnings": [
-                    "<warning about what might be missing in formulation>",
-                    "<another warning>"
-                ]
-            }}
-            
-            Focus on actionable suggestions that would help improve the query for better formulation results.
-            Be encouraging and constructive in your feedback.
-            """
-            
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-4",
-                    messages=[
-                        {"role": "system", "content": "You are a formulation expert with deep knowledge of cosmetic and pharmaceutical product development. Be encouraging and helpful in your feedback."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.3,
-                    max_tokens=800
-                )
-                
-                # Parse the response
-                content = response.choices[0].message.content
-                import re
-                
-                # Extract JSON from the response
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                if json_match:
-                    assessment_data = json.loads(json_match.group())
-                    return QueryAssessmentResponse(**assessment_data)
-                else:
-                    logger.warning("Could not parse JSON from OpenAI response")
-                    
-            except Exception as e:
-                logger.error(f"Error assessing query quality with OpenAI: {e}")
-                logger.error(f"Error details: {str(e)}")
+        # client = self._get_openai_client()
+        # if client:
+        #     prompt = f"""
+        #     You are a formulation expert assessing the quality of a product development query.
+        #     
+        #     Query: "{query}"
+        #     Category: {category or "General"}
+        #     
+        #     Rate this query on a 7-point scale where:
+        #     1 = Very poor (vague, lacks essential details)
+        #     2 = Poor (missing most important details)
+        #     3 = Below average (some details but insufficient)
+        #     4 = Average (adequate but could be better)
+        #     5 = Good (most details present)
+        #     6 = Very good (comprehensive and clear)
+        #     7 = Excellent (detailed, specific, and actionable)
+        #     
+        #     Consider these factors:
+        #     - Clarity and specificity of the request
+        #     - Technical detail level appropriate for formulation
+        #     - Safety considerations mentioned
+        #     - Target audience specified
+        #     - Performance goals stated
+        #     - Ingredient preferences or restrictions
+        #     - Formulation type clarity (serum, cream, gel, etc.)
+        #     
+        #     Provide your response in this exact JSON format:
+        #     {{
+        #         "score": <1-7>,
+        #         "feedback": "<detailed feedback explaining the score and what's good/bad>",
+        #         "needs_improvement": <true if score < 5, false otherwise>,
+        #         "suggestions": [
+        #             "<specific actionable suggestion 1>",
+        #             "<specific actionable suggestion 2>",
+        #             "<specific actionable suggestion 3>"
+        #         ],
+        #         "improvement_examples": [
+        #             "<example of how to improve the query>",
+        #             "<another example>"
+        #         ],
+        #         "missing_elements": [
+        #             "<missing element 1>",
+        #             "<missing element 2>"
+        #         ],
+        #         "confidence_level": "<low/medium/high based on query clarity>",
+        #         "can_generate_formulation": <true/false - can we still generate something useful>,
+        #         "formulation_warnings": [
+        #             "<warning about what might be missing in formulation>",
+        #             "<another warning>"
+        #         ]
+        #     }}
+        #     
+        #     Focus on actionable suggestions that would help improve the query for better formulation results.
+        #     Be encouraging and constructive in your feedback.
+        #     """
+        #     
+        #     try:
+        #         response = client.chat.completions.create(
+        #             model="gpt-3.5-turbo",  # Use faster model
+        #             messages=[
+        #                 {"role": "system", "content": "You are a formulation expert with deep knowledge of cosmetic and pharmaceutical product development. Be encouraging and helpful in your feedback."},
+        #                 {"role": "user", "content": prompt}
+        #             ],
+        #             temperature=0.3,
+        #             max_tokens=600,  # Reduced from 800
+        #             timeout=20  # Add timeout
+        #         )
+        #         
+        #         # Parse the response
+        #         content = response.choices[0].message.content
+        #         import re
+        #         
+        #         # Extract JSON from the response
+        #         json_match = re.search(r'\{.*\}', content, re.DOTALL)
+        #         if json_match:
+        #             assessment_data = json.loads(json_match.group())
+        #             return QueryAssessmentResponse(**assessment_data)
+        #         else:
+        #             logger.warning("Could not parse JSON from OpenAI response")
+        #             
+        #     except Exception as e:
+        #         logger.error(f"Error assessing query quality with OpenAI: {e}")
+        #         logger.error(f"Error details: {str(e)}")
         
         # Fallback assessment
         return self._generate_fallback_assessment(query, category)

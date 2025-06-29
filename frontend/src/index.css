@@ -144,3 +144,38 @@
 .animation-delay-2000 {
   animation-delay: 2s;
 }
+
+/* PDF Export: Force all color variables to safe values for html2canvas/pdf */
+.pdf-export-root, .pdf-export-root * {
+  --background: #fff !important;
+  --foreground: #222 !important;
+  --card: #fff !important;
+  --card-foreground: #222 !important;
+  --popover: #fff !important;
+  --popover-foreground: #222 !important;
+  --primary: #222 !important;
+  --primary-foreground: #fff !important;
+  --secondary: #eee !important;
+  --secondary-foreground: #222 !important;
+  --muted: #eee !important;
+  --muted-foreground: #888 !important;
+  --accent: #eee !important;
+  --accent-foreground: #222 !important;
+  --destructive: #f00 !important;
+  --border: #ddd !important;
+  --input: #ddd !important;
+  --ring: #aaa !important;
+  --chart-1: #888 !important;
+  --chart-2: #888 !important;
+  --chart-3: #888 !important;
+  --chart-4: #888 !important;
+  --chart-5: #888 !important;
+  --sidebar: #fff !important;
+  --sidebar-foreground: #222 !important;
+  --sidebar-primary: #222 !important;
+  --sidebar-primary-foreground: #fff !important;
+  --sidebar-accent: #eee !important;
+  --sidebar-accent-foreground: #222 !important;
+  --sidebar-border: #ddd !important;
+  --sidebar-ring: #aaa !important;
+}

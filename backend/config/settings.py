@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "BrandOS AI Platform"
     VERSION: str = "1.0.0"
     
-    # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/brandos_ai"
+    # Database - Using SQLite for easier setup
+    DATABASE_URL: str = "sqlite:///./brandos_ai.db"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

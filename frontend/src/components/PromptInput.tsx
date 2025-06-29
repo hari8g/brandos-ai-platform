@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { categoryPrompts } from "@/utils/rotating-prompts";
+import { Badge } from "@/components/ui/badge";
 
 interface QueryQualityResponse {
   score: number;
@@ -25,6 +26,7 @@ interface FormulationResponse {
   query_quality_feedback?: string;
   quality_warnings: string[];
   improvement_suggestions: string[];
+  packaging_marketing_inspiration?: string;
 }
 
 export default function PromptInput({
@@ -40,6 +42,20 @@ export default function PromptInput({
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
   const [location, setLocation] = useState("");
+  const examplePrompts = [
+    "A gentle foaming face wash for oily skin, fragrance-free",
+    "High-protein vegan snack bar with added vitamins",
+    "Grain-free dog food for sensitive stomachs, chicken flavor",
+    "Anti-aging night cream with retinol and hyaluronic acid",
+    "Low-calorie electrolyte drink for athletes"
+  ];
+  const [exampleIdx, setExampleIdx] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  // Ensure we have a valid example to show
+  const currentExample = examplePrompts[exampleIdx] || examplePrompts[0] || "A gentle foaming face wash for oily skin, fragrance-free";
+
+  console.log('PromptInput rendered with example:', currentExample, 'fade:', fade);
 
   useEffect(() => {
     if (!selectedCategory) {
@@ -79,8 +95,21 @@ export default function PromptInput({
     };
   }, [selectedCategory]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setExampleIdx((prev) => (prev + 1) % examplePrompts.length);
+        setFade(true);
+        console.log('Dynamic prompt cycling to:', examplePrompts[(exampleIdx + 1) % examplePrompts.length]);
+      }, 400); // fade out duration
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [examplePrompts.length, exampleIdx]);
+
   const assessQueryQuality = async (query: string): Promise<QueryQualityResponse> => {
-    const response = await fetch("/api/v1/query/assess", {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/query/assess", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -91,14 +120,33 @@ export default function PromptInput({
     });
     
     if (!response.ok) {
-      throw new Error("Failed to assess query quality");
+        const errorText = await response.text();
+        console.error("API Error:", response.status, errorText);
+        throw new Error(`Failed to assess query quality: ${response.status} ${errorText}`);
     }
     
-    return await response.json();
+      const data = await response.json();
+      
+      // Ensure all required fields have default values
+      return {
+        score: data.score || 1,
+        feedback: data.feedback || "Unable to assess query quality",
+        needs_improvement: data.needs_improvement !== undefined ? data.needs_improvement : true,
+        suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+        improvement_examples: Array.isArray(data.improvement_examples) ? data.improvement_examples : [],
+        missing_elements: Array.isArray(data.missing_elements) ? data.missing_elements : [],
+        confidence_level: data.confidence_level || "low",
+        can_generate_formulation: data.can_generate_formulation !== undefined ? data.can_generate_formulation : false,
+        formulation_warnings: Array.isArray(data.formulation_warnings) ? data.formulation_warnings : []
+      };
+    } catch (error) {
+      console.error("Error in assessQueryQuality:", error);
+      throw error;
+    }
   };
 
   const generateFormulation = async (query: string): Promise<FormulationResponse> => {
-    const response = await fetch("/api/v1/formulation/generate", {
+    const response = await fetch("http://127.0.0.1:8000/api/v1/formulation/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -123,12 +171,12 @@ export default function PromptInput({
     setQueryQuality(null);
     
     try {
-      // Step 1: Assess query quality (for feedback purposes)
+      // Step 1: Assess query quality (for feedback purposes) - now fast local assessment
       console.log("🔍 Assessing query quality...");
       const qualityAssessment = await assessQueryQuality(prompt);
       setQueryQuality(qualityAssessment);
       
-      // Step 2: Always generate formulation (with quality warnings if needed)
+      // Step 2: Generate formulation (this is the main time-consuming step)
       console.log("🚀 Generating formulation...");
       const formulation = await generateFormulation(prompt);
       onResult(formulation);
@@ -139,8 +187,9 @@ export default function PromptInput({
       }
       
     } catch (err) {
-      console.error("Error:", err);
-      alert("🚨 Failed to process your request. Please try again.");
+      console.error("Error in handleSubmit:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      alert(`🚨 Failed to process your request: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -165,107 +214,184 @@ export default function PromptInput({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4 w-full max-w-xl transition-all">
-      <input
-        className="border border-gray-300 p-4 text-md rounded-lg shadow-sm w-full bg-white placeholder-gray-400
-                   focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-400 transition
-                   whitespace-nowrap overflow-hidden text-ellipsis"
-        type="text"
+    <div className="space-y-6">
+      {/* Modern Container with Glass Effect */}
+      <div className="space-y-6">
+        {/* Prompt Input Section */}
+        <div className="space-y-4">
+          <label htmlFor="prompt" className="block text-lg font-medium text-gray-700 mb-2">
+            Describe your product idea
+          </label>
+          {/* Dynamic Example Prompt */}
+          <div className={`h-8 mb-3 text-gray-500 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
+            aria-live="polite">
+            <span className="inline-flex items-center">
+              <svg className="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="italic">e.g. {currentExample}</span>
+            </span>
+          </div>
+          <div className="relative">
+            <textarea
+              className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
+                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
+                         resize-none"
         placeholder={placeholder}
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
+              maxLength={5000}
       />
+            <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+              {prompt.length}/5000
+            </div>
+          </div>
+        </div>
+
+        {/* Location Input */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Manufacturing Location (optional)
+          </label>
       <input
-        className="border border-gray-200 p-2 text-sm rounded-lg shadow-sm w-full bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition"
         type="text"
-        placeholder="Enter your location (e.g. Mumbai, India)"
+            className="w-full p-3 rounded-lg border border-gray-200 bg-white/90 placeholder-gray-400
+                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200"
+            placeholder="e.g.Mumbai, Bangalore, Delhi"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
       />
-      <Button
-        onClick={handleSubmit}
-        disabled={loading || !selectedCategory}
-        className="w-full text-lg px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition 
-                   disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in zoom-in"
-      >
-        {loading ? "Processing..." : "Generate Formulation"}
-      </Button>
+        </div>
 
-      {/* Query Quality Feedback */}
+        {/* Generate Button */}
+        <button
+        onClick={handleSubmit}
+          disabled={loading || !prompt.trim()}
+          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
+                     ${loading || !prompt.trim() 
+                       ? 'bg-gray-300 cursor-not-allowed' 
+                       : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
+                     }`}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Generating Formulation...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>Generate Formulation</span>
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* Quality Feedback Modal */}
       {showQualityFeedback && queryQuality && (
-        <div className="w-full bg-orange-50 border border-orange-200 rounded-lg p-4 mt-4">
-          <div className="flex items-center mb-3">
-            <div className="flex-1">
-              <h3 className="font-semibold text-orange-800">🔍 Query Quality: {queryQuality.score}/7</h3>
-              <p className="text-orange-700 text-sm">{queryQuality.feedback}</p>
-            </div>
-            <div className="ml-4">
-              <div className="flex space-x-1">
-                {[1, 2, 3, 4, 5, 6, 7].map((score) => (
-                  <div
-                    key={score}
-                    className={`w-3 h-3 rounded-full ${
-                      score <= queryQuality.score 
-                        ? 'bg-green-400' 
-                        : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Query Quality Assessment</h3>
+                <button
+                  onClick={() => setShowQualityFeedback(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+
+              <div className="space-y-6">
+                {/* Score Display */}
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-orange-800">Quality Score</h4>
+                    <Badge variant={queryQuality.score >= 3 ? "default" : "destructive"}>
+                      {queryQuality.score}/7
+                    </Badge>
+                  </div>
+                  <div className="w-full bg-orange-200 rounded-full h-3 mb-3">
+                    <div
+                      className="bg-gradient-to-r from-orange-400 to-red-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${(queryQuality.score / 7) * 100}%` }}
+                    ></div>
             </div>
+                  <p className="text-orange-700">{queryQuality.feedback}</p>
           </div>
           
           {/* Missing Elements */}
           {queryQuality.missing_elements && queryQuality.missing_elements.length > 0 && (
-            <div className="mb-3">
-              <p className="text-orange-800 font-medium text-sm mb-2">❌ Missing elements:</p>
-              <ul className="list-disc list-inside text-orange-700 text-sm space-y-1">
-                {queryQuality.missing_elements.map((element, index) => (
-                  <li key={index}>{element}</li>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <h4 className="text-lg font-semibold text-blue-800 mb-3">Missing Elements</h4>
+                    <ul className="space-y-2">
+                      {queryQuality.missing_elements.map((element: string, index: number) => (
+                        <li key={index} className="flex items-center space-x-2 text-blue-700">
+                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span>{element}</span>
+                        </li>
                 ))}
               </ul>
             </div>
           )}
           
-          {/* Suggestions */}
-          <div className="mb-3">
-            <p className="text-orange-800 font-medium text-sm mb-2">💡 Suggestions to improve your query:</p>
-            <ul className="list-disc list-inside text-orange-700 text-sm space-y-1">
-              {queryQuality.suggestions.map((suggestion, index) => (
-                <li key={index}>{suggestion}</li>
+                {/* Improvement Suggestions */}
+                {queryQuality.suggestions && queryQuality.suggestions.length > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                    <h4 className="text-lg font-semibold text-green-800 mb-3">Improvement Suggestions</h4>
+                    <ul className="space-y-2">
+                      {queryQuality.suggestions.map((suggestion: string, index: number) => (
+                        <li key={index} className="flex items-start space-x-2 text-green-700">
+                          <svg className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                          <span>{suggestion}</span>
+                        </li>
               ))}
             </ul>
           </div>
+                )}
           
           {/* Improvement Examples */}
           {queryQuality.improvement_examples && queryQuality.improvement_examples.length > 0 && (
-            <div className="mb-3">
-              <p className="text-orange-800 font-medium text-sm mb-2">✨ Try one of these improved queries:</p>
-              <div className="space-y-2">
-                {queryQuality.improvement_examples.map((example, index) => (
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                    <h4 className="text-lg font-semibold text-purple-800 mb-3">Example Improvements</h4>
+                    <div className="space-y-3">
+                      {queryQuality.improvement_examples.map((example: string, index: number) => (
+                        <div key={index} className="bg-white rounded-lg p-3 border border-purple-200">
+                          <p className="text-purple-700 text-sm">{example}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-4 pt-4">
                   <button
-                    key={index}
-                    onClick={() => handleImprovedQuery(example)}
-                    className="w-full text-left p-3 bg-orange-100 hover:bg-orange-200 rounded text-orange-800 text-sm transition border border-orange-200"
+                    onClick={() => setShowQualityFeedback(false)}
+                    className="flex-1 py-3 px-6 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    💡 {example}
+                    Continue with Current Query
                   </button>
-                ))}
+                  {queryQuality.improvement_examples && queryQuality.improvement_examples.length > 0 && (
+                    <button
+                      onClick={() => handleImprovedQuery(queryQuality.improvement_examples[0])}
+                      className="flex-1 py-3 px-6 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+                    >
+                      Use Improved Query
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          )}
-          
-          {/* Formulation Warnings */}
-          {queryQuality.formulation_warnings && queryQuality.formulation_warnings.length > 0 && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
-              <p className="text-red-800 font-medium text-sm mb-2">⚠️ Important warnings:</p>
-              <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                {queryQuality.formulation_warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
             </div>
-          )}
         </div>
       )}
     </div>

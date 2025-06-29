@@ -24,7 +24,7 @@ print(f"OPENAI_API_KEY loaded: {'Yes' if os.getenv('OPENAI_API_KEY') else 'No'}"
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import formulation, optimization, health, query_assessment, invites
+from api.routes import formulation, optimization, health, query_assessment
 
 app = FastAPI(
     title="BrandOS AI Platform API",
@@ -46,7 +46,6 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(formulation.router, prefix="/api/v1")
 app.include_router(optimization.router, prefix="/api/v1")
 app.include_router(query_assessment.router, prefix="/api/v1")
-app.include_router(invites.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

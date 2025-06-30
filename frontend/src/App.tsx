@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { PromptInput } from './components/FormulationEngine';
 import { FormulationCard } from './components/FormulationEngine';
+import LandingPage from './components/LandingPage';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -12,10 +13,16 @@ function App() {
   const [formulations, setFormulations] = useState<any[]>([]);
   const [isGenerated, setIsGenerated] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [subscribed, setSubscribed] = useState(false);
   const formulationRef = useRef<HTMLDivElement>(null);
 
   // 2️⃣ State‐change log
   console.log('🛠️ Parent formulations:', formulations, 'isGenerated:', isGenerated);
+
+  // Show landing page if not subscribed
+  if (!subscribed) {
+    return <LandingPage onComplete={() => setSubscribed(true)} />;
+  }
 
   const generatePDF = async () => {
     if (!formulationRef.current) return;

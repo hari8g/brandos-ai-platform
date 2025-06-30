@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
+
 # backend/app/main.py
 
 from fastapi import FastAPI
@@ -17,9 +21,17 @@ setup_cors(app)
 # 3) include all your routers under the same /api prefix
 from app.routers.query import router as query_router
 from app.routers.formulation import router as formulation_router
+from app.routers.costing import router as costing_router
+from app.routers.query_router import router as query_suggestions_router
+from app.routers.mailchimp_router import router as mailchimp_router
+from app.routers.auth_router import router as auth_router
 
 app.include_router(query_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(formulation_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(costing_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(query_suggestions_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(mailchimp_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(auth_router, prefix=settings.API_PREFIX + "/v1")
 
 # 4) serve static files (frontend build)
 try:

@@ -2,7 +2,7 @@
 
 from pydantic_settings import BaseSettings
 from pydantic import AnyHttpUrl
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # API metadata
@@ -16,6 +16,11 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",       # alternate host
         # "https://app.yourdomain.com", # add your prod domain
     ]
+
+    # Mailchimp Configuration
+    MAILCHIMP_API_KEY: Optional[str] = None
+    MAILCHIMP_SERVER_PREFIX: Optional[str] = None
+    MAILCHIMP_LIST_ID: Optional[str] = None
 
     model_config = {
         "extra": "allow"

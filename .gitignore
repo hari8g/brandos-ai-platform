@@ -63,3 +63,8 @@ jspm_packages/
 /backend/static
 .env
 docker-compose.yml
+
+# Python cache
+__pycache__/
+*.pyc
+**/__pycache__/

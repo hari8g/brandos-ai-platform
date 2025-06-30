@@ -1,12 +1,16 @@
 import React, { useState } from "react";
+import { useCosting } from "../../hooks/useCosting";
+import CostSummary from "./CostSummary";
+import { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
 
-// ─── Helper Section component (hoisted) ─────────────────────────────────
+// ─── Helper Section component ─────────────────────────────────
 interface SectionProps {
   title: string;
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }
+
 function Section({ title, isOpen, onToggle, children }: SectionProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200/50 p-6">
@@ -36,134 +40,9 @@ function Section({ title, isOpen, onToggle, children }: SectionProps) {
   );
 }
 
-// ─── Helper Components ─────────────────────────────────
-// Socio-Customer Metrics Component
-const SocioCustomerMeter = ({ score, label }: { score: number; label: string }) => {
-  const getColor = (score: number) => {
-    if (score >= 8) return 'text-green-600 bg-green-100';
-    if (score >= 6) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
-      <div className={`px-3 py-1 rounded-full text-xs font-bold ${getColor(score)}`}>
-        {score}/10
-      </div>
-    </div>
-  );
-};
-
-// Purchasing Metrics Component
-const PurchasingMetrics = ({ metrics }: { metrics: any }) => {
-  const metricList = [
-    {
-      label: "Purchase Intent",
-      value: Math.min(metrics.purchaseIntent, 100),
-      color: "bg-blue-500"
-    },
-    {
-      label: "Price Sensitivity",
-      value: Math.min(metrics.priceSensitivity, 100),
-      color: "bg-green-500"
-    },
-    {
-      label: "Brand Loyalty",
-      value: Math.min(metrics.brandLoyalty, 100),
-      color: "bg-purple-500"
-    }
-  ];
-  return (
-    <div className="space-y-4">
-      {metricList.map((metric, idx) => (
-        <div key={metric.label} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
-          <span className="text-sm font-medium text-gray-700 w-32 flex-shrink-0">{metric.label}</span>
-          <div className="flex-1 mx-4">
-            <div className="w-full h-2.5 bg-gray-100 rounded-full">
-              <div
-                className={`${metric.color} h-2.5 rounded-full transition-all duration-300`}
-                style={{ width: `${metric.value}%` }}
-              ></div>
-            </div>
-          </div>
-          <span className="text-xs font-bold text-gray-700 min-w-[2.5rem] text-right">{metric.value}%</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 // ─── Main FormulationCard component ─────────────────────────────────
-interface Supplier {
-  name: string;
-  location: string;
-  url?: string;
-  price_per_100ml: number;
-}
-interface Alternative {
-  name: string;
-  price_impact: number;
-  reasoning: string;
-}
-interface Ingredient {
-  name: string;
-  percent: number;
-  cost_per_100ml: number;
-  suppliers: Supplier[];
-  alternatives: Alternative[];
-}
-interface CompetitiveLandscape {
-  price_range: string;
-  target_demographics: string;
-  distribution_channels: string;
-  key_competitors: string;
-}
-interface SeasonalTrend {
-  season: string;
-  trend: string;
-}
-interface Pricing {
-  small_batch: number;
-  medium_scale: number;
-  reasoning?: string;
-}
-interface FormulationData {
-  product_name: string;
-  ingredients: Ingredient[];
-  reasoning: string;
-  predicted_ph: number;
-  estimated_cost: number;
-  safety_notes: string[];
-  category?: string;
-  pricing: Pricing;
-  query_quality_score?: number;
-  query_quality_feedback?: string;
-  quality_warnings?: string[];
-  improvement_suggestions?: string[];
-  packaging_marketing_inspiration?: string;
-  market_trends?: string[];
-  packaging_design_ideas?: string[];
-  marketing_strategies?: string[];
-  competitive_landscape?: CompetitiveLandscape;
-  seasonal_trends?: SeasonalTrend[];
-  packaging?: {
-    type: string;
-    material: string;
-    size: string;
-    features: string[];
-    sustainability: string;
-  };
-  marketing_inspiration?: {
-    tagline: string;
-    key_benefits: string[];
-    target_audience: string;
-    brand_positioning: string;
-    social_media_hooks: string[];
-  };
-}
 interface FormulationCardProps {
-  data: FormulationData;
+  data: GenerateResponse;
   isGenerated?: boolean;
   onDownload?: () => void;
 }
@@ -173,34 +52,36 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
   isGenerated = false,
   onDownload,
 }) => {
-  // Inspect raw payload
-  console.log("🧩 Raw formulation payload:", data);
-  console.log("🧩 isGenerated:", isGenerated);
-  console.log("🧩 onDownload:", onDownload);
-
-  // Destructure with defaults
-  const {
-    packaging_marketing_inspiration = "",
-    market_trends = [],
-    packaging_design_ideas = [],
-    marketing_strategies = [],
-    competitive_landscape = null,
-    seasonal_trends = [],
-  } = data;
+  // Add costing functionality
+  const { loading, error, costEstimate, estimateCost, clearCostEstimate } = useCosting();
 
   const [expandedSections, setExpandedSections] = useState({
     reasoning: true,
     ingredients: true,
-    metrics: true,
-    pricing: true,
+    manufacturing: true,
     safety: true,
     marketing: true,
+    costing: false,
   });
+
   const toggleSection = (section: keyof typeof expandedSections) =>
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
+
+  // Handle costing request
+  const handleCostingRequest = async () => {
+    const request = {
+      formulation: data,
+      batch_sizes: ["small", "medium", "large"],
+      target_market: "mid-market",
+      region: "IN"
+    };
+    
+    await estimateCost(request);
+    setExpandedSections(prev => ({ ...prev, costing: true }));
+  };
 
   // Validate core data
   if (
@@ -214,16 +95,6 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
       <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center">
         <strong>Invalid formulation data.</strong> Please try generating again.
         <pre className="mt-2 text-xs">{JSON.stringify(data, null, 2)}</pre>
-      </div>
-    );
-  }
-  const validIngredients = data.ingredients.every(
-    (ing) => ing.name && typeof ing.percent === "number"
-  );
-  if (!validIngredients) {
-    return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center">
-        <strong>Invalid ingredient data.</strong> Please try generating again.
       </div>
     );
   }
@@ -259,137 +130,245 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         )}
       </div>
 
-      {/* Sections */}
+      {/* Scientific Reasoning Section */}
       <Section
-        title="🧠 Scientific Reasoning & Manufacturing Process"
+        title="🧠 Scientific Reasoning"
         isOpen={expandedSections.reasoning}
         onToggle={() => toggleSection("reasoning")}
       >
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-gray-700 whitespace-pre-line">
+          <p className="text-gray-700 whitespace-pre-line leading-relaxed">
             {data.reasoning}
           </p>
         </div>
       </Section>
 
+      {/* Enhanced Ingredients Section */}
       <Section
-        title="🧴 Ingredients & Formulation"
+        title="🧴 Ingredients & Suppliers"
         isOpen={expandedSections.ingredients}
         onToggle={() => toggleSection("ingredients")}
       >
-        <div className="space-y-3">
-          {data.ingredients.map((ing, i) => (
+        <div className="space-y-4">
+          {data.ingredients.map((ingredient, i) => (
             <div
               key={i}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
             >
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-gray-900">
-                    {ing.name}
-                  </span>
-                  <span className="text-sm font-bold text-blue-600">
-                    {ing.percent}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-gray-600">
-                  <span>₹{ing.cost_per_100ml}/100ml</span>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Grade A
-                  </span>
+              {/* Ingredient Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-gray-900 text-lg">
+                      {ingredient.name}
+                    </span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {ingredient.percent}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>₹{ingredient.cost_per_100ml}/100ml</span>
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Grade A
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Why Chosen Rationale */}
+              <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                <h4 className="font-semibold text-purple-800 text-sm mb-2 flex items-center">
+                  <span className="mr-2">💡</span>
+                  Why Chosen
+                </h4>
+                <p className="text-purple-700 text-sm leading-relaxed">
+                  {ingredient.why_chosen}
+                </p>
+              </div>
+
+              {/* Suppliers */}
+              {ingredient.suppliers && ingredient.suppliers.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center">
+                    <span className="mr-2">🏢</span>
+                    Local Suppliers
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {ingredient.suppliers.map((supplier, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-gray-50 border border-gray-200 rounded-lg p-3"
+                      >
+                        <div className="font-medium text-gray-900 text-sm mb-1">
+                          {supplier.name}
+                        </div>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div className="flex items-center">
+                            <span className="font-medium">📍</span>
+                            <span className="ml-1">{supplier.location}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-medium">📞</span>
+                            <span className="ml-1">{supplier.contact}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-medium">💰</span>
+                            <span className="ml-1">₹{supplier.price_per_unit}/unit</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </Section>
 
+      {/* Manufacturing Steps Section */}
       <Section
-        title="📊 Analysis & Metrics"
-        isOpen={expandedSections.metrics}
-        onToggle={() => toggleSection("metrics")}
+        title="⚙️ Manufacturing Steps"
+        isOpen={expandedSections.manufacturing}
+        onToggle={() => toggleSection("manufacturing")}
       >
-        <div className="mt-4 space-y-6">
-          {/* Socio-Customer Metrics */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">👥</span>
-              Customer Insights
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <SocioCustomerMeter score={8.5} label="Target Audience Match" />
-              <SocioCustomerMeter score={7.2} label="Social Media Appeal" />
-              <SocioCustomerMeter score={9.1} label="Trend Alignment" />
-              <SocioCustomerMeter score={6.8} label="Cultural Relevance" />
-            </div>
-          </div>
-
-          {/* Purchasing Metrics */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-            <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">💰</span>
-              Purchase Behavior
-            </h4>
-            <PurchasingMetrics 
-              metrics={{
-                purchaseIntent: 78,
-                priceSensitivity: 65,
-                brandLoyalty: 82
-              }} 
-            />
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+          <div className="space-y-3">
+            {data.manufacturing_steps.map((step, index) => (
+              <div key={index} className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <p className="text-green-800 text-sm leading-relaxed">
+                    {step}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </Section>
 
-      {/* Pricing */}
+      {/* Cost Analysis Section */}
       <Section
-        title="💰 Cost Analysis"
-        isOpen={expandedSections.pricing}
-        onToggle={() => toggleSection("pricing")}
+        title="💰 Premium Cost Analysis"
+        isOpen={expandedSections.costing}
+        onToggle={() => toggleSection("costing")}
       >
-        <div className="mt-4">
+        <div className="mt-4 space-y-4">
+          {/* Basic Cost Display */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-green-800">Estimated Cost (100ml)</span>
-              <span className="text-2xl font-bold text-green-900">₹{data.estimated_cost}</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-lg font-semibold text-green-800">Premium Formulation Cost (100ml)</span>
+              <span className="text-2xl font-bold text-green-900">₹{data.estimated_cost.toFixed(0)}</span>
             </div>
-            <div className="mt-3 text-sm text-green-700">
-              <div className="flex items-center justify-between mb-1">
-                <span>Raw Materials</span>
-                <span>₹{(data.estimated_cost * 0.6).toFixed(0)}</span>
+            <div className="text-sm text-green-700 space-y-2">
+              <div className="flex items-center justify-between">
+                <span>Premium Active Ingredients</span>
+                <span>₹{(data.estimated_cost * 0.50).toFixed(0)}</span>
               </div>
-              <div className="flex items-center justify-between mb-1">
-                <span>Packaging</span>
+              <div className="flex items-center justify-between">
+                <span>Luxury Packaging & Design</span>
                 <span>₹{(data.estimated_cost * 0.25).toFixed(0)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Manufacturing</span>
+                <span>Quality Control & Testing</span>
+                <span>₹{(data.estimated_cost * 0.10).toFixed(0)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Manufacturing & Labor</span>
                 <span>₹{(data.estimated_cost * 0.15).toFixed(0)}</span>
               </div>
             </div>
-          </div>
-          
-          {/* Pricing Tiers */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 text-sm mb-2">Small Batch Pricing</h4>
-              <div className="text-2xl font-bold text-blue-900">₹{data.pricing.small_batch}</div>
-              <p className="text-blue-700 text-xs mt-1">Per 100ml</p>
+            
+            {/* Premium Pricing Tiers */}
+            <div className="mt-4 pt-4 border-t border-green-200">
+              <h4 className="font-semibold text-green-800 text-sm mb-3">Suggested Retail Pricing</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h5 className="font-semibold text-blue-800 text-xs mb-1">30ml Premium</h5>
+                  <div className="text-xl font-bold text-blue-900">₹{(data.estimated_cost * 0.3 * 8).toFixed(0)}</div>
+                  <p className="text-blue-700 text-xs mt-1">Luxury positioning</p>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                  <h5 className="font-semibold text-purple-800 text-xs mb-1">50ml Deluxe</h5>
+                  <div className="text-xl font-bold text-purple-900">₹{(data.estimated_cost * 0.5 * 6).toFixed(0)}</div>
+                  <p className="text-purple-700 text-xs mt-1">Best value</p>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <h5 className="font-semibold text-orange-800 text-xs mb-1">100ml Ultimate</h5>
+                  <div className="text-xl font-bold text-orange-900">₹{(data.estimated_cost * 5).toFixed(0)}</div>
+                  <p className="text-orange-700 text-xs mt-1">Connoisseur choice</p>
+                </div>
+              </div>
             </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-semibold text-purple-800 text-sm mb-2">Medium Scale Pricing</h4>
-              <div className="text-2xl font-bold text-purple-900">₹{data.pricing.medium_scale}</div>
-              <p className="text-purple-700 text-xs mt-1">Per 100ml</p>
+          </div>
+
+          {/* AI-Powered Costing */}
+          {!costEstimate && !loading && (
+            <div className="text-center py-8">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                <h4 className="text-lg font-semibold text-blue-800 mb-3">Generate AI-Powered Cost Analysis</h4>
+                <p className="text-blue-700 text-sm mb-4">
+                  Get detailed cost breakdowns and pricing recommendations for different batch sizes using AI analysis.
+                </p>
+                <button
+                  onClick={handleCostingRequest}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 mx-auto"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <span>Generate Cost Analysis</span>
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <p className="text-gray-700 text-sm">{data.pricing.reasoning}</p>
-          </div>
+          )}
+
+          {loading && (
+            <div className="text-center py-8">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h4 className="text-lg font-semibold text-yellow-800 mb-2">Analyzing Costs...</h4>
+                <p className="text-yellow-700 text-sm">
+                  Our AI is calculating detailed cost breakdowns and pricing strategies for different batch sizes.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
+              <h4 className="font-semibold text-red-800 text-sm mb-2">Error Generating Cost Analysis</h4>
+              <p className="text-red-700 text-sm mb-3">{error}</p>
+              <button
+                onClick={handleCostingRequest}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {costEstimate && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-semibold text-gray-800">AI-Generated Cost Analysis</h4>
+                <button
+                  onClick={clearCostEstimate}
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                >
+                  Clear Analysis
+                </button>
+              </div>
+              <CostSummary cost={costEstimate} />
+            </div>
+          )}
         </div>
       </Section>
 
-      {/* Safety Assessment */}
+      {/* Safety Assessment Section */}
       <Section
         title="🛡️ Safety Assessment"
         isOpen={expandedSections.safety}
@@ -407,150 +386,31 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               ))}
             </ul>
           </div>
-        
-          {data.quality_warnings && data.quality_warnings.length > 0 && (
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="font-semibold text-yellow-800 text-sm mb-2">Quality Warnings</h4>
-              <ul className="space-y-1">
-                {data.quality_warnings.map((warning, index) => (
-                  <li key={index} className="flex items-start space-x-2 text-yellow-700 text-sm">
-                    <span className="text-yellow-500 mt-1">•</span>
-                    <span>{warning}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        
-          {data.improvement_suggestions && data.improvement_suggestions.length > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-semibold text-green-800 text-sm mb-2">Improvement Suggestions</h4>
-              <ul className="space-y-1">
-                {data.improvement_suggestions.map((suggestion, index) => (
-                  <li key={index} className="flex items-start space-x-2 text-green-700 text-sm">
-                    <span className="text-green-500 mt-1">•</span>
-                    <span>{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </Section>
 
-      {/* Packaging & Marketing Inspiration */}
+      {/* Marketing & Market Analysis Section */}
       <Section
-        title="🎨 Packaging & Marketing Inspiration"
+        title="🎨 Marketing & Market Analysis"
         isOpen={expandedSections.marketing}
         onToggle={() => toggleSection("marketing")}
       >
         <div className="mt-4 space-y-4">
-          {/* Packaging Details */}
-          {data.packaging && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 text-sm mb-3 flex items-center">
-                <span className="mr-2">📦</span>
-                Packaging Details
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-blue-700">Type:</span>
-                    <span className="font-medium text-blue-900">{data.packaging.type}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-blue-700">Material:</span>
-                    <span className="font-medium text-blue-900">{data.packaging.material}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-blue-700">Size:</span>
-                    <span className="font-medium text-blue-900">{data.packaging.size}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-xs">
-                    <span className="text-blue-700 font-medium">Features:</span>
-                    <div className="mt-1 space-y-1">
-                      {data.packaging.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-center space-x-2">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                          <span className="text-blue-900">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded">
-                <p className="text-green-800 text-xs font-medium">Sustainability: {data.packaging.sustainability}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Marketing Inspiration */}
-          {data.marketing_inspiration && (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
-              <h4 className="font-semibold text-purple-800 text-sm mb-3 flex items-center">
-                <span className="mr-2">📢</span>
-                Marketing Inspiration
-              </h4>
-              <div className="space-y-3">
-                <div className="bg-white rounded-lg p-3 border border-purple-200">
-                  <h5 className="font-medium text-purple-900 text-sm mb-1">Tagline</h5>
-                  <p className="text-purple-700 text-sm italic">"{data.marketing_inspiration.tagline}"</p>
-                </div>
-                
-                <div className="bg-white rounded-lg p-3 border border-purple-200">
-                  <h5 className="font-medium text-purple-900 text-sm mb-2">Key Benefits</h5>
-                  <div className="space-y-1">
-                    {data.marketing_inspiration.key_benefits.map((benefit, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                        <span className="text-purple-700 text-sm">{benefit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-white rounded-lg p-3 border border-purple-200">
-                    <h5 className="font-medium text-purple-900 text-sm mb-1">Target Audience</h5>
-                    <p className="text-purple-700 text-sm">{data.marketing_inspiration.target_audience}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-3 border border-purple-200">
-                    <h5 className="font-medium text-purple-900 text-sm mb-1">Brand Positioning</h5>
-                    <p className="text-purple-700 text-sm">{data.marketing_inspiration.brand_positioning}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 border border-purple-200">
-                  <h5 className="font-medium text-purple-900 text-sm mb-2">Social Media Hooks</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {data.marketing_inspiration.social_media_hooks.map((hook, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                        {hook}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Legacy Packaging & Marketing Inspiration */}
+          {/* Packaging & Marketing Inspiration */}
           {data.packaging_marketing_inspiration && (
             <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-4">
               <h4 className="font-semibold text-yellow-800 text-sm mb-2 flex items-center">
                 <span className="mr-2">✨</span>
                 Packaging & Marketing Inspiration
               </h4>
-              <div className="text-yellow-900 text-base font-medium">{data.packaging_marketing_inspiration}</div>
+              <div className="text-yellow-900 text-sm leading-relaxed">
+                {data.packaging_marketing_inspiration}
+              </div>
             </div>
           )}
           
           {/* Market Trends */}
-          {Array.isArray(data.market_trends) && data.market_trends.length > 0 && (
+          {data.market_trends && data.market_trends.length > 0 && (
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
               <h4 className="font-semibold text-purple-800 text-sm mb-3 flex items-center">
                 <span className="mr-2">📈</span>
@@ -558,7 +418,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               </h4>
               <div className="space-y-2">
                 {data.market_trends.map((trend, idx) => (
-                  <div key={idx} className="flex items-center space-x-2 text-purple-700 text-xs">
+                  <div key={idx} className="flex items-center space-x-2 text-purple-700 text-sm">
                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                     <span>{trend}</span>
                   </div>
@@ -566,77 +426,21 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               </div>
             </div>
           )}
-          {/* Packaging Design Ideas */}
-          {Array.isArray(data.packaging_design_ideas) && data.packaging_design_ideas.length > 0 && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 text-sm mb-3 flex items-center">
-                <span className="mr-2">📦</span>
-                Packaging Design Ideas
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                {data.packaging_design_ideas.map((idea, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
-                    <p className="text-blue-700 text-xs">{idea}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Marketing Strategies */}
-          {Array.isArray(data.marketing_strategies) && data.marketing_strategies.length > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-semibold text-green-800 text-sm mb-3 flex items-center">
-                <span className="mr-2">📢</span>
-                Marketing Strategies
-              </h4>
-              <div className="space-y-3">
-                {data.marketing_strategies.map((strategy, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-3 border border-green-200">
-                    <p className="text-green-700 text-xs">{strategy}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {/* Competitive Analysis */}
-          {typeof data.competitive_landscape === 'object' && data.competitive_landscape !== null && (
+
+          {/* Competitive Landscape */}
+          {data.competitive_landscape && (
             <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
               <h4 className="font-semibold text-orange-800 text-sm mb-3 flex items-center">
                 <span className="mr-2">🔍</span>
                 Competitive Landscape
               </h4>
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-orange-700">Price Range (100ml)</span>
-                  <span className="font-medium text-orange-900">{data.competitive_landscape.price_range}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-orange-700">Target Demographics</span>
-                  <span className="font-medium text-orange-900">{data.competitive_landscape.target_demographics}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-orange-700">Distribution Channels</span>
-                  <span className="font-medium text-orange-900">{data.competitive_landscape.distribution_channels}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-orange-700">Key Competitors</span>
-                  <span className="font-medium text-orange-900">{data.competitive_landscape.key_competitors}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* Seasonal Trends */}
-          {Array.isArray(data.seasonal_trends) && data.seasonal_trends.length > 0 && (
-            <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg p-4">
-              <h4 className="font-semibold text-pink-800 text-sm mb-3 flex items-center">
-                <span className="mr-2">🌸</span>
-                Seasonal Trends
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                {data.seasonal_trends.map((season, idx) => (
-                  <div key={idx} className="bg-white rounded-lg p-2 border border-pink-200">
-                    <h5 className="font-medium text-pink-900 text-xs mb-1">{season.season}</h5>
-                    <p className="text-pink-700 text-xs">{season.trend}</p>
+                {Object.entries(data.competitive_landscape).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between text-sm">
+                    <span className="text-orange-700 capitalize">
+                      {key.replace(/_/g, ' ')}:
+                    </span>
+                    <span className="font-medium text-orange-900">{value}</span>
                   </div>
                 ))}
               </div>
@@ -646,6 +450,6 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
       </Section>
     </div>
   );
-}
+};
 
 export default FormulationCard;

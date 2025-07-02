@@ -131,6 +131,30 @@ function App() {
           <p className="text-gray-600 mt-2">Idea to formulation, creation to marketing in minutes.</p>
         </header>
 
+        {/* Category Selection */}
+        <div className="flex justify-center gap-4 mb-6">
+          {[
+            { label: "Cosmetics", value: "cosmetics", icon: "💄" },
+            { label: "Pet Food", value: "pet food", icon: "🐾" },
+            { label: "Wellness", value: "wellness", icon: "🌱" }
+          ].map(cat => (
+            <button
+              key={cat.value}
+              onClick={() => setSelectedCategory(cat.value)}
+              className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold border transition
+                ${selectedCategory === cat.value
+                  ? "bg-purple-600 text-white border-purple-700 shadow"
+                  : "bg-white text-purple-700 border-purple-300 hover:bg-purple-50"
+                }`}
+              aria-pressed={selectedCategory === cat.value}
+              aria-label={`Select ${cat.label} category`}
+            >
+              <span className="text-xl">{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         {/* Prompt Input */}
         <PromptInput
           onResult={(data) => {

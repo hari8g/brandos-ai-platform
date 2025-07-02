@@ -3,6 +3,8 @@ FastAPI router for query assessment
 """
 from fastapi import APIRouter
 from app.models.assess import AssessRequest, AssessResponse
+from app.models.query import SuggestionRequest, SuggestionResponse
+from app.services.query.suggestions_service import generate_suggestions
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -66,4 +68,8 @@ async def assess_query(request: AssessRequest):
             score=0.0,
             can_generate=False,
             feedback=f"Error assessing query: {str(e)}"
-        ) 
+        )
+
+@router.post("/suggestions", response_model=SuggestionResponse)
+async def suggestions(request: SuggestionRequest):
+    return generate_suggestions(request) 

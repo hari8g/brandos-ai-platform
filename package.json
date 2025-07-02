@@ -18,5 +18,9 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.2.0"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.0",
+    "lottie-react": "^2.4.1"
   }
 }

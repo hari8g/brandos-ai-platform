@@ -84,7 +84,21 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
         - Provide detailed scientific reasoning with per-ingredient explanations
         - Include safety considerations
         - Use ingredients appropriate for the product type
-        - For each ingredient, provide 2-3 local suppliers with realistic contact information and pricing
+        - For each ingredient, provide 2-3 Indian suppliers (prefer Indian companies, cities, and contact info) with realistic contact information and pricing
+        - For the 'manufacturing_steps' section, output a 'Manufacturing Protocol' where:
+          - Each step is numbered and titled (e.g., 'Step 1: Pre-heat mixing vessel').
+          - For each step, include three sub-headings:
+            - Why: A concise scientific or practical rationale explaining why this step is critical to product performance, stability, or safety.
+            - How: A clear, actionable description of how to execute the step in a lab or pilot plant (including parameters like temperature, mixing speed, duration, order of addition, and safety/protective equipment).
+            - Ecosystem: Recommendations on what equipment, suppliers, materials, software, or best-practice standards to rely on (e.g., 'Use a stainless-steel 5 L jacketed reactor from Supplier X; ensure GMP-compatible seals; monitor pH with a Y meter').
+        - Format the manufacturing_steps as a JSON array, where each item is an object with:
+          {
+            "step_number": 1,
+            "title": "Pre-heat mixing vessel",
+            "why": "...",
+            "how": "...",
+            "ecosystem": "..."
+          }
         - Manufacturing steps should be detailed and sequential
         - Include current market trends and competitive analysis
         - Make supplier information realistic but fictional for demonstration purposes

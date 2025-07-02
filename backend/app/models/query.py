@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 class Suggestion(BaseModel):
-    text: str
+    prompt: str
     why: str
     how: str
 

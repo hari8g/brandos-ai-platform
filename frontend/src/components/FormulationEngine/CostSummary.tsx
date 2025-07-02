@@ -25,6 +25,7 @@ interface CostEstimate {
     packaging: number;
     overhead: number;
     quality_control?: number;
+    capex?: number;
   };
   currency: string;
   batch_pricing?: BatchPricing[];
@@ -59,6 +60,12 @@ export default function CostSummary({ cost }: CostSummaryProps) {
             <span className="text-gray-600">Premium Active Ingredients:</span>
             <span className="font-medium">{formatCurrency(cost.raw_materials)}</span>
           </div>
+          {cost.breakdown?.capex !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Capex Amortization (Equipment):</span>
+              <span className="font-medium">{formatCurrency(cost.breakdown.capex)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-gray-600">Skilled Labor & Clean Room Operations:</span>
             <span className="font-medium">{formatCurrency(cost.labor_cost)}</span>
@@ -71,10 +78,10 @@ export default function CostSummary({ cost }: CostSummaryProps) {
             <span className="text-gray-600">Facility & Utilities:</span>
             <span className="font-medium">{formatCurrency(cost.overhead_cost)}</span>
           </div>
-          {cost.quality_control_cost && (
+          {cost.breakdown?.quality_control !== undefined && (
             <div className="flex justify-between">
               <span className="text-gray-600">Quality Control & Testing:</span>
-              <span className="font-medium">{formatCurrency(cost.quality_control_cost)}</span>
+              <span className="font-medium">{formatCurrency(cost.breakdown.quality_control)}</span>
             </div>
           )}
           <hr className="my-2" />

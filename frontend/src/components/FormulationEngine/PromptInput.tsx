@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Button from "@/components/ui/button";
-import { categoryPrompts } from "@/utils/rotating-prompts";
+import { categoryPrompts } from "../../utils/rotating-prompts";
 import { Badge } from "@/components/ui/badge";
 import apiClient from "@/services/apiClient";
-import { useSuggestions } from "@/hooks/useSuggestions";
 import { GenerateResponse } from "@/types/formulation";
+import SuggestionCard, { Suggestion } from "./SuggestionCard";
 
 interface QueryQualityResponse {
   score: number;
@@ -18,12 +18,6 @@ interface QueryQualityResponse {
   formulation_warnings: string[];
 }
 
-interface Suggestion {
-  text: string;
-  why: string;
-  how: string;
-}
-
 type Step = 'draft' | 'suggestions' | 'generate';
 
 export default function PromptInput({
@@ -33,36 +27,42 @@ export default function PromptInput({
   onResult: (data: GenerateResponse) => void;
   selectedCategory: string | null;
 }) {
+  const [stage, setStage] = useState<'input' | 'suggestions' | 'ready'>('input');
   const [prompt, setPrompt] = useState("");
-  const [placeholder, setPlaceholder] = useState("");
   const [loading, setLoading] = useState(false);
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
   const [location, setLocation] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>('draft');
   const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [feedback, setFeedback] = useState("");
+  const [moreInfo, setMoreInfo] = useState("");
   
-  // Suggestions hook
-  const { loading: suggestionsLoading, error: suggestionsError, suggestions, generateSuggestions, clearSuggestions } = useSuggestions();
-
-  const examplePrompts = [
-    "A gentle foaming face wash for oily skin, fragrance-free",
-    "High-protein vegan snack bar with added vitamins",
-    "Grain-free dog food for sensitive stomachs, chicken flavor",
-    "Anti-aging night cream with retinol and hyaluronic acid",
-    "Low-calorie electrolyte drink for athletes"
-  ];
   const [exampleIdx, setExampleIdx] = useState(0);
   const [fade, setFade] = useState(true);
 
-  // Ensure we have a valid example to show
-  const currentExample = examplePrompts[exampleIdx] || examplePrompts[0] || "A gentle foaming face wash for oily skin, fragrance-free";
+  // Custom rolling prompts based on selectedCategory
+  const getPrompts = () => {
+    if (selectedCategory && categoryPrompts[selectedCategory]) {
+      return categoryPrompts[selectedCategory];
+    }
+    // fallback default prompts
+    return [
+      "A gentle foaming face wash for oily skin, fragrance-free",
+      "High-protein vegan snack bar with added vitamins",
+      "Grain-free dog food for sensitive stomachs, chicken flavor",
+      "Anti-aging night cream with retinol and hyaluronic acid",
+      "Low-calorie electrolyte drink for athletes"
+    ];
+  };
+  const prompts = getPrompts();
+  const currentExample = prompts[exampleIdx] || prompts[0];
 
   console.log('PromptInput rendered with example:', currentExample, 'fade:', fade);
 
   useEffect(() => {
     if (!selectedCategory) {
-      setPlaceholder("Enter your product idea...");
       return;
     }
   
@@ -72,12 +72,11 @@ export default function PromptInput({
     let isCancelled = false;
   
     const typePrompt = async (text: string) => {
-      setPlaceholder(""); // clear before typing
       await new Promise((resolve) => setTimeout(resolve, 100)); // wait 100ms
   
       for (let i = 0; i < text.length; i++) {
         if (isCancelled) return;
-        setPlaceholder((prev) => prev + text[i]);
+        setPrompt((prev) => prev + text[i]);
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     };
@@ -99,118 +98,49 @@ export default function PromptInput({
   }, [selectedCategory]);
 
   useEffect(() => {
+    setExampleIdx(0); // reset to first prompt on category change
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
     const interval = setInterval(() => {
       setFade(false);
       setTimeout(() => {
-        setExampleIdx((prev) => (prev + 1) % examplePrompts.length);
+        setExampleIdx((prev) => (prev + 1) % prompts.length);
         setFade(true);
-        console.log('Dynamic prompt cycling to:', examplePrompts[(exampleIdx + 1) % examplePrompts.length]);
       }, 400); // fade out duration
     }, 3500);
     return () => clearInterval(interval);
-  }, [examplePrompts.length, exampleIdx]);
+  }, [prompts.length, exampleIdx, selectedCategory]);
 
-  const assessQueryQuality = async (query: string): Promise<QueryQualityResponse> => {
-    try {
-      const response = await apiClient.post("/query/assess", {
-        prompt: query,
-        category: selectedCategory
-      });
-      
-      const data = response.data;
-      
-      // Convert backend response to frontend format
-      return {
-        score: data.score || 1,
-        feedback: data.feedback || "Unable to assess query quality",
-        needs_improvement: !data.can_generate,
-        suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
-        improvement_examples: [],
-        missing_elements: [],
-        confidence_level: data.score > 0.7 ? "high" : data.score > 0.4 ? "medium" : "low",
-        can_generate_formulation: data.can_generate || false,
-        formulation_warnings: []
-      };
-    } catch (error) {
-      console.error("Error in assessQueryQuality:", error);
-      throw error;
-    }
-  };
-
-  const generateFormulation = async (query: string): Promise<GenerateResponse> => {
-    const response = await apiClient.post("/formulation/generate", {
-      prompt: query,
-      category: selectedCategory
-    });
-    
-    return response.data;
-  };
-
-  const handleGetSuggestions = async () => {
-    if (!prompt.trim()) return;
-    
-    const result = await generateSuggestions({
-      prompt: prompt,
-      category: selectedCategory || undefined
-    });
-    
-    if (result) {
-      setCurrentStep('suggestions');
-    }
-  };
-
-  const handleSuggestionSelect = (suggestion: Suggestion) => {
-    setSelectedSuggestion(suggestion);
-    setCurrentStep('generate');
-  };
-
-  const handleGenerateFormulation = async () => {
-    const finalPrompt = selectedSuggestion?.text || prompt;
-    
+  const handleAssess = async () => {
     setLoading(true);
-    setShowQualityFeedback(false);
-    setQueryQuality(null);
-    
-    try {
-      // Step 1: Assess query quality (for feedback purposes)
-      console.log("🔍 Assessing query quality...");
-      const qualityAssessment = await assessQueryQuality(finalPrompt);
-      setQueryQuality(qualityAssessment);
-      
-      // Step 2: Generate formulation
-      console.log("🚀 Generating formulation...");
-      const formulationResponse = await generateFormulation(finalPrompt);
-      
-      // Pass the response directly to the parent component
-      onResult(formulationResponse);
-      
-      // Step 3: Show quality feedback if query needs improvement
-      if (qualityAssessment.needs_improvement) {
-        setShowQualityFeedback(true);
-      }
-      
-    } catch (err) {
-      console.error("Error in handleGenerateFormulation:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      alert(`🚨 Failed to process your request: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
+    // Always fetch suggestions, regardless of assessment
+    const sugResp = await apiClient.post("/query/suggestions", { prompt });
+    setSuggestions(sugResp.data.suggestions);
+    setLoading(false);
+    setStage("suggestions");
   };
 
-  const handleBackToDraft = () => {
-    setCurrentStep('draft');
-    setSelectedSuggestion(null);
-    clearSuggestions();
+  const handleUse = (s: Suggestion) => {
+    setSelectedSuggestion(s);
+    setPrompt(s.prompt);
+    setStage("ready");
   };
 
-  const handleBackToSuggestions = () => {
-    setCurrentStep('suggestions');
-    setSelectedSuggestion(null);
+  const handleGenerate = async () => {
+    setLoading(true);
+    // Combine prompt and moreInfo
+    const finalPrompt = moreInfo.trim()
+      ? `${prompt}\n\nAdditional context: ${moreInfo}`
+      : prompt;
+    const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt });
+    setLoading(false);
+    onResult(resp.data);
   };
 
   // Step 1: Draft
-  if (currentStep === 'draft') {
+  if (stage === 'input') {
     return (
       <div className="space-y-6">
         <div className="space-y-4">
@@ -224,7 +154,11 @@ export default function PromptInput({
               <svg className="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="italic">e.g. {currentExample}</span>
+              {selectedCategory ? (
+                <span className="italic">e.g. {currentExample}</span>
+              ) : (
+                <span className="italic text-gray-400">Select a category to see example prompts</span>
+              )}
             </span>
           </div>
           <div className="relative">
@@ -232,7 +166,7 @@ export default function PromptInput({
               className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
                          focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
                          resize-none"
-              placeholder={placeholder}
+              placeholder="Describe your product idea..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               maxLength={5000}
@@ -260,46 +194,40 @@ export default function PromptInput({
 
         {/* Get Suggestions Button */}
         <button
-          onClick={handleGetSuggestions}
-          disabled={suggestionsLoading || !prompt.trim()}
+          onClick={handleAssess}
+          disabled={loading || !prompt.trim()}
           className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
-                     ${suggestionsLoading || !prompt.trim() 
+                     ${loading || !prompt.trim() 
                        ? 'bg-gray-300 cursor-not-allowed' 
                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
                      }`}
         >
-          {suggestionsLoading ? (
+          {loading ? (
             <div className="flex items-center justify-center space-x-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Generating Suggestions...</span>
+              <span>Assessing...</span>
             </div>
           ) : (
             <div className="flex items-center justify-center space-x-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
-              <span>Get AI Suggestions</span>
+              <span>Assess & Improve</span>
             </div>
           )}
         </button>
-
-        {suggestionsError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{suggestionsError}</p>
-          </div>
-        )}
       </div>
     );
   }
 
   // Step 2: Suggestions
-  if (currentStep === 'suggestions') {
+  if (stage === 'suggestions') {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-900">AI-Powered Suggestions</h3>
+          <h3 className="text-xl font-bold text-indigo-600">Suggestions for your Product</h3>
           <button
-            onClick={handleBackToDraft}
+            onClick={() => setStage('input')}
             className="text-gray-500 hover:text-gray-700 text-sm font-medium"
           >
             ← Back to Draft
@@ -312,56 +240,16 @@ export default function PromptInput({
           </p>
         </div>
 
-        {suggestionsLoading ? (
+        {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Generating AI suggestions...</p>
+            <p className="text-gray-600">Loading AI suggestions...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {suggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                onClick={() => handleSuggestionSelect(suggestion)}
-                className="bg-white border border-gray-200 rounded-lg p-6 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h4 className="text-lg font-semibold text-gray-900">Suggestion {index + 1}</h4>
-                  <Badge variant="outline" className="text-xs">
-                    Click to select
-                  </Badge>
-                </div>
-                
-                <div className="space-y-3">
-                  <div>
-                    <h5 className="font-medium text-gray-800 mb-1">Refined Prompt:</h5>
-                    <p className="text-gray-700 text-sm bg-gray-50 p-3 rounded">{suggestion.text}</p>
-                  </div>
-                  
-                  <div>
-                    <h5 className="font-medium text-gray-800 mb-1">Why this helps:</h5>
-                    <p className="text-gray-600 text-sm">{suggestion.why}</p>
-                  </div>
-                  
-                  <div>
-                    <h5 className="font-medium text-gray-800 mb-1">How to implement:</h5>
-                    <p className="text-gray-600 text-sm">{suggestion.how}</p>
-                  </div>
-                </div>
-              </div>
+            {suggestions.map((s, i) => (
+              <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} />
             ))}
-          </div>
-        )}
-
-        {suggestionsError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{suggestionsError}</p>
-            <button
-              onClick={handleGetSuggestions}
-              className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"
-            >
-              Try Again
-            </button>
           </div>
         )}
       </div>
@@ -369,13 +257,13 @@ export default function PromptInput({
   }
 
   // Step 3: Generate
-  if (currentStep === 'generate') {
+  if (stage === 'ready') {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900">Generate Formulation</h3>
           <button
-            onClick={handleBackToSuggestions}
+            onClick={() => setStage('suggestions')}
             className="text-gray-500 hover:text-gray-700 text-sm font-medium"
           >
             ← Back to Suggestions
@@ -384,20 +272,39 @@ export default function PromptInput({
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
           <h4 className="font-semibold text-green-800 mb-2">Selected Prompt:</h4>
-          <p className="text-green-700">{selectedSuggestion?.text || prompt}</p>
+          <p className="text-green-700">{selectedSuggestion?.prompt || prompt}</p>
           
           {selectedSuggestion && (
             <div className="mt-3 pt-3 border-t border-green-200">
               <p className="text-green-600 text-sm">
-                <strong>Why this refinement helps:</strong> {selectedSuggestion.why}
+                <strong>Why this refinement helps:</strong> {selectedSuggestion.how}
               </p>
             </div>
           )}
         </div>
 
+        {/* Edit Prompt and More Info */}
+        <div>
+          <label className="block font-semibold mb-1">Edit your prompt:</label>
+          <textarea
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            className="mb-2 w-full border rounded p-2"
+            rows={4}
+          />
+          <label className="block font-semibold mb-1">Add more information (optional):</label>
+          <textarea
+            value={moreInfo}
+            onChange={e => setMoreInfo(e.target.value)}
+            className="mb-2 w-full border rounded p-2"
+            rows={2}
+            placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
+          />
+        </div>
+
         {/* Generate Button */}
         <button
-          onClick={handleGenerateFormulation}
+          onClick={handleGenerate}
           disabled={loading}
           className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
                      ${loading 

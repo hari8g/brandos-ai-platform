@@ -7,7 +7,8 @@
     "dev": "vite",
     "dev:standalone": "vite --config vite.standalone.config.ts",
     "type-check": "tsc --noEmit -p tsconfig.build.json",
-    "build": "npm run type-check && vite build",
+    "build": "npm run type-check && vite build --config vite.config.vercel.ts",
+    "build:local": "npm run type-check && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --report-unused-disable-directives --max-warnings 0"
   },

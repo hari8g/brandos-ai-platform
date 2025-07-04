@@ -1,0 +1,13 @@
+// frontend/tsconfig.build.json
+{
+    "extends": "./tsconfig.app.json",
+    "compilerOptions": {
+      // disable these checks when running the build
+      "noUnusedLocals": false,
+      "noUnusedParameters": false
+    },
+    // you still want to include the same files/paths as your main config:
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
+  }
+  

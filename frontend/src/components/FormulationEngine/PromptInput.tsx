@@ -55,6 +55,8 @@ export default function PromptInput({
   const [stage, setStage] = useState<'input' | 'suggestions' | 'ready'>('input');
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStep, setLoadingStep] = useState('');
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
   const [location, setLocation] = useState("");
@@ -163,11 +165,53 @@ export default function PromptInput({
 
   const handleAssess = async () => {
     setLoading(true);
-    // Always fetch suggestions, regardless of assessment
-    const sugResp = await apiClient.post("/query/suggestions", { prompt });
-    setSuggestions(sugResp.data.suggestions);
-    setLoading(false);
-    setStage("suggestions");
+    setLoadingProgress(0);
+    setLoadingStep('Analyzing your query...');
+    
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 300);
+
+    // Update loading steps
+    const stepTimeout1 = setTimeout(() => setLoadingStep('Processing with AI models...'), 800);
+    const stepTimeout2 = setTimeout(() => setLoadingStep('Generating personalized suggestions...'), 1600);
+    const stepTimeout3 = setTimeout(() => setLoadingStep('Finalizing recommendations...'), 2400);
+
+    try {
+      // Always fetch suggestions, regardless of assessment
+      const sugResp = await apiClient.post("/query/suggestions", { prompt });
+      setSuggestions(sugResp.data.suggestions);
+      
+      // Complete the progress
+      setLoadingProgress(100);
+      setLoadingStep('Complete!');
+      
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+        setStage("suggestions");
+      }, 500);
+    } catch (error) {
+      setLoadingStep('Error occurred. Please try again.');
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      clearInterval(progressInterval);
+      clearTimeout(stepTimeout1);
+      clearTimeout(stepTimeout2);
+      clearTimeout(stepTimeout3);
+    }
   };
 
   const handleUse = (s: Suggestion) => {
@@ -192,20 +236,20 @@ export default function PromptInput({
     return (
       <div className="space-y-6">
         <div className="space-y-4">
-          <label htmlFor="prompt" className="block text-lg font-medium text-gray-700 mb-2">
+          <label htmlFor="prompt" className="block text-lg font-medium text-indigo-700 mb-2">
             Describe your product idea
           </label>
           {/* Dynamic Example Prompt */}
           <div className={`h-8 mb-3 text-gray-500 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
             aria-live="polite">
             <span className="inline-flex items-center">
-              <svg className="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {selectedCategory ? (
                 <span className="italic">e.g. {currentExample}</span>
               ) : (
-                <span className="italic text-gray-400">Select a category to see example prompts</span>
+                <span className="italic text-purple-700">Select a category to see example prompts</span>
               )}
             </span>
           </div>
@@ -227,8 +271,8 @@ export default function PromptInput({
 
         {/* Location Input */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Manufacturing Location (optional)
+          <label className="block text-sm font-medium text-purple-700">
+            Location (optional)
           </label>
           <input
             type="text"
@@ -253,7 +297,7 @@ export default function PromptInput({
           {loading ? (
             <div className="flex items-center justify-center space-x-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Assessing...</span>
+              <span>Starting Analysis...</span>
             </div>
           ) : (
             <div className="flex items-center justify-center space-x-2">
@@ -290,8 +334,13 @@ export default function PromptInput({
 
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading AI suggestions...</p>
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <svg className="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <p className="text-gray-600 font-medium">Processing your request...</p>
+            <p className="text-gray-400 text-sm mt-1">This usually takes 10-15 seconds</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -390,6 +439,79 @@ export default function PromptInput({
 
   return (
     <>
+      {/* Modern Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full translate-y-12 -translate-x-12"></div>
+            
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">AI Analysis in Progress</h3>
+                <p className="text-gray-600 text-sm">We're analyzing your product idea to provide the best suggestions</p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Progress</span>
+                  <span className="text-sm font-bold text-blue-600">{Math.round(loadingProgress)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 ease-out relative"
+                    style={{ width: `${loadingProgress}%` }}
+                  >
+                    {/* Animated shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Step */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center px-4 py-2 bg-blue-50 rounded-full">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                  <span className="text-sm font-medium text-blue-700">{loadingStep}</span>
+                </div>
+              </div>
+
+              {/* Estimated Time */}
+              <div className="text-center">
+                <div className="inline-flex items-center text-gray-500 text-sm">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Estimated time: {loadingProgress < 30 ? '10-15 seconds' : loadingProgress < 70 ? '5-8 seconds' : 'Almost done...'}</span>
+                </div>
+              </div>
+
+              {/* Loading Animation */}
+              <div className="mt-6 flex justify-center">
+                <div className="flex space-x-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quality Feedback Modal */}
       {showQualityFeedback && queryQuality && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

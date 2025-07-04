@@ -57,6 +57,7 @@ export default function PromptInput({
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState('');
+  const [loadingType, setLoadingType] = useState<'assess' | 'generate'>('assess');
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
   const [location, setLocation] = useState("");
@@ -165,6 +166,7 @@ export default function PromptInput({
 
   const handleAssess = async () => {
     setLoading(true);
+    setLoadingType('assess');
     setLoadingProgress(0);
     setLoadingStep('Analyzing your query...');
     
@@ -222,224 +224,287 @@ export default function PromptInput({
 
   const handleGenerate = async () => {
     setLoading(true);
-    // Combine prompt and moreInfo
-    const finalPrompt = moreInfo.trim()
-      ? `${prompt}\n\nAdditional context: ${moreInfo}`
-      : prompt;
-    const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt });
-    setLoading(false);
-    onResult(resp.data);
+    setLoadingType('generate');
+    setLoadingProgress(0);
+    setLoadingStep('🧪 Mixing up some magic...');
+    
+    // Formulation-themed puns and steps
+    const formulationPuns = [
+      { step: '🧪 Mixing up some magic...', pun: 'Why did the chemist go broke? Because he lost his solution!' },
+      { step: '⚗️ Brewing the perfect formula...', pun: 'What do you call a chemist who\'s always late? A slow reaction!' },
+      { step: '🔬 Analyzing molecular structures...', pun: 'Why are chemists great at solving problems? They have all the solutions!' },
+      { step: '🧬 Crafting the DNA of your product...', pun: 'What did the DNA say to the other DNA? Do these genes make me look fat?' },
+      { step: '⚡ Adding the secret sauce...', pun: 'Why did the chemist like working with ammonia? Because it was pretty basic!' },
+      { step: '🎯 Fine-tuning the formula...', pun: 'What\'s a chemist\'s favorite type of tree? A chemist-tree!' },
+      { step: '✨ Adding the final sparkle...', pun: 'Why did the chemist go to the beach? To get a tan-gent!' },
+      { step: '🎉 Your formulation is ready!', pun: 'What do you call a chemist who\'s also a comedian? A reaction-ary!' }
+    ];
+    
+    let currentPunIndex = 0;
+    
+    // Simulate progress updates with puns
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        
+        // Update pun every 15% progress
+        const newProgress = prev + Math.random() * 12;
+        if (newProgress > (currentPunIndex + 1) * 12.5 && currentPunIndex < formulationPuns.length - 1) {
+          currentPunIndex++;
+          setLoadingStep(formulationPuns[currentPunIndex].step);
+        }
+        
+        return newProgress;
+      });
+    }, 400);
+
+    try {
+      // Combine prompt and moreInfo
+      const finalPrompt = moreInfo.trim()
+        ? `${prompt}\n\nAdditional context: ${moreInfo}`
+        : prompt;
+      
+      const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt });
+      
+      // Complete the progress
+      setLoadingProgress(100);
+      setLoadingStep('🎉 Your formulation is ready!');
+      
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+        onResult(resp.data);
+      }, 800);
+    } catch (error) {
+      setLoadingStep('😅 Oops! Something went wrong...');
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      clearInterval(progressInterval);
+    }
   };
 
-  // Step 1: Draft
-  if (stage === 'input') {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <label htmlFor="prompt" className="block text-lg font-medium text-indigo-700 mb-2">
-            Describe your product idea
-          </label>
-          {/* Dynamic Example Prompt */}
-          <div className={`h-8 mb-3 text-gray-500 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
-            aria-live="polite">
-            <span className="inline-flex items-center">
-              <svg className="w-4 h-4 mr-2 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {selectedCategory ? (
-                <span className="italic">e.g. {currentExample}</span>
-              ) : (
-                <span className="italic text-purple-700">Select a category to see example prompts</span>
-              )}
-            </span>
-          </div>
-          <div className="relative">
-            <textarea
-              className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
-                         focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
-                         resize-none"
-              placeholder=""
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              maxLength={5000}
-            />
-            <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-              {prompt.length}/5000
-            </div>
-          </div>
-        </div>
-
-        {/* Location Input */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-purple-700">
-            Location (optional)
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 rounded-lg border border-gray-200 bg-white/90 placeholder-gray-400
-                     focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200"
-            placeholder="e.g. Mumbai, Bangalore, Delhi"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-        </div>
-
-        {/* Get Suggestions Button */}
-        <button
-          onClick={handleAssess}
-          disabled={loading || !prompt.trim()}
-          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
-                     ${loading || !prompt.trim() 
-                       ? 'bg-gray-300 cursor-not-allowed' 
-                       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
-                     }`}
-        >
-          {loading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Starting Analysis...</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <span>Assess & Improve</span>
-            </div>
-          )}
-        </button>
-      </div>
-    );
-  }
-
-  // Step 2: Suggestions
-  if (stage === 'suggestions') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-indigo-600">Suggestions for your Product</h3>
-          <button
-            onClick={() => setStage('input')}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-          >
-            ← Back to Draft
-          </button>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-700 text-sm">
-            <strong>Original Query:</strong> {prompt}
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <svg className="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </div>
-            <p className="text-gray-600 font-medium">Processing your request...</p>
-            <p className="text-gray-400 text-sm mt-1">This usually takes 10-15 seconds</p>
-          </div>
-        ) : (
+  // Render the main content based on stage
+  const renderMainContent = () => {
+    // Step 1: Draft
+    if (stage === 'input') {
+      return (
+        <div className="space-y-6">
           <div className="space-y-4">
-            {suggestions.map((s, i) => (
-              <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} />
-            ))}
+            <label htmlFor="prompt" className="block text-lg font-medium text-indigo-700 mb-2">
+              Describe your product idea
+            </label>
+            {/* Dynamic Example Prompt */}
+            <div className={`h-8 mb-3 text-gray-500 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
+              aria-live="polite">
+              <span className="inline-flex items-center">
+                <svg className="w-4 h-4 mr-2 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {selectedCategory ? (
+                  <span className="italic">e.g. {currentExample}</span>
+                ) : (
+                  <span className="italic text-purple-700">Select a category to see example prompts</span>
+                )}
+              </span>
+            </div>
+            <div className="relative">
+              <textarea
+                className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
+                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
+                           resize-none"
+                placeholder=""
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                maxLength={5000}
+              />
+              <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                {prompt.length}/5000
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-    );
-  }
 
-  // Step 3: Generate
-  if (stage === 'ready') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-900">Generate Formulation</h3>
+          {/* Location Input */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-purple-700">
+              Location (optional)
+            </label>
+            <input
+              type="text"
+              className="w-full p-3 rounded-lg border border-gray-200 bg-white/90 placeholder-gray-400
+                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200"
+              placeholder="e.g. Mumbai, Bangalore, Delhi"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
+
+          {/* Get Suggestions Button */}
           <button
-            onClick={() => setStage('suggestions')}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            onClick={handleAssess}
+            disabled={loading || !prompt.trim()}
+            className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
+                       ${loading || !prompt.trim() 
+                         ? 'bg-gray-300 cursor-not-allowed' 
+                         : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
+                       }`}
           >
-            ← Back to Suggestions
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Starting Analysis...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>Assess & Improve</span>
+              </div>
+            )}
           </button>
         </div>
+      );
+    }
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h4 className="font-semibold text-green-800 mb-2">Selected Prompt:</h4>
-          <p className="text-green-700">{selectedSuggestion?.prompt || prompt}</p>
-          
-          {selectedSuggestion && (
-            <div className="mt-3 pt-3 border-t border-green-200">
-              <p className="text-green-600 text-sm">
-                <strong>Why this refinement helps:</strong> {selectedSuggestion.how}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Prompt and More Info */}
-        <div>
-          <label className="block font-semibold mb-1">Edit your prompt:</label>
-          <textarea
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            className="mb-2 w-full border rounded p-2"
-            rows={4}
-          />
-          <label className="block font-semibold mb-1">Add more information (optional):</label>
-          <textarea
-            value={moreInfo}
-            onChange={e => setMoreInfo(e.target.value)}
-            className="mb-2 w-full border rounded p-2"
-            rows={2}
-            placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
-          />
-          {/* Dynamic More Info Rolling Prompt */}
-          <div className={`h-6 mb-2 text-gray-400 text-xs font-medium transition-opacity duration-500 ${moreInfoFade ? 'opacity-100' : 'opacity-0'}`}
-            aria-live="polite">
-            <span className="inline-flex items-center">
-              <svg className="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="italic">e.g. {currentMoreInfo}</span>
-            </span>
+    // Step 2: Suggestions
+    if (stage === 'suggestions') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-indigo-600">Suggestions for your Product</h3>
+            <button
+              onClick={() => setStage('input')}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              ← Back to Draft
+            </button>
           </div>
-        </div>
 
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={loading}
-          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
-                     ${loading 
-                       ? 'bg-gray-300 cursor-not-allowed' 
-                       : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
-                     }`}
-        >
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-700 text-sm">
+              <strong>Original Query:</strong> {prompt}
+            </p>
+          </div>
+
           {loading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Generating Formulation...</span>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <svg className="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <p className="text-gray-600 font-medium">Processing your request...</p>
+              <p className="text-gray-400 text-sm mt-1">This usually takes 10-15 seconds</p>
             </div>
           ) : (
-            <div className="flex items-center justify-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span>Generate Formulation</span>
+            <div className="space-y-4">
+              {suggestions.map((s, i) => (
+                <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} />
+              ))}
             </div>
           )}
-        </button>
-      </div>
-    );
-  }
+        </div>
+      );
+    }
+
+    // Step 3: Generate
+    if (stage === 'ready') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-900">Generate Formulation</h3>
+            <button
+              onClick={() => setStage('suggestions')}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              ← Back to Suggestions
+            </button>
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h4 className="font-semibold text-green-800 mb-2">Selected Prompt:</h4>
+            <p className="text-green-700">{selectedSuggestion?.prompt || prompt}</p>
+            
+            {selectedSuggestion && (
+              <div className="mt-3 pt-3 border-t border-green-200">
+                <p className="text-green-600 text-sm">
+                  <strong>Why this refinement helps:</strong> {selectedSuggestion.how}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Edit Prompt and More Info */}
+          <div>
+            <label className="block font-semibold mb-1">Edit your prompt:</label>
+            <textarea
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              className="mb-2 w-full border rounded p-2"
+              rows={4}
+            />
+            <label className="block font-semibold mb-1">Add more information (optional):</label>
+            <textarea
+              value={moreInfo}
+              onChange={e => setMoreInfo(e.target.value)}
+              className="mb-2 w-full border rounded p-2"
+              rows={2}
+              placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
+            />
+            {/* Dynamic More Info Rolling Prompt */}
+            <div className={`h-6 mb-2 text-gray-400 text-xs font-medium transition-opacity duration-500 ${moreInfoFade ? 'opacity-100' : 'opacity-0'}`}
+              aria-live="polite">
+              <span className="inline-flex items-center">
+                <svg className="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="italic">e.g. {currentMoreInfo}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
+                       ${loading 
+                         ? 'bg-gray-300 cursor-not-allowed' 
+                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
+                       }`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Brewing Magic...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Generate Formulation</span>
+              </div>
+            )}
+          </button>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <>
-      {/* Modern Loading Overlay */}
+      {/* Modern Loading Overlay - Always rendered when loading */}
       {loading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
@@ -452,12 +517,25 @@ export default function PromptInput({
               {/* Header */}
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
+                  {loadingType === 'assess' ? (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">AI Analysis in Progress</h3>
-                <p className="text-gray-600 text-sm">We're analyzing your product idea to provide the best suggestions</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {loadingType === 'assess' ? 'Scrtch.AI is scratching it\'s head' : '🧪 Scrtch.AI is brewing magic'}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {loadingType === 'assess' 
+                    ? 'Don\'t worry, i want to be absolutley sure of what you meant..'
+                    : 'Creating your perfect formulation with a dash of chemistry humor!'
+                  }
+                </p>
               </div>
 
               {/* Progress Bar */}
@@ -486,14 +564,37 @@ export default function PromptInput({
               </div>
 
               {/* Estimated Time */}
-              <div className="text-center">
+              <div className="text-center mb-4">
                 <div className="inline-flex items-center text-gray-500 text-sm">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>Estimated time: {loadingProgress < 30 ? '10-15 seconds' : loadingProgress < 70 ? '5-8 seconds' : 'Almost done...'}</span>
+                  <span>Estimated time: {loadingProgress < 30 ? '10-15 seconds' : loadingProgress < 70 ? '5-8 seconds' : 'Just few more ticks...'}</span>
                 </div>
               </div>
+
+              {/* Chemistry Puns for Generate */}
+              {loadingType === 'generate' && (
+                <div className="text-center mb-4">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3">
+                    <p className="text-purple-700 text-sm font-medium">
+                      💡 Chemistry Pun: {(() => {
+                        const puns = [
+                          'Why did the chemist go broke? Because he lost his solution!',
+                          'What do you call a chemist who\'s always late? A slow reaction!',
+                          'Why are chemists great at solving problems? They have all the solutions!',
+                          'What did the DNA say to the other DNA? Do these genes make me look fat?',
+                          'Why did the chemist like working with ammonia? Because it was pretty basic!',
+                          'What\'s a chemist\'s favorite type of tree? A chemist-tree!',
+                          'Why did the chemist go to the beach? To get a tan-gent!',
+                          'What do you call a chemist who\'s also a comedian? A reaction-ary!'
+                        ];
+                        return puns[Math.floor((loadingProgress / 100) * puns.length)] || puns[0];
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Loading Animation */}
               <div className="mt-6 flex justify-center">
@@ -609,6 +710,9 @@ export default function PromptInput({
           </div>
         </div>
       )}
+
+      {/* Main Content */}
+      {renderMainContent()}
     </>
   );
-}
+} 

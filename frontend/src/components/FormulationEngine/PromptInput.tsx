@@ -3,8 +3,8 @@ import Button from "@/components/ui/button";
 import { categoryPrompts } from "../../utils/rotating-prompts";
 import { Badge } from "@/components/ui/badge";
 import apiClient from "@/services/apiClient";
-import { GenerateResponse } from "@/types/formulation";
-import SuggestionCard, { Suggestion } from "./SuggestionCard";
+import type { GenerateResponse } from "@/types/formulation";
+import SuggestionCard, { type Suggestion } from "./SuggestionCard";
 
 interface QueryQualityResponse {
   score: number;

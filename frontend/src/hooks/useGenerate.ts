@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import apiClient from '../services/apiClient'
-import { GenerateRequest, GenerateResponse } from '../types/formulation'
+import type { GenerateRequest, GenerateResponse } from '../types/formulation'
 
 export function useGenerate() {
   const [loading, setLoading] = useState(false)

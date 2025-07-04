@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useCosting } from "../../hooks/useCosting";
 import CostSummary from "./CostSummary";
-import { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
+import type { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
 
 // ─── Helper Section component ─────────────────────────────────
 interface SectionProps {

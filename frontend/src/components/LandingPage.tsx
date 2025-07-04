@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTypewriter } from 'react-simple-typewriter';
 import { Link as ScrollLink } from 'react-scroll';
 import apiClient from '../services/apiClient';
-import { AuthCheckRequest, AuthCheckResponse } from '../types/auth';
+import type { AuthCheckRequest, AuthCheckResponse } from '../types/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
 // Placeholder: swap with your own confetti file at this path

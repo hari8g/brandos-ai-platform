@@ -1,10 +1,29 @@
 import os
 import json
-from openai import OpenAI
-from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion
+from dotenv import load_dotenv
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Load environment variables from the root .env file
+# Navigate from backend/app/services/query/ to project root
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
+load_dotenv(os.path.join(project_root, '.env'))
+
+# Initialize OpenAI client only if API key is available
+client = None
+try:
+    from openai import OpenAI
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key and api_key != "your_openai_api_key_here" and api_key.strip():
+        client = OpenAI(api_key=api_key)
+        print("✅ OpenAI client initialized successfully")
+    else:
+        print("⚠️ OpenAI API key not found or invalid, will use fallback mock data")
+        print(f"🔍 API Key found: {'Yes' if api_key else 'No'}")
+        if api_key:
+            print(f"🔍 API Key length: {len(api_key)}")
+except Exception as e:
+    print(f"⚠️ Failed to initialize OpenAI client: {e}")
+
+from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion
 
 def extract_product_info(user_prompt: str) -> dict:
     extraction_prompt = f'''
@@ -17,6 +36,9 @@ def extract_product_info(user_prompt: str) -> dict:
       - concern (e.g. "wrinkle reduction", "hydration")
     '''
     try:
+        if not client:
+            return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
+            
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": extraction_prompt}],
@@ -31,6 +53,10 @@ def extract_product_info(user_prompt: str) -> dict:
         return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
 
 def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
+    # If OpenAI client is not available, use mock suggestions
+    if not client:
+        return generate_mock_suggestions(request)
+        
     info = extract_product_info(request.prompt)
     suggestion_prompt = f'''
     You are a cosmetic formulation expert.
@@ -56,18 +82,30 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
         content = response.choices[0].message.content
         json_str = content[content.find('['):content.rfind(']')+1]
         data = json.loads(json_str)
-        suggestions = [
-            Suggestion(prompt=s["prompt"], why=s["why"], how=s["how"]) for s in data
-        ]
+        
+        # Validate and clean the data before creating Suggestion objects
+        suggestions = []
+        for s in data:
+            try:
+                # Ensure all required fields are present and are strings
+                prompt = str(s.get("prompt", ""))
+                why = str(s.get("why", ""))
+                how = str(s.get("how", ""))
+                
+                if prompt and why and how:  # Only add if all fields have content
+                    suggestions.append(Suggestion(prompt=prompt, why=why, how=how))
+            except Exception as e:
+                print(f"Error processing suggestion: {e}")
+                continue
+        
+        # If no valid suggestions were created, use fallback
+        if not suggestions:
+            return generate_mock_suggestions(request)
+        
         return SuggestionResponse(suggestions=suggestions, success=True, message="Enriched suggestions generated")
     except Exception as e:
         print("generate_suggestions error:", e)
-        fallback = [
-            Suggestion(prompt="Formulate a hydrating face cream for dry skin with ceramides, squalane, and hyaluronic acid. Target a rich, non-greasy texture and airless pump packaging.", why="Addresses hydration and barrier repair for dry skin.", how="Use for users seeking deep moisturization."),
-            Suggestion(prompt="Create a lightweight anti-aging serum for wrinkle reduction, featuring retinol, peptides, and vitamin C. Ensure fast absorption and stability.", why="Targets visible signs of aging with proven actives.", how="Ideal for users wanting a potent, non-heavy serum."),
-            Suggestion(prompt="Develop a soothing gel for sensitive skin with niacinamide, panthenol, and green tea extract. Focus on calming, non-irritating formula.", why="Soothes irritation and strengthens skin barrier.", how="Best for users with redness or sensitivity.")
-        ]
-        return SuggestionResponse(suggestions=fallback, success=False, message="Fallback suggestions due to error")
+        return generate_mock_suggestions(request)
 
 def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     """Generate mock suggestions as fallback"""
@@ -75,17 +113,17 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     
     suggestions = [
         Suggestion(
-            text=f"Create a {request.category or 'skincare'} product with specific focus on {base_prompt}. Include detailed ingredient specifications, target skin type, and desired performance characteristics.",
+            prompt=f"Create a {request.category or 'skincare'} product with specific focus on {base_prompt}. Include detailed ingredient specifications, target skin type, and desired performance characteristics.",
             why="Adding specific ingredient and performance details helps create more targeted formulations",
             how="Specify exact ingredients, concentrations, and performance expectations in your prompt"
         ),
         Suggestion(
-            text=f"Develop a premium {request.category or 'skincare'} solution for {base_prompt}. Consider packaging, pricing, and target demographic preferences.",
+            prompt=f"Develop a premium {request.category or 'skincare'} solution for {base_prompt}. Consider packaging, pricing, and target demographic preferences.",
             why="Market positioning and packaging details help create commercially viable products",
             how="Include target audience, price point, and packaging preferences in your formulation request"
         ),
         Suggestion(
-            text=f"Formulate a {request.category or 'skincare'} product optimized for {base_prompt}. Focus on stability, safety, and regulatory compliance.",
+            prompt=f"Formulate a {request.category or 'skincare'} product optimized for {base_prompt}. Focus on stability, safety, and regulatory compliance.",
             why="Technical considerations ensure the formulation is safe, stable, and compliant",
             how="Mention stability requirements, safety concerns, and regulatory considerations in your prompt"
         )

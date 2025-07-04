@@ -11,11 +11,20 @@ interface BatchPricing {
   currency: string;
 }
 
+interface ScaleInfo {
+  scale: string;
+  equipment_cost: number;
+  annual_batches: number;
+  capex_per_batch: number;
+}
+
 interface CostEstimate {
   raw_materials: number;
   labor_cost: number;
   packaging_cost: number;
   overhead_cost: number;
+  quality_control_cost?: number;
+  capex_amortization?: number;
   total_production_cost: number;
   margin: number;
   total: number;
@@ -24,14 +33,21 @@ interface CostEstimate {
     labor: number;
     packaging: number;
     overhead: number;
+    quality_control?: number;
+    capex?: number;
   };
   currency: string;
   batch_pricing?: BatchPricing[];
+  premium_factors?: string[];
+  cost_optimization_suggestions?: string[];
+  scale_info?: ScaleInfo;
+  pricing_strategy?: string;
+  market_positioning?: string;
 }
 
 interface CostingRequest {
   formulation: any;
-  batch_sizes: string[];
+  batch_sizes: (string | number)[];
   target_market?: string;
   region?: string;
 }

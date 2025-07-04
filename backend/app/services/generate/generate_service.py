@@ -1,22 +1,25 @@
 import os
 import json
 from typing import List
-from openai import OpenAI
 from dotenv import load_dotenv
+from openai import OpenAI
 from app.models.generate import GenerateRequest, GenerateResponse, IngredientDetail, SupplierInfo
 
-# Load .env file
-load_dotenv()
+# Load environment variables from the root .env file
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
 # Initialize OpenAI client only if API key is available
 client = None
 try:
     api_key = os.getenv("OPENAI_API_KEY")
-    if api_key and api_key != "your_openai_api_key_here":
+    if api_key and api_key != "your_openai_api_key_here" and api_key.strip():
         client = OpenAI(api_key=api_key)
         print("✅ OpenAI client initialized successfully")
+        print(f"🔍 API Key found: {'Yes' if api_key else 'No'}")
+        if api_key:
+            print(f"🔍 API Key length: {len(api_key)}")
     else:
-        print("⚠️ OpenAI API key not found, will use fallback mock data")
+        print("⚠️ OpenAI API key not found or invalid, will use fallback mock data")
 except Exception as e:
     print(f"⚠️ Failed to initialize OpenAI client: {e}")
 
@@ -168,11 +171,30 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
                     suppliers=suppliers
                 ))
             
+            # Convert manufacturing_steps to simple strings if they are objects
+            manufacturing_steps = data.get('manufacturing_steps', [])
+            if manufacturing_steps and isinstance(manufacturing_steps[0], dict):
+                # Convert complex objects to simple strings
+                converted_steps = []
+                for step in manufacturing_steps:
+                    if isinstance(step, dict):
+                        # Format: "Step X: Title - How"
+                        step_num = step.get('step_number', '')
+                        title = step.get('title', '')
+                        how = step.get('how', '')
+                        step_str = f"Step {step_num}: {title}"
+                        if how:
+                            step_str += f" - {how}"
+                        converted_steps.append(step_str)
+                    else:
+                        converted_steps.append(str(step))
+                manufacturing_steps = converted_steps
+            
             result = GenerateResponse(
                 product_name=data.get('product_name', f"Custom {req.category or 'Product'}"),
                 reasoning=data.get('reasoning', 'No reasoning provided'),
                 ingredients=ingredients,
-                manufacturing_steps=data.get('manufacturing_steps', []),
+                manufacturing_steps=manufacturing_steps,
                 estimated_cost=float(data.get('estimated_cost', 0)),
                 safety_notes=data.get('safety_notes', []),
                 packaging_marketing_inspiration=data.get('packaging_marketing_inspiration'),

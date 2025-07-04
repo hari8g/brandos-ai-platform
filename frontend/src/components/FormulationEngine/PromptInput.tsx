@@ -20,6 +20,31 @@ interface QueryQualityResponse {
 
 type Step = 'draft' | 'suggestions' | 'generate';
 
+// Add moreInfoPrompts mapping for additional context suggestions
+const moreInfoPrompts: Record<string, string[]> = {
+  cosmetics: [
+    "I want it to be fragrance-free and suitable for sensitive skin.",
+    "Should be vegan and cruelty-free.",
+    "No parabens or sulfates, please.",
+    "Needs to be safe for daily use.",
+    "Should have a lightweight, non-greasy texture."
+  ],
+  "pet food": [
+    "My dog has a chicken allergy.",
+    "Needs to be grain-free and easy to digest.",
+    "Should support joint health for older pets.",
+    "No artificial colors or flavors.",
+    "Must be suitable for small breeds."
+  ],
+  wellness: [
+    "I prefer natural sweeteners only.",
+    "Should be gluten-free and non-GMO.",
+    "Needs to support immune health.",
+    "No added sugar or artificial preservatives.",
+    "Should be easy to mix in water or smoothies."
+  ]
+};
+
 export default function PromptInput({
   onResult,
   selectedCategory,
@@ -41,6 +66,8 @@ export default function PromptInput({
   
   const [exampleIdx, setExampleIdx] = useState(0);
   const [fade, setFade] = useState(true);
+  const [moreInfoIdx, setMoreInfoIdx] = useState(0);
+  const [moreInfoFade, setMoreInfoFade] = useState(true);
 
   // Custom rolling prompts based on selectedCategory
   const getPrompts = () => {
@@ -59,6 +86,12 @@ export default function PromptInput({
   const prompts = getPrompts();
   const currentExample = prompts[exampleIdx] || prompts[0];
 
+  // In the 'ready' stage, add rolling prompt logic for moreInfo
+  const moreInfoSuggestions = selectedCategory && moreInfoPrompts[selectedCategory] ? moreInfoPrompts[selectedCategory] : [
+    "Add any special requirements or preferences here."
+  ];
+  const currentMoreInfo = moreInfoSuggestions[moreInfoIdx] || moreInfoSuggestions[0];
+
   console.log('PromptInput rendered with example:', currentExample, 'fade:', fade);
 
   useEffect(() => {
@@ -76,7 +109,6 @@ export default function PromptInput({
   
       for (let i = 0; i < text.length; i++) {
         if (isCancelled) return;
-        setPrompt((prev) => prev + text[i]);
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     };
@@ -112,6 +144,22 @@ export default function PromptInput({
     }, 3500);
     return () => clearInterval(interval);
   }, [prompts.length, exampleIdx, selectedCategory]);
+
+  useEffect(() => {
+    setMoreInfoIdx(0);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const interval = setInterval(() => {
+      setMoreInfoFade(false);
+      setTimeout(() => {
+        setMoreInfoIdx((prev) => (prev + 1) % moreInfoSuggestions.length);
+        setMoreInfoFade(true);
+      }, 400);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [moreInfoSuggestions.length, moreInfoIdx, selectedCategory]);
 
   const handleAssess = async () => {
     setLoading(true);
@@ -166,7 +214,7 @@ export default function PromptInput({
               className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
                          focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
                          resize-none"
-              placeholder="Describe your product idea..."
+              placeholder=""
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               maxLength={5000}
@@ -300,6 +348,16 @@ export default function PromptInput({
             rows={2}
             placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
           />
+          {/* Dynamic More Info Rolling Prompt */}
+          <div className={`h-6 mb-2 text-gray-400 text-xs font-medium transition-opacity duration-500 ${moreInfoFade ? 'opacity-100' : 'opacity-0'}`}
+            aria-live="polite">
+            <span className="inline-flex items-center">
+              <svg className="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="italic">e.g. {currentMoreInfo}</span>
+            </span>
+          </div>
         </div>
 
         {/* Generate Button */}

@@ -55,6 +55,16 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
   // Add costing functionality
   const { loading, error, costEstimate, estimateCost, clearCostEstimate } = useCosting();
 
+  // Currency formatting function
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const [expandedSections, setExpandedSections] = useState({
     reasoning: true,
     ingredients: true,
@@ -64,21 +74,30 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
     costing: false,
   });
 
+  // Add state for batch size selection
+  const [batchSizeType, setBatchSizeType] = useState<'small' | 'medium' | 'large' | 'custom'>('medium');
+  const [customBatchSize, setCustomBatchSize] = useState<number>(1000);
+
   const toggleSection = (section: keyof typeof expandedSections) =>
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
 
-  // Handle costing request
+  // Update handleCostingRequest to use selected batch size(s)
   const handleCostingRequest = async () => {
+    let batch_sizes: (string | number)[] = [];
+    if (batchSizeType === 'custom') {
+      batch_sizes = [customBatchSize];
+    } else {
+      batch_sizes = [batchSizeType];
+    }
     const request = {
       formulation: data,
-      batch_sizes: ["small", "medium", "large"],
+      batch_sizes,
       target_market: "mid-market",
       region: "IN"
     };
-    
     await estimateCost(request);
     setExpandedSections(prev => ({ ...prev, costing: true }));
   };
@@ -252,116 +271,237 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Cost Analysis Section */}
       <Section
-        title="💰 Premium Cost Analysis"
+        title="💰 Cost Analysis & Pricing Strategy"
         isOpen={expandedSections.costing}
         onToggle={() => toggleSection("costing")}
       >
-        <div className="mt-4 space-y-4">
-          {/* Basic Cost Display */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-lg font-semibold text-green-800">Premium Formulation Cost (100ml)</span>
-              <span className="text-2xl font-bold text-green-900">₹{data.estimated_cost.toFixed(0)}</span>
-            </div>
-            <div className="text-sm text-green-700 space-y-2">
-              <div className="flex items-center justify-between">
-                <span>Premium Active Ingredients</span>
-                <span>₹{(data.estimated_cost * 0.50).toFixed(0)}</span>
+        <div className="mt-4 space-y-6">
+          {/* Unified Cost Overview */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h4 className="text-xl font-bold text-blue-800">Cost Analysis Overview</h4>
+                <p className="text-sm text-blue-600">Comprehensive cost breakdown and pricing strategy</p>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Luxury Packaging & Design</span>
-                <span>₹{(data.estimated_cost * 0.25).toFixed(0)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Quality Control & Testing</span>
-                <span>₹{(data.estimated_cost * 0.10).toFixed(0)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Manufacturing & Labor</span>
-                <span>₹{(data.estimated_cost * 0.15).toFixed(0)}</span>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-900">
+                  {costEstimate ? formatCurrency(costEstimate.total) : `₹${data.estimated_cost.toFixed(0)}`}
+                </div>
+                <div className="text-sm text-blue-700">
+                  {costEstimate ? 'AI-Optimized Price' : 'Estimated Cost'} (50ml)
+                </div>
               </div>
             </div>
-            
-            {/* Premium Pricing Tiers */}
-            <div className="mt-4 pt-4 border-t border-green-200">
-              <h4 className="font-semibold text-green-800 text-sm mb-3">Suggested Retail Pricing</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <h5 className="font-semibold text-blue-800 text-xs mb-1">30ml Premium</h5>
-                  <div className="text-xl font-bold text-blue-900">₹{(data.estimated_cost * 0.3 * 8).toFixed(0)}</div>
-                  <p className="text-blue-700 text-xs mt-1">Luxury positioning</p>
+
+            {/* Cost Breakdown Cards */}
+            {(() => {
+              // Calculate actual ingredient costs
+              const totalIngredientCost = data.ingredients.reduce((sum, ing) => {
+                return sum + (ing.cost_per_100ml * ing.percent / 100);
+              }, 0);
+              
+              // Use AI data if available, otherwise use calculated estimates
+              const costData = costEstimate ? {
+                ingredients: costEstimate.raw_materials,
+                packaging: costEstimate.packaging_cost,
+                labor: costEstimate.labor_cost,
+                overhead: costEstimate.overhead_cost,
+                qualityControl: costEstimate.quality_control_cost || 0,
+                capex: costEstimate.capex_amortization || 0
+              } : {
+                ingredients: totalIngredientCost,
+                packaging: totalIngredientCost * 0.25,
+                labor: totalIngredientCost * 0.20,
+                overhead: totalIngredientCost * 0.15,
+                qualityControl: totalIngredientCost * 0.10,
+                capex: 0
+              };
+
+              const totalCost = Object.values(costData).reduce((sum, cost) => sum + cost, 0);
+
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                  {[
+                    { key: 'ingredients', label: 'Ingredients', color: 'green', icon: '🌿' },
+                    { key: 'packaging', label: 'Packaging', color: 'blue', icon: '📦' },
+                    { key: 'labor', label: 'Labor', color: 'purple', icon: '👷' },
+                    { key: 'overhead', label: 'Overhead', color: 'orange', icon: '🏢' },
+                    { key: 'qualityControl', label: 'QC', color: 'teal', icon: '🔬' },
+                    { key: 'capex', label: 'Equipment', color: 'red', icon: '⚙️' }
+                  ].map(({ key, label, color, icon }) => {
+                    const cost = costData[key as keyof typeof costData];
+                    const percentage = totalCost > 0 ? (cost / totalCost) * 100 : 0;
+                    
+                    return (
+                      <div key={key} className={`bg-white/70 border border-${color}-200 rounded-lg p-3 text-center`}>
+                        <div className="text-lg mb-1">{icon}</div>
+                        <div className={`font-semibold text-${color}-700 text-sm`}>
+                          ₹{cost.toFixed(0)}
+                        </div>
+                        <div className={`text-${color}-600 text-xs`}>{label}</div>
+                        <div className={`text-${color}-500 text-xs`}>
+                          {percentage.toFixed(0)}%
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                  <h5 className="font-semibold text-purple-800 text-xs mb-1">50ml Deluxe</h5>
-                  <div className="text-xl font-bold text-purple-900">₹{(data.estimated_cost * 0.5 * 6).toFixed(0)}</div>
-                  <p className="text-purple-700 text-xs mt-1">Best value</p>
-                </div>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <h5 className="font-semibold text-orange-800 text-xs mb-1">100ml Ultimate</h5>
-                  <div className="text-xl font-bold text-orange-900">₹{(data.estimated_cost * 5).toFixed(0)}</div>
-                  <p className="text-orange-700 text-xs mt-1">Connoisseur choice</p>
-                </div>
+              );
+            })()}
+
+            {/* Status Indicator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${costEstimate ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <span className="text-sm text-gray-600">
+                  {costEstimate ? 'AI Analysis Complete' : 'Preliminary Estimate'}
+                </span>
               </div>
+              {costEstimate && (
+                <div className="text-sm text-green-600 font-medium">
+                  ✓ Scale: {costEstimate.scale_info?.scale || 'medium'} • Margin: {costEstimate.margin.toFixed(1)}%
+                </div>
+              )}
             </div>
           </div>
 
-          {/* AI-Powered Costing */}
+          {/* Production Scale Selection */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <span className="mr-2">📊</span>
+              Select Production Scale
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+              {[
+                { type: 'small', label: 'Small Scale', units: '250 units', desc: 'Artisanal production', icon: '🏠', color: 'orange' },
+                { type: 'medium', label: 'Medium Scale', units: '2,500 units', desc: 'Growing business', icon: '🏢', color: 'blue' },
+                { type: 'large', label: 'Large Scale', units: '20,000 units', desc: 'Established business', icon: '🏭', color: 'purple' },
+                { type: 'custom', label: 'Custom', units: 'Custom units', desc: 'Specific requirements', icon: '⚙️', color: 'gray' }
+              ].map((option) => (
+                <button
+                  key={option.type}
+                  type="button"
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                    batchSizeType === option.type 
+                      ? `border-${option.color}-500 bg-${option.color}-50 shadow-md` 
+                      : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setBatchSizeType(option.type as any)}
+                >
+                  <div className="text-2xl mb-2">{option.icon}</div>
+                  <div className="font-semibold text-gray-800 text-sm">{option.label}</div>
+                  <div className="text-gray-600 text-xs">{option.units}</div>
+                  <div className="text-gray-500 text-xs mt-1">{option.desc}</div>
+                </button>
+              ))}
+            </div>
+            
+            {batchSizeType === 'custom' && (
+              <div className="flex items-center space-x-4">
+                <label className="font-medium text-gray-700">Custom Batch Size:</label>
+                <input
+                  type="number"
+                  min={10}
+                  max={100000}
+                  step={10}
+                  value={customBatchSize}
+                  onChange={e => setCustomBatchSize(Number(e.target.value))}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  placeholder="Enter units"
+                />
+                <span className="text-sm text-gray-600">units</span>
+              </div>
+            )}
+          </div>
+
+          {/* AI Analysis Section */}
           {!costEstimate && !loading && (
-            <div className="text-center py-8">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                <h4 className="text-lg font-semibold text-blue-800 mb-3">Generate AI-Powered Cost Analysis</h4>
-                <p className="text-blue-700 text-sm mb-4">
-                  Get detailed cost breakdowns and pricing recommendations for different batch sizes using AI analysis.
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-8">
+              <div className="text-center">
+                <div className="text-4xl mb-4">🤖</div>
+                <h4 className="text-xl font-bold text-indigo-800 mb-3">Generate AI-Powered Cost Analysis</h4>
+                <p className="text-indigo-700 text-sm mb-6 max-w-md mx-auto">
+                  Get detailed cost breakdowns, pricing strategies, and optimization suggestions tailored to your selected production scale.
                 </p>
                 <button
                   onClick={handleCostingRequest}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 mx-auto"
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center space-x-3 mx-auto"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
-                  <span>Generate Cost Analysis</span>
+                  <span>Generate Detailed Analysis</span>
                 </button>
               </div>
             </div>
           )}
 
           {loading && (
-            <div className="text-center py-8">
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <h4 className="text-lg font-semibold text-yellow-800 mb-2">Analyzing Costs...</h4>
-                <p className="text-yellow-700 text-sm">
-                  Our AI is calculating detailed cost breakdowns and pricing strategies for different batch sizes.
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <h4 className="text-xl font-bold text-yellow-800 mb-2">Analyzing Your Costs...</h4>
+                <p className="text-yellow-700 text-sm max-w-md mx-auto">
+                  Our AI is calculating detailed cost breakdowns, pricing strategies, and optimization suggestions for your selected production scale.
                 </p>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-lg p-4">
-              <h4 className="font-semibold text-red-800 text-sm mb-2">Error Generating Cost Analysis</h4>
-              <p className="text-red-700 text-sm mb-3">{error}</p>
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-6">
+              <div className="flex items-center space-x-3 mb-3">
+                <span className="text-2xl">⚠️</span>
+                <h4 className="font-semibold text-red-800">Error Generating Cost Analysis</h4>
+              </div>
+              <p className="text-red-700 text-sm mb-4">{error}</p>
               <button
                 onClick={handleCostingRequest}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-medium"
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 Try Again
               </button>
             </div>
           )}
 
+          {/* Detailed AI Analysis Results */}
           {costEstimate && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-gray-800">AI-Generated Cost Analysis</h4>
+                <h4 className="text-xl font-bold text-gray-800 flex items-center">
+                  <span className="mr-2">📊</span>
+                  AI-Generated Analysis Results
+                </h4>
                 <button
                   onClick={clearCostEstimate}
-                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium px-3 py-1 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Clear Analysis
                 </button>
               </div>
+              
+              {/* Quick Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-green-600">{costEstimate.margin.toFixed(1)}%</div>
+                  <div className="text-sm text-green-700">Profit Margin</div>
+                </div>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{formatCurrency(costEstimate.total_production_cost)}</div>
+                  <div className="text-sm text-blue-700">Production Cost</div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-purple-600">{formatCurrency(costEstimate.total)}</div>
+                  <div className="text-sm text-purple-700">Retail Price</div>
+                </div>
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-orange-600">{costEstimate.scale_info?.scale || 'medium'}</div>
+                  <div className="text-sm text-orange-700">Production Scale</div>
+                </div>
+              </div>
+              
+              {/* Detailed Cost Summary */}
               <CostSummary cost={costEstimate} />
             </div>
           )}

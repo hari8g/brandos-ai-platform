@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:standalone": "vite --config vite.standalone.config.ts",
-    "type-check": "tsc --noEmit -p tsconfig.app.json",
+    "type-check": "tsc --noEmit -p tsconfig.build.json",
     "build": "npm run type-check && vite build",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --report-unused-disable-directives --max-warnings 0"

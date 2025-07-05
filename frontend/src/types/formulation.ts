@@ -23,6 +23,8 @@ export interface GenerateRequest {
 export interface ScientificReasoning {
   keyComponents: { name: string; why: string }[];
   impliedDesire: string;
+  psychologicalDrivers: string[];
+  valueProposition: string[];
   targetAudience: string;
   indiaTrends: string[];
   regulatoryStandards: string[];

@@ -120,6 +120,9 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
     );
   }
 
+  // Debug: Log scientific reasoning data
+  console.log("🔍 Scientific reasoning data:", data.scientific_reasoning);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -174,11 +177,13 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
           colors={colors}
         >
           <ScientificReasoning
-            keyComponents={data.scientific_reasoning.keyComponents}
-            impliedDesire={data.scientific_reasoning.impliedDesire}
-            targetAudience={data.scientific_reasoning.targetAudience}
-            indiaTrends={data.scientific_reasoning.indiaTrends}
-            regulatoryStandards={data.scientific_reasoning.regulatoryStandards}
+            keyComponents={data.scientific_reasoning.keyComponents || []}
+            impliedDesire={data.scientific_reasoning.impliedDesire || ""}
+            psychologicalDrivers={data.scientific_reasoning.psychologicalDrivers || []}
+            valueProposition={data.scientific_reasoning.valueProposition || []}
+            targetAudience={data.scientific_reasoning.targetAudience || ""}
+            indiaTrends={data.scientific_reasoning.indiaTrends || []}
+            regulatoryStandards={data.scientific_reasoning.regulatoryStandards || []}
             selectedCategory={selectedCategory}
           />
         </Section>

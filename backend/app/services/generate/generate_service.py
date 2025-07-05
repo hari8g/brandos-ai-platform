@@ -636,6 +636,20 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 {"name": "Natural Preservatives (1-2%)", "why": "Ensures product stability and safety throughout shelf life while maintaining nutritional integrity"}
             ],
             "impliedDesire": "Pet parents want premium nutrition that supports their pet's health, vitality, and longevity through scientifically-formulated, high-quality ingredients that deliver visible results in energy, coat condition, and overall wellness.",
+            "psychologicalDrivers": [
+                "Desire for visible, measurable results in pet health and vitality",
+                "Trust in scientific validation and clinical backing for pet nutrition",
+                "Preference for premium, transparent formulations with clear ingredient lists",
+                "Willingness to invest in proven efficacy and long-term health benefits",
+                "Emotional connection to pet wellness and quality of life"
+            ],
+            "valueProposition": [
+                "Science-backed formulations with clinical validation for pet nutrition",
+                "Transparent ingredient sourcing and quality standards",
+                "Results-driven approach with measurable outcomes in pet health",
+                "Premium nutrition that supports pet longevity and vitality",
+                "Comprehensive health benefits from a single, trusted product"
+            ],
             "targetAudience": "Urban pet parents aged 25-45 with disposable income, who prioritize their pet's health and are willing to invest in premium nutrition. They are health-conscious, research-oriented, and value transparency in ingredient sourcing and nutritional science.",
             "indiaTrends": [
                 "Pet humanization trend driving premium pet food demand, with 65% of urban pet owners willing to pay premium for quality nutrition (Nielsen India, Dec 2024)",
@@ -658,6 +672,20 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 {"name": "Quality Assurance System (2-3%)", "why": "Pharmaceutical-grade testing and validation to ensure safety, purity, and efficacy"}
             ],
             "impliedDesire": "Health-conscious consumers want scientifically-formulated supplements that deliver measurable health benefits, support their wellness goals, and provide peace of mind through clinical validation and premium quality standards.",
+            "psychologicalDrivers": [
+                "Desire for visible, measurable health improvements and wellness outcomes",
+                "Trust in scientific validation and clinical backing for supplement efficacy",
+                "Preference for premium, transparent formulations with proven ingredients",
+                "Willingness to invest in preventive healthcare and long-term wellness",
+                "Seeking peace of mind through quality-assured, safe formulations"
+            ],
+            "valueProposition": [
+                "Science-backed formulations with clinical validation for health benefits",
+                "Transparent ingredient sourcing and pharmaceutical-grade quality standards",
+                "Results-driven approach with measurable wellness outcomes",
+                "Preventive healthcare support with proven efficacy",
+                "Comprehensive wellness benefits from trusted, premium formulations"
+            ],
             "targetAudience": "Health-conscious adults aged 25-55 with disposable income, who prioritize preventive healthcare and are willing to invest in premium wellness solutions. They value clinical evidence, transparency, and results-driven formulations.",
             "indiaTrends": [
                 "Preventive healthcare awareness growing 35% annually, with 72% of urban consumers investing in wellness supplements (IBEF Wellness Report, Nov 2024)",
@@ -680,6 +708,20 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 {"name": "Stability & Preservation (2-5%)", "why": "Advanced preservative systems that ensure product safety and ingredient potency throughout shelf life"}
             ],
             "impliedDesire": "Beauty-conscious consumers want scientifically-formulated skincare that delivers visible results, supports skin health, and provides a premium experience through clinically-proven ingredients and advanced formulation technology.",
+            "psychologicalDrivers": [
+                "Desire for visible, measurable improvements in skin appearance and health",
+                "Trust in scientific validation and clinical backing for skincare efficacy",
+                "Preference for premium, transparent formulations with proven ingredients",
+                "Willingness to invest in proven results and long-term skin health",
+                "Seeking confidence through improved skin appearance and texture"
+            ],
+            "valueProposition": [
+                "Science-backed formulations with clinical validation for skin benefits",
+                "Transparent ingredient sourcing and premium quality standards",
+                "Results-driven approach with measurable skin improvements",
+                "Advanced formulation technology for optimal ingredient delivery",
+                "Comprehensive skin health benefits from trusted, premium products"
+            ],
             "targetAudience": "Beauty-conscious consumers aged 18-45 with disposable income, who prioritize skin health and are willing to invest in premium skincare. They value clinical evidence, ingredient transparency, and results-driven formulations.",
             "indiaTrends": [
                 "Premium skincare market growing at 25% annually, with 68% of consumers willing to pay premium for proven results (IBEF Beauty Report, Nov 2024)",

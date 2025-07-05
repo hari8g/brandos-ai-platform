@@ -4,6 +4,8 @@ import { getCategoryColors } from '@/lib/colorUtils';
 interface ScientificReasoningProps {
   keyComponents: { name: string; why: string }[];
   impliedDesire: string;
+  psychologicalDrivers: string[];
+  valueProposition: string[];
   targetAudience: string;
   indiaTrends: string[];
   regulatoryStandards: string[];
@@ -13,6 +15,8 @@ interface ScientificReasoningProps {
 const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
   keyComponents,
   impliedDesire,
+  psychologicalDrivers,
+  valueProposition,
   targetAudience,
   indiaTrends,
   regulatoryStandards,
@@ -20,38 +24,7 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
 }) => {
   const colors = getCategoryColors(selectedCategory || null);
 
-  // Latest real-time citation sources for market trends (2024-2025)
-  const citationSources = [
-    { source: "McKinsey & Company", report: "Indian Consumer Market Report Q4 2024", year: "Dec 2024", url: "https://www.mckinsey.com/industries/consumer-packaged-goods/our-insights/the-indian-consumer-market" },
-    { source: "Nielsen India", report: "FMCG Market Insights Q4 2024", year: "Dec 2024", url: "https://www.nielsen.com/in/en/insights/report/2024/indian-fmcg-market-trends/" },
-    { source: "IBEF", report: "Indian Beauty & Personal Care Market 2024", year: "Nov 2024", url: "https://www.ibef.org/industry/beauty-personal-care" },
-    { source: "RedSeer Consulting", report: "E-commerce Beauty Market Analysis 2024", year: "Dec 2024", url: "https://redseer.com/reports/beauty-ecommerce-india-2024" },
-    { source: "Euromonitor International", report: "Beauty & Personal Care in India 2024", year: "Dec 2024", url: "https://www.euromonitor.com/beauty-and-personal-care-in-india/report" },
-    { source: "Bain & Company", report: "Indian Consumer Market Outlook 2025", year: "Jan 2025", url: "https://www.bain.com/insights/indian-consumer-market-2025/" },
-    { source: "Deloitte India", report: "FMCG Sector Report 2024", year: "Dec 2024", url: "https://www2.deloitte.com/in/en/pages/consumer/articles/fmcg-sector-report-2024.html" },
-    { source: "PwC India", report: "Consumer Markets Trends 2024", year: "Dec 2024", url: "https://www.pwc.in/industries/consumer-markets.html" },
-    { source: "KPMG India", report: "Beauty & Personal Care Market 2024", year: "Nov 2024", url: "https://home.kpmg/in/en/home/insights/2024/beauty-personal-care-market.html" },
-    { source: "BCG India", report: "Digital Consumer Trends 2024", year: "Dec 2024", url: "https://www.bcg.com/publications/2024/digital-consumer-trends-india" },
-    { source: "FSSAI", report: "Updated Cosmetic Regulations 2024", year: "Dec 2024", url: "https://fssai.gov.in/cms/regulations/cosmetics" },
-    { source: "BIS", report: "Latest Standards for Cosmetics 2024", year: "Dec 2024", url: "https://www.bis.gov.in/standards/cosmetics/" },
-    { source: "CDSCO", report: "Drug & Cosmetic Regulations 2024", year: "Dec 2024", url: "https://cdsco.gov.in/opencms/opencms/en/Home/" },
-    { source: "CRISIL", report: "FMCG Sector Analysis Q4 2024", year: "Dec 2024", url: "https://www.crisil.com/en/home/our-analysis/reports/2024/fmcg-sector-analysis.html" },
-    { source: "ICRA", report: "Consumer Goods Market Report 2024", year: "Dec 2024", url: "https://www.icra.in/Research/Reports/Consumer-Goods-Market-Report-2024" }
-  ];
 
-  // Function to get a random citation source
-  const getRandomCitation = () => {
-    return citationSources[Math.floor(Math.random() * citationSources.length)];
-  };
-
-  // Function to format citation with live link
-  const formatCitation = (source: string, report: string, year: string, url: string) => {
-    return (
-      <div className={`text-xs ${colors.text} ${colors.lightBg} rounded px-2 py-1 inline-block`}>
-        {source} | {report} | 📅 {year}
-      </div>
-    );
-  };
 
   return (
     <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
@@ -96,45 +69,33 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
                 <p className="mt-1 text-sm">{impliedDesire}</p>
               </div>
               
-              <div className={`border-t ${colors.border} pt-3`}>
-                <strong className={`${colors.text} text-base`}>Psychological Drivers:</strong>
-                <ul className="mt-1 space-y-1 text-sm">
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Desire for visible, measurable results</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Trust in scientific validation and clinical backing</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Preference for premium, transparent formulations</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Willingness to invest in proven efficacy</span>
-                  </li>
-                </ul>
-              </div>
+              {psychologicalDrivers && psychologicalDrivers.length > 0 && (
+                <div className={`border-t ${colors.border} pt-3`}>
+                  <strong className={`${colors.text} text-base`}>Psychological Drivers:</strong>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    {psychologicalDrivers.map((driver, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className={`${colors.icon} mt-1`}>•</span>
+                        <span className={`${colors.text}`}>{driver}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
-              <div className={`border-t ${colors.border} pt-3`}>
-                <strong className={`${colors.text} text-base`}>Value Proposition:</strong>
-                <ul className="mt-1 space-y-1 text-sm">
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Science-backed formulations with clinical validation</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Transparent ingredient sourcing and quality standards</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Results-driven approach with measurable outcomes</span>
-                  </li>
-                </ul>
-              </div>
+              {valueProposition && valueProposition.length > 0 && (
+                <div className={`border-t ${colors.border} pt-3`}>
+                  <strong className={`${colors.text} text-base`}>Value Proposition:</strong>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    {valueProposition.map((proposition, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className={`${colors.icon} mt-1`}>•</span>
+                        <span className={`${colors.text}`}>{proposition}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -195,47 +156,31 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
           </div>
         </div>
 
-        {/* Indian Market Trends - Enhanced with Latest Real-time Citations */}
+        {/* Indian Market Trends - Using Real Backend Data */}
         {indiaTrends && indiaTrends.length > 0 && (
           <div>
             <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
               <span className="mr-2"></span>
-              What do we see as a trend nowdays ?
+              What do we see as a trend nowadays ?
             </h4>
             <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
               <div className="space-y-4">
-                {indiaTrends.map((trend, index) => {
-                  const citation = getRandomCitation();
-                  return (
-                    <div key={index} className={`border-b ${colors.border} pb-3 last:border-b-0`}>
-                      <div className="flex items-start space-x-3">
-                        <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
-                        <div className="flex-1">
-                          <div className={`${colors.text} text-sm leading-relaxed mb-2`}>{trend}</div>
-                          {formatCitation(citation.source, citation.report, citation.year, citation.url)}
-                        </div>
+                {indiaTrends.map((trend, index) => (
+                  <div key={index} className={`border-b ${colors.border} pb-3 last:border-b-0`}>
+                    <div className="flex items-start space-x-3">
+                      <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
+                      <div className="flex-1">
+                        <div className={`${colors.text} text-sm leading-relaxed`}>{trend}</div>
                       </div>
                     </div>
-                  );
-                })}
-                
-                <div className={`border-t ${colors.border} pt-3 mt-4`}>
-                  <strong className={`${colors.text} text-base`}>Latest Market Drivers:</strong>
-                  <ul className="mt-1 space-y-1 text-xs">
-                    <li className={`${colors.text}`}>• Growing disposable income in urban areas (Nielsen India, Dec 2024)</li>
-                    <li className={`${colors.text}`}>• Increased awareness of health and wellness (IBEF Report, Nov 2024)</li>
-                    <li className={`${colors.text}`}>• Rise of e-commerce and digital adoption (RedSeer Consulting, Dec 2024)</li>
-                    <li className={`${colors.text}`}>• Regulatory push for quality standards (FSSAI Guidelines, Dec 2024)</li>
-                    <li className={`${colors.text}`}>• Premiumization trend in beauty sector (Bain & Company, Jan 2025)</li>
-                    <li className={`${colors.text}`}>• Clean beauty movement gaining momentum (Euromonitor, Dec 2024)</li>
-                  </ul>
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Regulatory & Compliance - Enhanced */}
+        {/* Regulatory & Compliance - Using Real Backend Data */}
         {regulatoryStandards && regulatoryStandards.length > 0 && (
           <div>
             <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
@@ -252,17 +197,6 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
                     </div>
                   </div>
                 ))}
-                
-                <div className={`border-t ${colors.border} pt-3 mt-4`}>
-                  <strong className={`${colors.text} text-base`}>and their benefits:</strong>
-                  <ul className="mt-1 space-y-1 text-xs">
-                    <li className={`${colors.text}`}>• Ensures product safety and consumer protection</li>
-                    <li className={`${colors.text}`}>• Builds trust and credibility in the market</li>
-                    <li className={`${colors.text}`}>• Facilitates easier market entry and distribution</li>
-                    <li className={`${colors.text}`}>• Reduces legal and regulatory risks</li>
-                    <li className={`${colors.text}`}>• Supports premium positioning and pricing</li>
-                  </ul>
-                </div>
               </div>
             </div>
           </div>

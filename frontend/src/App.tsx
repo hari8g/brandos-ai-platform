@@ -132,25 +132,67 @@ function App() {
         </header>
 
         {/* Category Selection */}
-        <div className="flex justify-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
           {[
-            { label: "Cosmetics", value: "cosmetics", icon: "💄" },
-            { label: "Pet Food", value: "pet food", icon: "🐾" },
-            { label: "Wellness", value: "wellness", icon: "🌱" }
+            { 
+              label: "Cosmetics", 
+              value: "cosmetics", 
+              icon: "💄",
+              gradient: "from-pink-400 via-purple-400 to-indigo-400",
+              hoverGradient: "from-pink-500 via-purple-500 to-indigo-500",
+              description: "Skincare & Beauty"
+            },
+            { 
+              label: "Pet Food", 
+              value: "pet food", 
+              icon: "🐾",
+              gradient: "from-orange-400 via-amber-400 to-yellow-400",
+              hoverGradient: "from-orange-500 via-amber-500 to-yellow-500",
+              description: "Pet Nutrition"
+            },
+            { 
+              label: "Wellness", 
+              value: "wellness", 
+              icon: "🌱",
+              gradient: "from-green-400 via-emerald-400 to-teal-400",
+              hoverGradient: "from-green-500 via-emerald-500 to-teal-500",
+              description: "Health & Supplements"
+            }
           ].map(cat => (
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full font-semibold border transition
+              className={`group relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-2xl font-semibold border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-xl h-48 w-full
                 ${selectedCategory === cat.value
-                  ? "bg-purple-600 text-white border-purple-700 shadow"
-                  : "bg-white text-purple-700 border-purple-300 hover:bg-purple-50"
+                  ? `bg-gradient-to-r ${cat.gradient} text-white border-transparent shadow-2xl shadow-purple-500/25`
+                  : "bg-white/80 backdrop-blur-sm text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-white"
                 }`}
               aria-pressed={selectedCategory === cat.value}
               aria-label={`Select ${cat.label} category`}
             >
-              <span className="text-xl">{cat.icon}</span>
-              {cat.label}
+              {/* Glow effect for selected */}
+              {selectedCategory === cat.value && (
+                <div className={`absolute -inset-2 bg-gradient-to-r ${cat.gradient} rounded-2xl blur opacity-75 animate-pulse`}></div>
+              )}
+              
+              <div className="relative z-10 flex flex-col items-center">
+                <span className={`text-5xl mb-3 transition-transform duration-300 group-hover:scale-110 ${selectedCategory === cat.value ? 'animate-bounce' : ''}`}>
+                  {cat.icon}
+                </span>
+                <span className="text-xl font-bold text-center">{cat.label}</span>
+                <span className={`text-sm mt-2 text-center ${selectedCategory === cat.value ? 'text-white/80' : 'text-gray-500'}`}>
+                  {cat.description}
+                </span>
+              </div>
+              
+              {/* Selection indicator */}
+              {selectedCategory === cat.value && (
+                <div className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
             </button>
           ))}
         </div>

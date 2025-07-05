@@ -189,7 +189,18 @@ export default function PromptInput({
     try {
       // Always fetch suggestions, regardless of assessment
       const sugResp = await apiClient.post("/query/suggestions", { prompt });
-      setSuggestions(sugResp.data.suggestions);
+      setSuggestions(
+        sugResp.data.suggestions.map((s: any) => {
+          if (typeof s === 'object' && 'prompt' in s && 'why' in s && 'how' in s) {
+            return s;
+          }
+          return {
+            prompt: typeof s === 'string' ? s : JSON.stringify(s, null, 2),
+            why: s.why || '',
+            how: s.how || ''
+          };
+        })
+      );
       
       // Complete the progress
       setLoadingProgress(100);

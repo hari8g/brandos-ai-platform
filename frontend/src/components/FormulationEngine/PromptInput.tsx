@@ -45,9 +45,41 @@ const moreInfoPrompts: Record<string, string[]> = {
   ]
 };
 
+function formatObjectPrompt(obj: any): string {
+  // For known keys, format nicely
+  if (typeof obj === 'object' && obj !== null) {
+    let out = '';
+    if (obj.product_type) out += `Product Type: ${obj.product_type}\n`;
+    if (obj.form) out += `Form: ${obj.form}\n`;
+    if (obj.target_animal) out += `Target Animal: ${obj.target_animal}\n`;
+    if (obj.target_skin_type) out += `Target Skin Type: ${obj.target_skin_type}\n`;
+    if (obj.key_ingredients) out += `Key Ingredients: ${Array.isArray(obj.key_ingredients) ? obj.key_ingredients.join(', ') : obj.key_ingredients}\n`;
+    if (obj.texture) out += `Texture: ${obj.texture}\n`;
+    if (obj.delivery_mechanism) out += `Delivery: ${obj.delivery_mechanism}\n`;
+    if (obj.performance_metrics) out += `Performance: ${Array.isArray(obj.performance_metrics) ? obj.performance_metrics.join(', ') : obj.performance_metrics}\n`;
+    if (obj.concern) out += `Concern: ${obj.concern}\n`;
+    return out.trim() || JSON.stringify(obj, null, 2);
+  }
+  return JSON.stringify(obj, null, 2);
+}
+
 function normalizeSuggestion(s: any): Suggestion {
   // If already a valid Suggestion object
   if (typeof s === 'object' && typeof s.prompt === 'string' && typeof s.why === 'string' && typeof s.how === 'string') {
+    // Try to parse prompt if it's a stringified object
+    if (s.prompt.trim().startsWith('{') && s.prompt.trim().endsWith('}')) {
+      try {
+        const parsed = JSON.parse(s.prompt.replace(/'/g, '"'));
+        return {
+          prompt: formatObjectPrompt(parsed),
+          why: s.why,
+          how: s.how
+        };
+      } catch {
+        // fallback to original
+        return s;
+      }
+    }
     return s;
   }
   // If s is a string, try to parse it
@@ -56,7 +88,7 @@ function normalizeSuggestion(s: any): Suggestion {
       const parsed = JSON.parse(s);
       if (typeof parsed === 'object' && parsed !== null) {
         return {
-          prompt: String(parsed.prompt || s),
+          prompt: formatObjectPrompt(parsed),
           why: String(parsed.why || ''),
           how: String(parsed.how || ''),
         };
@@ -69,7 +101,7 @@ function normalizeSuggestion(s: any): Suggestion {
   // If s is an object but missing keys, try to extract them
   if (typeof s === 'object' && s !== null) {
     return {
-      prompt: typeof s.prompt === 'string' ? s.prompt : JSON.stringify(s, null, 2),
+      prompt: typeof s.prompt === 'string' ? s.prompt : formatObjectPrompt(s),
       why: typeof s.why === 'string' ? s.why : '',
       how: typeof s.how === 'string' ? s.how : '',
     };
@@ -197,6 +229,66 @@ export default function PromptInput({
     return () => clearInterval(interval);
   }, [moreInfoSuggestions.length, moreInfoIdx, selectedCategory]);
 
+  // Helper function to get category colors
+  const getCategoryColors = (category: string | null) => {
+    switch (category) {
+      case 'cosmetics':
+        return {
+          primary: 'pink',
+          secondary: 'purple',
+          tertiary: 'indigo',
+          gradient: 'from-pink-400 via-purple-400 to-indigo-400',
+          hoverGradient: 'from-pink-500 via-purple-500 to-indigo-500',
+          text: 'text-pink-600',
+          border: 'border-pink-200',
+          focus: 'focus:border-pink-500 focus:ring-pink-200',
+          bg: 'bg-pink-50',
+          icon: 'text-pink-700'
+        };
+      case 'pet food':
+        return {
+          primary: 'orange',
+          secondary: 'amber',
+          tertiary: 'yellow',
+          gradient: 'from-orange-400 via-amber-400 to-yellow-400',
+          hoverGradient: 'from-orange-500 via-amber-500 to-yellow-500',
+          text: 'text-orange-600',
+          border: 'border-orange-200',
+          focus: 'focus:border-orange-500 focus:ring-orange-200',
+          bg: 'bg-orange-50',
+          icon: 'text-orange-700'
+        };
+      case 'wellness':
+        return {
+          primary: 'green',
+          secondary: 'emerald',
+          tertiary: 'teal',
+          gradient: 'from-green-400 via-emerald-400 to-teal-400',
+          hoverGradient: 'from-green-500 via-emerald-500 to-teal-500',
+          text: 'text-green-600',
+          border: 'border-green-200',
+          focus: 'focus:border-green-500 focus:ring-green-200',
+          bg: 'bg-green-50',
+          icon: 'text-green-700'
+        };
+      default:
+        return {
+          primary: 'purple',
+          secondary: 'indigo',
+          tertiary: 'blue',
+          gradient: 'from-purple-400 via-indigo-400 to-blue-400',
+          hoverGradient: 'from-purple-500 via-indigo-500 to-blue-500',
+          text: 'text-purple-600',
+          border: 'border-purple-200',
+          focus: 'focus:border-purple-500 focus:ring-purple-200',
+          bg: 'bg-purple-50',
+          icon: 'text-purple-700'
+        };
+    }
+  };
+
+  const colors = getCategoryColors(selectedCategory);
+
   const handleAssess = async () => {
     setLoading(true);
     setLoadingType('assess');
@@ -221,7 +313,7 @@ export default function PromptInput({
 
     try {
       // Always fetch suggestions, regardless of assessment
-      const sugResp = await apiClient.post("/query/suggestions", { prompt });
+      const sugResp = await apiClient.post("/query/suggestions", { prompt, category: selectedCategory });
       setSuggestions(
         sugResp.data.suggestions.map(normalizeSuggestion)
       );
@@ -300,7 +392,7 @@ export default function PromptInput({
         ? `${prompt}\n\nAdditional context: ${moreInfo}`
         : prompt;
       
-      const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt });
+      const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt, category: selectedCategory });
       
       // Complete the progress
       setLoadingProgress(100);
@@ -331,28 +423,30 @@ export default function PromptInput({
       return (
         <div className="space-y-6">
           <div className="space-y-4">
-            <label htmlFor="prompt" className="block text-lg font-medium text-indigo-700 mb-2">
+            <label htmlFor="prompt" className={`block text-lg font-medium ${colors.text} mb-2`}>
               Describe your product idea
             </label>
             {/* Dynamic Example Prompt */}
-            <div className={`h-8 mb-3 text-gray-500 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
+            <div className={`h-8 mb-3 text-sm font-medium transition-opacity duration-500 ${fade ? 'opacity-100' : 'opacity-0'}`}
               aria-live="polite">
-              <span className="inline-flex items-center">
-                <svg className="w-4 h-4 mr-2 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className={`inline-flex items-center ${
+                selectedCategory ? colors.text : 'text-gray-500'
+              }`}>
+                <svg className={`w-4 h-4 mr-2 ${colors.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {selectedCategory ? (
-                  <span className="italic">e.g. {currentExample}</span>
+                  <span className="italic font-semibold">e.g. {currentExample}</span>
                 ) : (
-                  <span className="italic text-purple-700">Select a category to see example prompts</span>
+                  <span className="italic text-gray-500">Select a category to see example prompts</span>
                 )}
               </span>
             </div>
             <div className="relative">
               <textarea
-                className="w-full h-32 p-4 text-md rounded-xl border-2 border-gray-200 bg-white/90 placeholder-gray-400
-                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200
-                           resize-none"
+                className={`w-full h-32 p-4 text-md rounded-xl border-2 ${colors.border} bg-white/90 placeholder-gray-400
+                           ${colors.focus} focus:outline-none transition-all duration-200
+                           resize-none`}
                 placeholder=""
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -366,13 +460,13 @@ export default function PromptInput({
 
           {/* Location Input */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-purple-700">
+            <label className={`block text-sm font-medium ${colors.text}`}>
               Location (optional)
             </label>
             <input
               type="text"
-              className="w-full p-3 rounded-lg border border-gray-200 bg-white/90 placeholder-gray-400
-                       focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all duration-200"
+              className={`w-full p-3 rounded-lg border ${colors.border} bg-white/90 placeholder-gray-400
+                       ${colors.focus} focus:outline-none transition-all duration-200`}
               placeholder="e.g. Mumbai, Bangalore, Delhi"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -386,7 +480,7 @@ export default function PromptInput({
             className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
                        ${loading || !prompt.trim() 
                          ? 'bg-gray-300 cursor-not-allowed' 
-                         : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
+                         : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl`
                        }`}
           >
             {loading ? (
@@ -412,24 +506,32 @@ export default function PromptInput({
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-indigo-600">Suggestions for your Product</h3>
-            <button
-              onClick={() => setStage('input')}
-              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-            >
-              ← Back to Draft
-            </button>
+            <h3 className={`text-xl font-bold ${colors.text}`}>Suggestions for your Product</h3>
+            <div className="relative inline-flex items-center group">
+              <span className={`absolute -inset-1 rounded-xl bg-gradient-to-r ${colors.gradient} opacity-60 blur-lg animate-glow z-0 group-hover:opacity-80 transition`} />
+              <button
+                onClick={() => setStage('input')}
+                className={`relative flex items-center gap-1 text-gray-500 hover:${colors.text} text-sm font-semibold transition group z-10`}
+              >
+                <span className="inline-block transform group-hover:-translate-x-1 transition-transform duration-200">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </span>
+                <span>Back to Draft</span>
+              </button>
+            </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-blue-700 text-sm">
+          <div className={`${colors.bg} border ${colors.border} rounded-lg p-4`}>
+            <p className={`${colors.text} text-sm`}>
               <strong>Original Query:</strong> {prompt}
             </p>
           </div>
 
           {loading ? (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <div className={`w-16 h-16 bg-gradient-to-r ${colors.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
                 <svg className="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -453,22 +555,30 @@ export default function PromptInput({
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">Generate Formulation</h3>
-            <button
-              onClick={() => setStage('suggestions')}
-              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-            >
-              ← Back to Suggestions
-            </button>
+            <h3 className={`text-xl font-bold ${colors.text}`}>Generate Formulation</h3>
+            <div className="relative inline-flex items-center group">
+              <span className={`absolute -inset-1 rounded-xl bg-gradient-to-r ${colors.gradient} opacity-60 blur-lg animate-glow z-0 group-hover:opacity-80 transition`} />
+              <button
+                onClick={() => setStage('suggestions')}
+                className={`relative flex items-center gap-1 text-gray-500 hover:${colors.text} text-sm font-semibold transition group z-10`}
+              >
+                <span className="inline-block transform group-hover:-translate-x-1 transition-transform duration-200">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </span>
+                <span>Back to Suggestions</span>
+              </button>
+            </div>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h4 className="font-semibold text-green-800 mb-2">Selected Prompt:</h4>
-            <p className="text-green-700">{selectedSuggestion?.prompt || prompt}</p>
+          <div className={`${colors.bg} border ${colors.border} rounded-lg p-6`}>
+            <h4 className={`font-semibold ${colors.text} mb-2`}>Selected Prompt:</h4>
+            <p className={`${colors.text}`}>{selectedSuggestion?.prompt || prompt}</p>
             
             {selectedSuggestion && (
-              <div className="mt-3 pt-3 border-t border-green-200">
-                <p className="text-green-600 text-sm">
+              <div className={`mt-3 pt-3 border-t ${colors.border}`}>
+                <p className={`${colors.text} text-sm`}>
                   <strong>Why this refinement helps:</strong> {selectedSuggestion.how}
                 </p>
               </div>
@@ -477,18 +587,18 @@ export default function PromptInput({
 
           {/* Edit Prompt and More Info */}
           <div>
-            <label className="block font-semibold mb-1">Edit your prompt:</label>
+            <label className={`block font-semibold mb-1 ${colors.text}`}>Edit your prompt:</label>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              className="mb-2 w-full border rounded p-2"
+              className={`mb-2 w-full border ${colors.border} rounded p-2 ${colors.focus}`}
               rows={4}
             />
-            <label className="block font-semibold mb-1">Add more information (optional):</label>
+            <label className={`block font-semibold mb-1 ${colors.text}`}>Add more information (optional):</label>
             <textarea
               value={moreInfo}
               onChange={e => setMoreInfo(e.target.value)}
-              className="mb-2 w-full border rounded p-2"
+              className={`mb-2 w-full border ${colors.border} rounded p-2 ${colors.focus}`}
               rows={2}
               placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
             />
@@ -496,7 +606,7 @@ export default function PromptInput({
             <div className={`h-6 mb-2 text-gray-400 text-xs font-medium transition-opacity duration-500 ${moreInfoFade ? 'opacity-100' : 'opacity-0'}`}
               aria-live="polite">
               <span className="inline-flex items-center">
-                <svg className="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-3 h-3 mr-1 ${colors.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="italic">e.g. {currentMoreInfo}</span>
@@ -511,7 +621,7 @@ export default function PromptInput({
             className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
                        ${loading 
                          ? 'bg-gray-300 cursor-not-allowed' 
-                         : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl'
+                         : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl`
                        }`}
           >
             {loading ? (

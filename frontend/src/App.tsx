@@ -15,9 +15,25 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const formulationRef = useRef<HTMLDivElement>(null);
+  const promptInputRef = useRef<HTMLDivElement>(null);
 
   // 2️⃣ State‐change log
   console.log('🛠️ Parent formulations:', formulations, 'isGenerated:', isGenerated);
+
+  // Function to handle category selection with smooth scrolling
+  const handleCategorySelection = (category: string) => {
+    setSelectedCategory(category);
+    
+    // Smooth scroll to prompt input area on mobile
+    setTimeout(() => {
+      if (promptInputRef.current) {
+        promptInputRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }, 100); // Small delay to ensure state update
+  };
 
   // Show landing page if not subscribed
   if (!subscribed) {
@@ -161,7 +177,7 @@ function App() {
           ].map(cat => (
             <button
               key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
+              onClick={() => handleCategorySelection(cat.value)}
               className={`group relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-2xl font-semibold border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-xl h-48 w-full
                 ${selectedCategory === cat.value
                   ? `bg-gradient-to-r ${cat.gradient} text-white border-transparent shadow-2xl shadow-purple-500/25`
@@ -198,14 +214,16 @@ function App() {
         </div>
 
         {/* Prompt Input */}
-        <PromptInput
-          onResult={(data) => {
-            console.log('🔄 App.tsx received data:', data);
-            setFormulations([data]);
-            setIsGenerated(true);
-          }}
-          selectedCategory={selectedCategory}
-        />
+        <div ref={promptInputRef}>
+          <PromptInput
+            onResult={(data) => {
+              console.log('🔄 App.tsx received data:', data);
+              setFormulations([data]);
+              setIsGenerated(true);
+            }}
+            selectedCategory={selectedCategory}
+          />
+        </div>
 
         {/* Reset */}
         {isGenerated && (

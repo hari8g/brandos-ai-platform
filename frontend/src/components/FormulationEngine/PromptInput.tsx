@@ -659,7 +659,7 @@ export default function PromptInput({
             <div className="relative z-10">
               {/* Header */}
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className={`w-16 h-16 bg-gradient-to-r ${colors.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
                   {loadingType === 'assess' ? (
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -684,12 +684,12 @@ export default function PromptInput({
               {/* Progress Bar */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">Progress</span>
-                  <span className="text-sm font-bold text-blue-600">{Math.round(loadingProgress)}%</span>
+                  <span className={`text-sm font-medium ${colors.text}`}>Progress</span>
+                  <span className={`text-sm font-bold ${colors.text}`}>{Math.round(loadingProgress)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-500 ease-out relative"
+                    className={`h-full bg-gradient-to-r ${colors.gradient} rounded-full transition-all duration-500 ease-out relative`}
                     style={{ width: `${loadingProgress}%` }}
                   >
                     {/* Animated shimmer effect */}
@@ -700,15 +700,15 @@ export default function PromptInput({
 
               {/* Current Step */}
               <div className="text-center mb-6">
-                <div className="inline-flex items-center px-4 py-2 bg-blue-50 rounded-full">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
-                  <span className="text-sm font-medium text-blue-700">{loadingStep}</span>
+                <div className={`inline-flex items-center px-4 py-2 ${colors.bg} rounded-full`}>
+                  <div className={`w-2 h-2 ${colors.icon} rounded-full mr-2 animate-pulse`}></div>
+                  <span className={`text-sm font-medium ${colors.text}`}>{loadingStep}</span>
                 </div>
               </div>
 
               {/* Estimated Time */}
               <div className="text-center mb-4">
-                <div className="inline-flex items-center text-gray-500 text-sm">
+                <div className={`inline-flex items-center ${colors.text} text-sm`}>
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -745,7 +745,7 @@ export default function PromptInput({
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                      className={`w-2 h-2 ${colors.icon} rounded-full animate-bounce`}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     ></div>
                   ))}

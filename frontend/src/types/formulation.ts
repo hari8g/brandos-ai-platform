@@ -3,6 +3,7 @@ export interface SupplierInfo {
   contact: string;
   location: string;
   price_per_unit: number;
+  price_per_100ml?: number;
 }
 
 export interface IngredientDetail {
@@ -17,6 +18,14 @@ export interface GenerateRequest {
   prompt: string;
   category?: string;
   target_cost?: number;
+}
+
+export interface ScientificReasoning {
+  keyComponents: { name: string; why: string }[];
+  impliedDesire: string;
+  targetAudience: string;
+  indiaTrends: string[];
+  regulatoryStandards: string[];
 }
 
 export interface MarketResearchData {
@@ -54,12 +63,6 @@ export interface GenerateResponse {
   packaging_marketing_inspiration?: string;
   market_trends?: string[];
   competitive_landscape?: Record<string, any>;
-  scientific_reasoning?: {
-    keyComponents: { name: string; why: string }[];
-    impliedDesire: string;
-    targetAudience: string;
-    indiaTrends: string[];
-    regulatoryStandards: string[];
-  };
+  scientific_reasoning?: ScientificReasoning;
   market_research?: MarketResearchData;
 } 

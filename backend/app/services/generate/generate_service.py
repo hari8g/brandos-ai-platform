@@ -484,11 +484,17 @@ Guidelines:
             for ing_data in data.get('ingredients', []):
                 suppliers = []
                 for supplier_data in ing_data.get('suppliers', []):
+                    # Calculate pricing per 100ml based on ingredient percentage and cost
+                    ingredient_percent = float(ing_data.get('percent', 0))
+                    ingredient_cost_per_100ml = float(ing_data.get('cost_per_100ml', 0))
+                    price_per_100ml = (ingredient_cost_per_100ml * ingredient_percent / 100) if ingredient_percent > 0 else 0
+                    
                     suppliers.append(SupplierInfo(
                         name=supplier_data.get('name', 'Unknown Supplier'),
                         contact=supplier_data.get('contact', 'Contact info not available'),
                         location=supplier_data.get('location', 'Location not specified'),
-                        price_per_unit=float(supplier_data.get('price_per_unit', 0))
+                        price_per_unit=float(supplier_data.get('price_per_unit', 0)),
+                        price_per_100ml=price_per_100ml
                     ))
                 
                 ingredients.append(IngredientDetail(
@@ -1015,13 +1021,15 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="AquaPure Solutions",
                         contact="Phone: +91-98765-43210, Email: info@aquapure.com",
                         location="Mumbai, Maharashtra",
-                        price_per_unit=0.25
+                        price_per_unit=0.25,
+                        price_per_100ml=0.33
                     ),
                     SupplierInfo(
                         name="Clean Water Co.",
                         contact="Phone: +91-87654-32109, Email: sales@cleanwater.co.in",
                         location="Delhi, NCR",
-                        price_per_unit=0.35
+                        price_per_unit=0.35,
+                        price_per_100ml=0.46
                     )
                 ]
             ),
@@ -1035,13 +1043,15 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="ChemCorp India",
                         contact="Phone: +91-76543-21098, Email: hyaluronic@chemcorp.in",
                         location="Ahmedabad, Gujarat",
-                        price_per_unit=2200.0
+                        price_per_unit=2200.0,
+                        price_per_100ml=0.90
                     ),
                     SupplierInfo(
                         name="Natural Ingredients Ltd",
                         contact="Phone: +91-65432-10987, Email: info@naturalingredients.com",
                         location="Bangalore, Karnataka",
-                        price_per_unit=2800.0
+                        price_per_unit=2800.0,
+                        price_per_100ml=1.14
                     )
                 ]
             ),
@@ -1055,13 +1065,15 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Vitamins & More",
                         contact="Phone: +91-54321-09876, Email: niacinamide@vitamins.co.in",
                         location="Pune, Maharashtra",
-                        price_per_unit=1800.0
+                        price_per_unit=1800.0,
+                        price_per_100ml=1.75
                     ),
                     SupplierInfo(
                         name="Premium Actives",
                         contact="Phone: +91-43210-98765, Email: sales@premiumactives.com",
                         location="Chennai, Tamil Nadu",
-                        price_per_unit=2200.0
+                        price_per_unit=2200.0,
+                        price_per_100ml=2.14
                     )
                 ]
             ),
@@ -1075,13 +1087,15 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Organic Solutions",
                         contact="Phone: +91-32109-87654, Email: glycerin@organic.in",
                         location="Hyderabad, Telangana",
-                        price_per_unit=600.0
+                        price_per_unit=600.0,
+                        price_per_100ml=0.96
                     ),
                     SupplierInfo(
                         name="Green Chemistry",
                         contact="Phone: +91-21098-76543, Email: info@greenchemistry.com",
                         location="Kolkata, West Bengal",
-                        price_per_unit=750.0
+                        price_per_unit=750.0,
+                        price_per_100ml=1.20
                     )
                 ]
             ),
@@ -1095,7 +1109,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Lipid Sciences",
                         contact="Phone: +91-10987-65432, Email: ceramides@lipidsciences.in",
                         location="Mumbai, Maharashtra",
-                        price_per_unit=1400.0
+                        price_per_unit=1400.0,
+                        price_per_100ml=0.84
                     )
                 ]
             ),
@@ -1109,7 +1124,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Vitamin World",
                         contact="Phone: +91-09876-54321, Email: vitamine@vitaminworld.co.in",
                         location="Delhi, NCR",
-                        price_per_unit=900.0
+                        price_per_unit=900.0,
+                        price_per_100ml=0.18
                     )
                 ]
             ),
@@ -1123,7 +1139,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="PreserveTech Solutions",
                         contact="Phone: +91-54321-09876, Email: sales@preservetech.in",
                         location="Pune, Maharashtra",
-                        price_per_unit=400.0
+                        price_per_unit=400.0,
+                        price_per_100ml=0.08
                     )
                 ]
             ),
@@ -1137,7 +1154,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Natural Scents",
                         contact="Phone: +91-43210-98765, Email: info@naturalscents.in",
                         location="Mysore, Karnataka",
-                        price_per_unit=750.0
+                        price_per_unit=750.0,
+                        price_per_100ml=0.08
                     )
                 ]
             ),
@@ -1151,7 +1169,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="Texture Solutions",
                         contact="Phone: +91-32109-87654, Email: thickeners@texture.in",
                         location="Ahmedabad, Gujarat",
-                        price_per_unit=300.0
+                        price_per_unit=300.0,
+                        price_per_100ml=0.15
                     )
                 ]
             ),
@@ -1165,7 +1184,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                         name="pH Solutions",
                         contact="Phone: +91-21098-76543, Email: ph@phsolutions.in",
                         location="Bangalore, Karnataka",
-                        price_per_unit=200.0
+                        price_per_unit=200.0,
+                        price_per_100ml=0.02
                     )
                 ]
             )

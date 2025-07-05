@@ -37,15 +37,15 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={`border ${colors.border} rounded-lg p-3`}>
                 <div className={`text-sm font-semibold ${colors.text} mb-1`}>TAM (Total Addressable Market)</div>
-                <div className="text-gray-700 text-sm">{tam}</div>
+                <div className={`${colors.text} text-sm`}>{tam}</div>
               </div>
               <div className={`border ${colors.border} rounded-lg p-3`}>
                 <div className={`text-sm font-semibold ${colors.text} mb-1`}>SAM (Serviceable Addressable Market)</div>
-                <div className="text-gray-700 text-sm">{sam}</div>
+                <div className={`${colors.text} text-sm`}>{sam}</div>
               </div>
               <div className={`border ${colors.border} rounded-lg p-3`}>
                 <div className={`text-sm font-semibold ${colors.text} mb-1`}>SOM (Serviceable Obtainable Market)</div>
-                <div className="text-gray-700 text-sm">{som}</div>
+                <div className={`${colors.text} text-sm`}>{som}</div>
               </div>
             </div>
           </div>
@@ -61,11 +61,11 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className={`border ${colors.border} rounded-lg p-3`}>
                 <div className={`text-sm font-semibold ${colors.text} mb-1`}>Current Market Size</div>
-                <div className="text-gray-700 text-sm">{marketSize}</div>
+                <div className={`${colors.text} text-sm`}>{marketSize}</div>
               </div>
               <div className={`border ${colors.border} rounded-lg p-3`}>
                 <div className={`text-sm font-semibold ${colors.text} mb-1`}>Growth Rate</div>
-                <div className="text-gray-700 text-sm">{growthRate}</div>
+                <div className={`${colors.text} text-sm`}>{growthRate}</div>
               </div>
             </div>
           </div>
@@ -84,7 +84,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                   <div key={index} className="flex items-start space-x-3">
                     <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
                     <div className="flex-1">
-                      <div className="text-gray-700 text-sm leading-relaxed">{trend}</div>
+                      <div className={`${colors.text} text-sm leading-relaxed`}>{trend}</div>
                     </div>
                   </div>
                 ))}
@@ -106,7 +106,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                   <div key={index} className="flex items-start space-x-3">
                     <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
                     <div className="flex-1">
-                      <div className="text-gray-700 text-sm leading-relaxed">{competitor}</div>
+                      <div className={`${colors.text} text-sm leading-relaxed`}>{competitor}</div>
                     </div>
                   </div>
                 ))}
@@ -123,7 +123,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
           </h4>
           <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
             <div className="space-y-3">
-              <div className="text-gray-700 text-sm leading-relaxed">
+              <div className={`${colors.text} text-sm leading-relaxed`}>
                 <strong className={`${colors.text}`}>Market Potential:</strong>
                 <p className="mt-1">
                   Based on the TAM, SAM, and SOM analysis, this market presents significant opportunities for growth and market penetration.
@@ -135,19 +135,19 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                 <ul className="mt-1 space-y-1 text-sm">
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Growing market demand with positive growth trajectory</span>
+                    <span className={`${colors.text}`}>Growing market demand with positive growth trajectory</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Opportunity to capture market share through innovation</span>
+                    <span className={`${colors.text}`}>Opportunity to capture market share through innovation</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Potential for premium positioning and pricing</span>
+                    <span className={`${colors.text}`}>Potential for premium positioning and pricing</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Room for differentiation in competitive landscape</span>
+                    <span className={`${colors.text}`}>Room for differentiation in competitive landscape</span>
                   </li>
                 </ul>
               </div>
@@ -157,15 +157,15 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                 <ul className="mt-1 space-y-1 text-sm">
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Focus on underserved market segments</span>
+                    <span className={`${colors.text}`}>Focus on underserved market segments</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Leverage emerging trends for competitive advantage</span>
+                    <span className={`${colors.text}`}>Leverage emerging trends for competitive advantage</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className="text-gray-700">Build strong brand positioning and differentiation</span>
+                    <span className={`${colors.text}`}>Build strong brand positioning and differentiation</span>
                   </li>
                 </ul>
               </div>

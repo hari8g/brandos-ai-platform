@@ -69,7 +69,7 @@ const CostSummary: React.FC<CostSummaryProps> = ({
     return (
       <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-6`}>
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${colors.icon}`}></div>
           <span className={`ml-3 ${colors.text}`}>Calculating costs...</span>
         </div>
       </div>

@@ -6,6 +6,7 @@ class SupplierInfo(BaseModel):
     contact: str
     location: str
     price_per_unit: float
+    price_per_100ml: Optional[float] = None
 
 class IngredientDetail(BaseModel):
     name: str
@@ -31,11 +32,6 @@ class Formulation(BaseModel):
     packaging: Optional[Dict[str, Any]] = None
     marketing_inspiration: Optional[Dict[str, Any]] = None
 
-class GenerateRequest(BaseModel):
-    prompt: str
-    category: Optional[str] = None
-    target_cost: Optional[float] = None
-
 class ScientificReasoning(BaseModel):
     keyComponents: List[Dict[str, str]]
     impliedDesire: str
@@ -48,6 +44,11 @@ class MarketResearch(BaseModel):
     sam: Dict[str, Any]
     tm: Dict[str, Any]
 
+class GenerateRequest(BaseModel):
+    prompt: str
+    category: Optional[str] = None
+    target_cost: Optional[str] = None
+
 class GenerateResponse(BaseModel):
     product_name: str
     reasoning: str
@@ -55,8 +56,8 @@ class GenerateResponse(BaseModel):
     manufacturing_steps: List[str]
     estimated_cost: float
     safety_notes: List[str]
-    packaging_marketing_inspiration: Optional[str]
-    market_trends: Optional[List[str]]
-    competitive_landscape: Optional[dict]
+    packaging_marketing_inspiration: Optional[str] = None
+    market_trends: Optional[List[str]] = None
+    competitive_landscape: Optional[Dict[str, Any]] = None
     scientific_reasoning: Optional[ScientificReasoning] = None
     market_research: Optional[MarketResearch] = None 

@@ -153,13 +153,13 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Formulation Reasoning Section */}
       <Section
-        title="💡 Formulation Reasoning"
+        title="Formulation Reasoning"
         isOpen={expandedSections.reasoning}
         onToggle={() => toggleSection("reasoning")}
         colors={colors}
       >
         <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
-          <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+          <p className={`${colors.text} whitespace-pre-line leading-relaxed`}>
             {data.reasoning}
           </p>
         </div>
@@ -168,7 +168,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
       {/* Scientific Reasoning Component */}
       {data.scientific_reasoning && (
         <Section
-          title="🔬 Scientific Reasoning"
+          title="Scientific Reasoning"
           isOpen={expandedSections.scientific_reasoning}
           onToggle={() => toggleSection("scientific_reasoning")}
           colors={colors}
@@ -187,7 +187,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
       {/* Market Research Component */}
       {data.market_research && (
         <Section
-          title="📊 Market Research & Analysis"
+          title="Market Research & Analysis"
           isOpen={expandedSections.market_research}
           onToggle={() => toggleSection("market_research")}
           colors={colors}
@@ -207,7 +207,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Enhanced Ingredients Section */}
       <Section
-        title="🧴 Ingredients & Suppliers"
+        title="Ingredients & Suppliers"
         isOpen={expandedSections.ingredients}
         onToggle={() => toggleSection("ingredients")}
         colors={colors}
@@ -222,15 +222,15 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-gray-900 text-lg">
+                    <span className={`font-bold ${colors.text} text-lg`}>
                       {ingredient.name}
                     </span>
                     <span className={`text-lg font-bold ${colors.text}`}>
                       {ingredient.percent}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <span>₹{ingredient.cost_per_100ml}/100ml</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className={`${colors.text}`}>₹{ingredient.cost_per_100ml}/100ml</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors.lightBg} ${colors.text}`}>
                       Grade A
                     </span>
@@ -252,7 +252,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
               {/* Suppliers */}
               {ingredient.suppliers && ingredient.suppliers.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-800 text-sm mb-2 flex items-center">
+                  <h4 className={`font-semibold ${colors.text} text-sm mb-2 flex items-center`}>
                     <span className="mr-2">🏢</span>
                     Local Suppliers
                   </h4>
@@ -262,10 +262,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                         key={idx}
                         className={`${colors.lightBg} border ${colors.border} rounded-lg p-3`}
                       >
-                        <div className="font-medium text-gray-900 text-sm mb-1">
+                        <div className={`font-medium ${colors.text} text-sm mb-1`}>
                           {supplier.name}
                         </div>
-                        <div className="text-xs text-gray-600 space-y-1">
+                        <div className={`text-xs ${colors.text} space-y-1`}>
                           <div className="flex items-center">
                             <span className="font-medium">📍</span>
                             <span className="ml-1">{supplier.location}</span>
@@ -276,7 +276,14 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                           </div>
                           <div className="flex items-center">
                             <span className="font-medium">💰</span>
-                            <span className="ml-1">₹{supplier.price_per_unit}/unit</span>
+                            <span className="ml-1">
+                              ₹{supplier.price_per_unit}/unit
+                              {ingredient.cost_per_100ml > 0 && (
+                                <span className={`text-xs ${colors.text} ml-1 opacity-70`}>
+                                  (≈₹{(ingredient.cost_per_100ml * ingredient.percent / 100).toFixed(2)}/100ml)
+                                </span>
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -291,7 +298,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Manufacturing Steps Section */}
       <Section
-        title="⚙️ Manufacturing Steps"
+        title="Manufacturing Steps"
         isOpen={expandedSections.manufacturing}
         onToggle={() => toggleSection("manufacturing")}
         colors={colors}
@@ -316,7 +323,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Cost Analysis Section */}
       <Section
-        title="💰 Cost Analysis & Pricing Strategy"
+        title="Cost Analysis & Pricing Strategy"
         isOpen={expandedSections.costing}
         onToggle={() => toggleSection("costing")}
         colors={colors}
@@ -346,7 +353,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Safety Assessment Section */}
       <Section
-        title="🛡️ Safety Assessment"
+        title="Safety Assessment"
         isOpen={expandedSections.safety}
         onToggle={() => toggleSection("safety")}
         colors={colors}
@@ -366,9 +373,9 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         </div>
       </Section>
 
-      {/* Marketing & Market Analysis Section */}
+      {/* Packaging Inspiration Section */}
       <Section
-        title="🎨 Marketing & Market Analysis"
+        title="Packaging Inspiration"
         isOpen={expandedSections.marketing}
         onToggle={() => toggleSection("marketing")}
         colors={colors}
@@ -379,7 +386,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
             <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
               <h4 className={`font-semibold ${colors.text} text-sm mb-2 flex items-center`}>
                 <span className="mr-2">✨</span>
-                Packaging & Marketing Inspiration
+                Packaging Design & Inspiration
               </h4>
               <div className={`${colors.text} text-sm leading-relaxed`}>
                 {data.packaging_marketing_inspiration}
@@ -391,8 +398,8 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
           {data.market_trends && data.market_trends.length > 0 && (
             <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
               <h4 className={`font-semibold ${colors.text} text-sm mb-3 flex items-center`}>
-                <span className="mr-2">📈</span>
-                Current Market Trends
+                <span className="mr-2">📦</span>
+                Packaging Trends
               </h4>
               <div className="space-y-2">
                 {data.market_trends.map((trend, idx) => (
@@ -410,7 +417,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
             <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
               <h4 className={`font-semibold ${colors.text} text-sm mb-3 flex items-center`}>
                 <span className="mr-2">🏆</span>
-                Competitive Landscape
+                Competitive Packaging Analysis
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 {Object.entries(data.competitive_landscape).map(([key, value]) => (
@@ -418,7 +425,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                     <div className={`font-medium ${colors.text} capitalize`}>
                       {key.replace(/_/g, ' ')}:
                     </div>
-                    <div className="text-gray-700">
+                    <div className={`${colors.text}`}>
                       {typeof value === 'string' ? value : JSON.stringify(value)}
                     </div>
                   </div>

@@ -59,8 +59,8 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
         {/* What It Delivers - Enhanced Functional Attributes */}
         <div>
           <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2">⚡</span>
-            What It Delivers - Functional Benefits
+            <span className="mr-2"></span>
+            What did we formulate with ?
           </h4>
           <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
             <div className="space-y-3">
@@ -86,8 +86,8 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
         {/* What It Implies - Enhanced Desire Analysis */}
         <div>
           <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2">🎯</span>
-            What It Implies - Consumer Desire Analysis
+            <span className="mr-2"></span>
+            Why we think the customer will buy this Product ?
           </h4>
           <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
             <div className="space-y-3">
@@ -142,8 +142,8 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
         {/* Who It's For - Detailed Target Analysis */}
         <div>
           <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2">👥</span>
-            Who It's For - Detailed Target Analysis
+            <span className="mr-2"></span>
+            Who could be our Ideal customer Persona?
           </h4>
           <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
             <div className="space-y-3">
@@ -199,8 +199,8 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
         {indiaTrends && indiaTrends.length > 0 && (
           <div>
             <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-              <span className="mr-2">📈</span>
-              Indian Market Trends & Insights
+              <span className="mr-2"></span>
+              What do we see as a trend nowdays ?
             </h4>
             <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
               <div className="space-y-4">
@@ -239,8 +239,8 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
         {regulatoryStandards && regulatoryStandards.length > 0 && (
           <div>
             <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-              <span className="mr-2">🛡️</span>
-              Regulatory Standards & Compliance
+              <span className="mr-2"></span>
+              What should we comply with ?
             </h4>
             <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
               <div className="space-y-3">
@@ -254,7 +254,7 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
                 ))}
                 
                 <div className={`border-t ${colors.border} pt-3 mt-4`}>
-                  <strong className={`${colors.text} text-base`}>Compliance Benefits:</strong>
+                  <strong className={`${colors.text} text-base`}>and their benefits:</strong>
                   <ul className="mt-1 space-y-1 text-xs">
                     <li className={`${colors.text}`}>• Ensures product safety and consumer protection</li>
                     <li className={`${colors.text}`}>• Builds trust and credibility in the market</li>

@@ -3,28 +3,26 @@ from typing import List, Optional, Dict
 from .generate import GenerateResponse
 
 class BatchPricing(BaseModel):
-    batch_size: str  # "small" (100-500 units), "medium" (1000-5000 units), "large" (10000+ units)
+    batch_size: str  # "small", "medium", "large"
+    units: int
     unit_cost: float
     total_cost: float
-    retail_price: float
+    retail_price_30ml: float
+    retail_price_50ml: float
+    retail_price_100ml: float
     wholesale_price: float
     profit_margin: float
     currency: str = "INR"
 
-class CostEstimate(BaseModel):
-    raw_materials: float
-    labor_cost: float
+class SimpleCostEstimate(BaseModel):
+    batch_pricing: List[BatchPricing]
+    total_ingredient_cost: float
+    manufacturing_cost: float
     packaging_cost: float
     overhead_cost: float
-    quality_control_cost: Optional[float] = None
-    total_production_cost: float
-    margin: float
-    total: float
-    breakdown: Optional[Dict] = None
     currency: str = "INR"
-    batch_pricing: Optional[List[BatchPricing]] = None
-    premium_factors: Optional[List[str]] = None
-    cost_optimization_suggestions: Optional[List[str]] = None
+    pricing_strategy: str
+    market_positioning: str
 
 class CostingRequest(BaseModel):
     formulation: GenerateResponse
@@ -35,5 +33,5 @@ class CostingRequest(BaseModel):
 class CostingResponse(BaseModel):
     success: bool
     message: str
-    cost_estimate: Optional[CostEstimate] = None
+    cost_estimate: Optional[SimpleCostEstimate] = None
     error: Optional[str] = None 

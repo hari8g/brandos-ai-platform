@@ -19,6 +19,31 @@ export interface GenerateRequest {
   target_cost?: number;
 }
 
+export interface MarketResearchData {
+  tam: {
+    marketSize: string;
+    cagr: string;
+    methodology: string;
+    insights: string[];
+    competitors: string[];
+  };
+  sam: {
+    marketSize: string;
+    segments: string[];
+    methodology: string;
+    insights: string[];
+    distribution: string[];
+  };
+  tm: {
+    marketSize: string;
+    targetUsers: string;
+    revenue: string;
+    methodology: string;
+    insights: string[];
+    adoptionDrivers: string[];
+  };
+}
+
 export interface GenerateResponse {
   product_name: string;
   reasoning: string;
@@ -29,4 +54,12 @@ export interface GenerateResponse {
   packaging_marketing_inspiration?: string;
   market_trends?: string[];
   competitive_landscape?: Record<string, any>;
+  scientific_reasoning?: {
+    keyComponents: { name: string; why: string }[];
+    impliedDesire: string;
+    targetAudience: string;
+    indiaTrends: string[];
+    regulatoryStandards: string[];
+  };
+  market_research?: MarketResearchData;
 } 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCategoryColors, type CategoryColors } from '@/lib/colorUtils';
 
 export interface Suggestion {
   prompt: string;
@@ -10,27 +11,30 @@ interface Props {
   suggestion: Suggestion;
   onUse: (prompt: string) => void;
   index: number;
+  selectedCategory?: string | null;
 }
 
-export default function SuggestionCard({ suggestion, onUse, index }: Props) {
+export default function SuggestionCard({ suggestion, onUse, index, selectedCategory }: Props) {
+  const colors = getCategoryColors(selectedCategory || null);
+
   return (
-    <div className="transition-shadow duration-200 border border-gray-200 rounded-2xl p-6 mb-6 bg-white shadow-sm hover:shadow-xl focus-within:shadow-xl group">
-      <h4 className="text-lg font-bold text-purple-700 mb-2">Suggestion {index + 1}</h4>
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl text-base font-sans text-indigo-700 whitespace-pre-wrap mb-4 border border-indigo-100 group-hover:border-indigo-300 transition-colors duration-200">
+    <div className={`transition-all duration-300 border ${colors.border} rounded-2xl p-6 mb-6 bg-white shadow-sm hover:shadow-xl focus-within:shadow-xl group hover:scale-[1.02]`}>
+      <h4 className={`text-lg font-bold ${colors.text} mb-2`}>Suggestion {index + 1}</h4>
+      <div className={`${colors.cardBg} p-4 rounded-xl text-base font-sans ${colors.text} whitespace-pre-wrap mb-4 border ${colors.border} group-hover:border-${colors.primary}-300 transition-colors duration-200`}>
         {suggestion.prompt}
       </div>
       <div className="flex flex-col md:flex-row gap-4 mb-3">
-        <details className="w-full bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-          <summary className="font-semibold text-indigo-700 cursor-pointer">Why?</summary>
+        <details className={`w-full ${colors.lightBg} rounded-lg p-3 border ${colors.border}`}>
+          <summary className={`font-semibold ${colors.text} cursor-pointer`}>Why?</summary>
           <p className="mt-2 text-gray-700 text-sm">{suggestion.why}</p>
         </details>
-        <details className="w-full bg-purple-50 rounded-lg p-3 border border-purple-100">
-          <summary className="font-semibold text-purple-700 cursor-pointer">How?</summary>
+        <details className={`w-full ${colors.lightBg} rounded-lg p-3 border ${colors.border}`}>
+          <summary className={`font-semibold ${colors.text} cursor-pointer`}>How?</summary>
           <p className="mt-2 text-gray-700 text-sm">{suggestion.how}</p>
         </details>
       </div>
       <button
-        className="mt-2 w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-md hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition-all duration-200"
+        className={`mt-2 w-full py-3 px-6 bg-gradient-to-r ${colors.buttonGradient} text-white rounded-xl font-semibold shadow-md hover:${colors.buttonHoverGradient} focus:outline-none focus:ring-2 focus:ring-${colors.primary}-400 focus:ring-offset-2 transition-all duration-200 transform hover:scale-105`}
         onClick={() => onUse(suggestion.prompt)}
       >
         <span className="inline-flex items-center gap-2">

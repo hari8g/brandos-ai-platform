@@ -3,46 +3,26 @@ import apiClient from '../services/apiClient'
 
 interface BatchPricing {
   batch_size: string;
+  units: number;
   unit_cost: number;
   total_cost: number;
-  retail_price: number;
+  retail_price_30ml: number;
+  retail_price_50ml: number;
+  retail_price_100ml: number;
   wholesale_price: number;
   profit_margin: number;
   currency: string;
 }
 
-interface ScaleInfo {
-  scale: string;
-  equipment_cost: number;
-  annual_batches: number;
-  capex_per_batch: number;
-}
-
-interface CostEstimate {
-  raw_materials: number;
-  labor_cost: number;
+interface SimpleCostEstimate {
+  batch_pricing: BatchPricing[];
+  total_ingredient_cost: number;
+  manufacturing_cost: number;
   packaging_cost: number;
   overhead_cost: number;
-  quality_control_cost?: number;
-  capex_amortization?: number;
-  total_production_cost: number;
-  margin: number;
-  total: number;
-  breakdown?: {
-    ingredients: number;
-    labor: number;
-    packaging: number;
-    overhead: number;
-    quality_control?: number;
-    capex?: number;
-  };
   currency: string;
-  batch_pricing?: BatchPricing[];
-  premium_factors?: string[];
-  cost_optimization_suggestions?: string[];
-  scale_info?: ScaleInfo;
-  pricing_strategy?: string;
-  market_positioning?: string;
+  pricing_strategy: string;
+  market_positioning: string;
 }
 
 interface CostingRequest {
@@ -55,16 +35,16 @@ interface CostingRequest {
 interface CostingResponse {
   success: boolean;
   message: string;
-  cost_estimate?: CostEstimate;
+  cost_estimate?: SimpleCostEstimate;
   error?: string;
 }
 
 export const useCosting = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [costEstimate, setCostEstimate] = useState<CostEstimate | null>(null)
+  const [costEstimate, setCostEstimate] = useState<SimpleCostEstimate | null>(null)
 
-  const estimateCost = async (request: CostingRequest): Promise<CostEstimate | null> => {
+  const estimateCost = async (request: CostingRequest): Promise<SimpleCostEstimate | null> => {
     setLoading(true)
     setError(null)
 

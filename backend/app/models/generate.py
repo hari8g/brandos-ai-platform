@@ -36,6 +36,18 @@ class GenerateRequest(BaseModel):
     category: Optional[str] = None
     target_cost: Optional[float] = None
 
+class ScientificReasoning(BaseModel):
+    keyComponents: List[Dict[str, str]]
+    impliedDesire: str
+    targetAudience: str
+    indiaTrends: List[str]
+    regulatoryStandards: List[str]
+
+class MarketResearch(BaseModel):
+    tam: Dict[str, Any]
+    sam: Dict[str, Any]
+    tm: Dict[str, Any]
+
 class GenerateResponse(BaseModel):
     product_name: str
     reasoning: str
@@ -45,4 +57,6 @@ class GenerateResponse(BaseModel):
     safety_notes: List[str]
     packaging_marketing_inspiration: Optional[str]
     market_trends: Optional[List[str]]
-    competitive_landscape: Optional[dict] 
+    competitive_landscape: Optional[dict]
+    scientific_reasoning: Optional[ScientificReasoning] = None
+    market_research: Optional[MarketResearch] = None 

@@ -542,7 +542,7 @@ export default function PromptInput({
           ) : (
             <div className="space-y-4">
               {suggestions.map((s, i) => (
-                <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} />
+                <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} selectedCategory={selectedCategory} />
               ))}
             </div>
           )}

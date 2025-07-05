@@ -242,6 +242,7 @@ function App() {
               data={formulations[0]}
               isGenerated={isGenerated}
               onDownload={generatePDF}
+              selectedCategory={selectedCategory}
             />
           ) : (
             <div className="text-center py-12 text-gray-400">

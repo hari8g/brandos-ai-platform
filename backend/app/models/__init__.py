@@ -1,13 +1,15 @@
 from .assess import AssessRequest, AssessResponse
 from .generate import GenerateRequest, GenerateResponse, IngredientDetail, SupplierInfo, ScientificReasoning, MarketResearch
-from .costing import SimpleCostEstimate, BatchPricing, CostingRequest, CostingResponse
+from .costing import ManufacturingScenario, ManufacturingInsights, ManufacturingRequest, ManufacturingResponse
 from .suppliers import SupplierRequest, SupplierResponse, Supplier
 from .compliance import ComplianceRequest, ComplianceResponse
+from .branding import BrandingStrategy, BrandNameSuggestion, SocialMediaChannel, BrandingRequest, BrandingResponse
 
 __all__ = [
     "AssessRequest", "AssessResponse",
     "GenerateRequest", "GenerateResponse", "IngredientDetail", "SupplierInfo", "ScientificReasoning", "MarketResearch",
-    "SimpleCostEstimate", "BatchPricing", "CostingRequest", "CostingResponse",
+    "ManufacturingScenario", "ManufacturingInsights", "ManufacturingRequest", "ManufacturingResponse",
     "SupplierRequest", "SupplierResponse", "Supplier",
-    "ComplianceRequest", "ComplianceResponse"
+    "ComplianceRequest", "ComplianceResponse",
+    "BrandingStrategy", "BrandNameSuggestion", "SocialMediaChannel", "BrandingRequest", "BrandingResponse"
 ]

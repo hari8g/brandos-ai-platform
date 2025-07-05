@@ -2,6 +2,8 @@ import os
 import json
 from dotenv import load_dotenv
 from typing import List, Optional
+from openai import OpenAI
+from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion
 
 # Load environment variables from the root .env file
 # Navigate from backend/app/services/query/ to project root
@@ -11,16 +13,12 @@ load_dotenv(os.path.join(project_root, '.env'))
 # Initialize OpenAI client only if API key is available
 client = None
 try:
-    from openai import OpenAI
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key and api_key != "your_openai_api_key_here" and api_key.strip():
         client = OpenAI(api_key=api_key)
         print("✅ OpenAI client initialized successfully")
     else:
         print("⚠️ OpenAI API key not found or invalid, will use fallback mock data")
-        print(f"🔍 API Key found: {'Yes' if api_key else 'No'}")
-        if api_key:
-            print(f"🔍 API Key length: {len(api_key)}")
 except Exception as e:
     print(f"⚠️ Failed to initialize OpenAI client: {e}")
 
@@ -64,15 +62,26 @@ def extract_product_info(user_prompt: str, category: Optional[str] = None) -> di
     try:
         if not client:
             return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
+        
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": extraction_prompt}],
             temperature=0,
-            max_tokens=200
+            max_tokens=200,
+            tools=get_extraction_function_definitions(),
+            tool_choice={"type": "function", "function": {"name": "extract_product_info"}}
         )
-        content = response.choices[0].message.content
-        json_str = content[content.find('{'):content.rfind('}')+1]
-        return json.loads(json_str)
+        
+        message = response.choices[0].message
+        if message.tool_calls and len(message.tool_calls) > 0:
+            tool_call = message.tool_calls[0]
+            if tool_call.function.name == "extract_product_info":
+                try:
+                    return json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError:
+                    return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
+        
+        return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
     except Exception as e:
         print("extract_product_info error:", e)
         return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
@@ -129,35 +138,51 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     # If OpenAI client is not available, use mock suggestions
     if not client:
         return generate_mock_suggestions(request)
+    
     info = extract_product_info(request.prompt, request.category)
     suggestion_prompt = get_suggestion_prompt(info, request)
+    
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": suggestion_prompt}],
             temperature=0,
-            max_tokens=800
+            max_tokens=800,
+            tools=get_suggestions_function_definitions(),
+            tool_choice={"type": "function", "function": {"name": "generate_suggestions"}}
         )
-        content = response.choices[0].message.content
-        json_str = content[content.find('['):content.rfind(']')+1]
-        data = json.loads(json_str)
-        # Validate and clean the data before creating Suggestion objects
-        suggestions = []
-        for s in data:
-            try:
-                # Ensure all required fields are present and are strings
-                prompt = str(s.get("prompt", ""))
-                why = str(s.get("why", ""))
-                how = str(s.get("how", ""))
-                if prompt and why and how:  # Only add if all fields have content
-                    suggestions.append(Suggestion(prompt=prompt, why=why, how=how))
-            except Exception as e:
-                print(f"Error processing suggestion: {e}")
-                continue
-        # If no valid suggestions were created, use fallback
-        if not suggestions:
-            return generate_mock_suggestions(request)
-        return SuggestionResponse(suggestions=suggestions, success=True, message="Enriched suggestions generated")
+        
+        message = response.choices[0].message
+        if message.tool_calls and len(message.tool_calls) > 0:
+            tool_call = message.tool_calls[0]
+            if tool_call.function.name == "generate_suggestions":
+                try:
+                    data = json.loads(tool_call.function.arguments)
+                    suggestions_data = data.get('suggestions', [])
+                    
+                    # Validate and clean the data before creating Suggestion objects
+                    suggestions = []
+                    for s in suggestions_data:
+                        try:
+                            # Ensure all required fields are present and are strings
+                            prompt = str(s.get("prompt", ""))
+                            why = str(s.get("why", ""))
+                            how = str(s.get("how", ""))
+                            if prompt and why and how:  # Only add if all fields have content
+                                suggestions.append(Suggestion(prompt=prompt, why=why, how=how))
+                        except Exception as e:
+                            print(f"Error processing suggestion: {e}")
+                            continue
+                    
+                    # If no valid suggestions were created, use fallback
+                    if not suggestions:
+                        return generate_mock_suggestions(request)
+                    
+                    return SuggestionResponse(suggestions=suggestions, success=True, message="Enriched suggestions generated")
+                except json.JSONDecodeError:
+                    return generate_mock_suggestions(request)
+        
+        return generate_mock_suggestions(request)
     except Exception as e:
         print("generate_suggestions error:", e)
         return generate_mock_suggestions(request)
@@ -224,4 +249,75 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
         suggestions=suggestions,
         success=True,
         message=f"Mock suggestions generated for {category} (AI service unavailable)"
-    ) 
+    )
+
+# Function calling definitions
+def get_suggestions_function_definitions():
+    """Define the function schema for suggestions generation"""
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "generate_suggestions",
+                "description": "Generate 3 detailed AI prompts for formulation",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "suggestions": {
+                            "type": "array",
+                            "description": "Array of 3 detailed suggestions",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "prompt": {
+                                        "type": "string",
+                                        "description": "Detailed AI prompt for formulation"
+                                    },
+                                    "why": {
+                                        "type": "string",
+                                        "description": "Explanation of why this suggestion is valuable"
+                                    },
+                                    "how": {
+                                        "type": "string",
+                                        "description": "Usage tip for this suggestion"
+                                    }
+                                },
+                                "required": ["prompt", "why", "how"]
+                            }
+                        }
+                    },
+                    "required": ["suggestions"]
+                }
+            }
+        }
+    ]
+
+def get_extraction_function_definitions():
+    """Define the function schema for product info extraction"""
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "extract_product_info",
+                "description": "Extract product type, form, and concern from user input",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "product_type": {
+                            "type": "string",
+                            "description": "Type of product (e.g., 'anti-aging face cream')"
+                        },
+                        "form": {
+                            "type": "string",
+                            "description": "Form of the product (e.g., 'cream', 'serum', 'gel')"
+                        },
+                        "concern": {
+                            "type": "string",
+                            "description": "Primary concern or benefit (e.g., 'wrinkle reduction', 'hydration')"
+                        }
+                    },
+                    "required": ["product_type", "form", "concern"]
+                }
+            }
+        }
+    ] 

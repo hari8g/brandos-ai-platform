@@ -1,27 +1,27 @@
 """
-FastAPI router for costing and pricing
+FastAPI router for manufacturing analysis
 """
 from fastapi import APIRouter
-from app.models.costing import CostingRequest, CostingResponse
-from app.services.costing.costing_service import estimate_cost
+from app.models.costing import ManufacturingRequest, ManufacturingResponse
+from app.services.costing.costing_service import analyze_manufacturing
 
-router = APIRouter(prefix="/costing", tags=["costing"])
+router = APIRouter(prefix="/costing", tags=["manufacturing"])
 
-@router.post("/estimate", response_model=CostingResponse)
-async def estimate_costing(request: CostingRequest):
-    """Estimate costs and pricing for different batch sizes"""
+@router.post("/estimate", response_model=ManufacturingResponse)
+async def analyze_manufacturing_scenarios(request: ManufacturingRequest):
+    """Analyze manufacturing scenarios for different customer scales"""
     try:
-        cost_estimate = estimate_cost(request)
+        manufacturing_insights = analyze_manufacturing(request)
         
-        return CostingResponse(
+        return ManufacturingResponse(
             success=True,
-            message="Cost estimate generated successfully",
-            cost_estimate=cost_estimate
+            message="Manufacturing analysis generated successfully",
+            manufacturing_insights=manufacturing_insights
         )
     
     except Exception as e:
-        return CostingResponse(
+        return ManufacturingResponse(
             success=False,
-            message="Error generating cost estimate",
+            message="Error generating manufacturing analysis",
             error=str(e)
         ) 

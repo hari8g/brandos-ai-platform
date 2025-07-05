@@ -39,10 +39,27 @@ class ScientificReasoning(BaseModel):
     indiaTrends: List[str]
     regulatoryStandards: List[str]
 
+class CalculationBreakdown(BaseModel):
+    """Detailed calculation breakdown for market metrics"""
+    formula: str
+    variables: Dict[str, float]
+    calculation_steps: List[str]
+    assumptions: List[str]
+    data_sources: List[str]
+    confidence_level: str
+
+class MarketMetricDetail(BaseModel):
+    """Detailed market metric with calculation breakdown"""
+    value: str
+    calculation: CalculationBreakdown
+    methodology: str
+    insights: List[str]
+
 class MarketResearch(BaseModel):
     tam: Dict[str, Any]
     sam: Dict[str, Any]
     tm: Dict[str, Any]
+    detailed_calculations: Optional[Dict[str, MarketMetricDetail]] = None
 
 class GenerateRequest(BaseModel):
     prompt: str

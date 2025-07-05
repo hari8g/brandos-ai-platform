@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useCosting } from "../../hooks/useCosting";
-import CostSummary from "./CostSummary";
+import { useBranding } from "../../hooks/useBranding";
+import ManufacturingInsights from "./ManufacturingInsights";
 import ScientificReasoning from "../ScientificReasoning";
 import MarketResearch from "../MarketResearch";
+import ManufacturingSteps from "./ManufacturingSteps";
+import Branding from "../Branding";
 import { getCategoryColors } from "@/lib/colorUtils";
 import type { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
 
@@ -53,6 +56,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 }) => {
   // Add costing functionality
   const { loading, error, costEstimate, estimateCost, clearCostEstimate } = useCosting();
+  const { loading: brandingLoading, error: brandingError, brandingStrategy, analyzeBranding } = useBranding();
   const colors = getCategoryColors(selectedCategory || null);
 
   // Currency formatting function
@@ -74,11 +78,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
     costing: false,
     scientific_reasoning: true,
     market_research: true,
+    branding: false,
   });
 
-  // Add state for batch size selection
-  const [batchSizeType, setBatchSizeType] = useState<'small' | 'medium' | 'large' | 'custom'>('medium');
-  const [customBatchSize, setCustomBatchSize] = useState<number>(1000);
+
 
   const toggleSection = (section: keyof typeof expandedSections) =>
     setExpandedSections((prev) => ({
@@ -86,22 +89,27 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
       [section]: !prev[section],
     }));
 
-  // Update handleCostingRequest to use selected batch size(s)
+  // Update handleCostingRequest to use manufacturing analysis
   const handleCostingRequest = async () => {
-    let batch_sizes: (string | number)[] = [];
-    if (batchSizeType === 'custom') {
-      batch_sizes = [customBatchSize];
-    } else {
-      batch_sizes = [batchSizeType];
-    }
     const request = {
       formulation: data,
-      batch_sizes,
-      target_market: "mid-market",
+      target_market: "premium",
       region: "IN"
     };
     await estimateCost(request);
     setExpandedSections(prev => ({ ...prev, costing: true }));
+  };
+
+  // Handle branding analysis request
+  const handleBrandingRequest = async () => {
+    const request = {
+      formulation: data,
+      target_audience: "general",
+      brand_tone: "modern",
+      region: "IN"
+    };
+    await analyzeBranding(request);
+    setExpandedSections(prev => ({ ...prev, branding: true }));
   };
 
   // Validate core data
@@ -206,6 +214,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
             keyTrends={data.market_research.tam.insights}
             competitiveLandscape={data.market_research.tam.competitors}
             selectedCategory={selectedCategory}
+            marketResearchData={data.market_research}
           />
         </Section>
       )}
@@ -308,33 +317,21 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         onToggle={() => toggleSection("manufacturing")}
         colors={colors}
       >
-        <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
-          <div className="space-y-3">
-            {data.manufacturing_steps.map((step, index) => (
-              <div key={index} className="flex items-start space-x-3">
-                <div className={`flex-shrink-0 w-8 h-8 ${colors.bg} ${colors.text} rounded-full flex items-center justify-center text-sm font-bold`}>
-                  {index + 1}
-                </div>
-                <div className="flex-1">
-                  <p className={`${colors.text} text-sm leading-relaxed`}>
-                    {step}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ManufacturingSteps 
+          steps={data.manufacturing_steps} 
+          selectedCategory={selectedCategory}
+        />
       </Section>
 
-      {/* Cost Analysis Section */}
+      {/* Manufacturing Insights Section */}
       <Section
-        title="Cost Analysis & Pricing Strategy"
+        title="Manufacturing Insights & Scaling Strategy"
         isOpen={expandedSections.costing}
         onToggle={() => toggleSection("costing")}
         colors={colors}
       >
         <div className="mt-4">
-          {/* Costing Button */}
+          {/* Manufacturing Analysis Button */}
           {!costEstimate && (
             <div className="text-center mb-6">
               <button
@@ -342,17 +339,23 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                 disabled={loading}
                 className={`bg-gradient-to-r ${colors.buttonGradient} hover:${colors.buttonHoverGradient} text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {loading ? 'Calculating...' : 'Get Cost Analysis'}
+                {loading ? 'Analyzing...' : 'Get Manufacturing Analysis'}
               </button>
             </div>
           )}
 
-          {/* Simplified Cost Summary */}
-          <CostSummary 
-            costEstimate={costEstimate} 
-            loading={loading} 
-            selectedCategory={selectedCategory} 
-          />
+          {/* Manufacturing Insights */}
+          {costEstimate && costEstimate.manufacturing_insights && (
+            <ManufacturingInsights
+              small_scale={costEstimate.manufacturing_insights.small_scale}
+              medium_scale={costEstimate.manufacturing_insights.medium_scale}
+              large_scale={costEstimate.manufacturing_insights.large_scale}
+              scaling_benefits={costEstimate.manufacturing_insights.scaling_benefits}
+              risk_factors={costEstimate.manufacturing_insights.risk_factors}
+              market_opportunity={costEstimate.manufacturing_insights.market_opportunity}
+              selectedCategory={selectedCategory}
+            />
+          )}
         </div>
       </Section>
 
@@ -436,6 +439,44 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      </Section>
+
+      {/* Branding Strategy Section */}
+      <Section
+        title="Branding Strategy"
+        isOpen={expandedSections.branding}
+        onToggle={() => toggleSection("branding")}
+        colors={colors}
+      >
+        <div className="mt-4">
+          {/* Branding Analysis Button */}
+          {!brandingStrategy && (
+            <div className="text-center mb-6">
+              <button
+                onClick={handleBrandingRequest}
+                disabled={brandingLoading}
+                className={`bg-gradient-to-r ${colors.buttonGradient} hover:${colors.buttonHoverGradient} text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {brandingLoading ? 'Analyzing Branding...' : 'Get Branding Strategy'}
+              </button>
+            </div>
+          )}
+
+          {/* Branding Strategy */}
+          {brandingStrategy && (
+            <Branding
+              brandingStrategy={brandingStrategy}
+              selectedCategory={selectedCategory}
+            />
+          )}
+
+          {/* Branding Error */}
+          {brandingError && (
+            <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{brandingError}</p>
             </div>
           )}
         </div>

@@ -22,6 +22,7 @@ setup_cors(app)
 from app.routers.query import router as query_router
 from app.routers.formulation import router as formulation_router
 from app.routers.costing import router as costing_router
+from app.routers.branding import router as branding_router
 from app.routers.query_router import router as query_suggestions_router
 from app.routers.mailchimp_router import router as mailchimp_router
 from app.routers.auth_router import router as auth_router
@@ -29,6 +30,7 @@ from app.routers.auth_router import router as auth_router
 app.include_router(query_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(formulation_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(costing_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(branding_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(query_suggestions_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(mailchimp_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(auth_router, prefix=settings.API_PREFIX + "/v1")

@@ -21,13 +21,29 @@ export interface GenerateRequest {
 }
 
 export interface ScientificReasoning {
-  keyComponents: { name: string; why: string }[];
+  keyComponents: Array<{ name: string; why: string }>;
   impliedDesire: string;
-  psychologicalDrivers: string[];
-  valueProposition: string[];
   targetAudience: string;
   indiaTrends: string[];
   regulatoryStandards: string[];
+  psychologicalDrivers?: string[];
+  valueProposition?: string[];
+}
+
+export interface CalculationBreakdown {
+  formula: string;
+  variables: Record<string, number>;
+  calculation_steps: string[];
+  assumptions: string[];
+  data_sources: string[];
+  confidence_level: string;
+}
+
+export interface MarketMetricDetail {
+  value: string;
+  calculation: CalculationBreakdown;
+  methodology: string;
+  insights: string[];
 }
 
 export interface MarketResearchData {
@@ -53,7 +69,10 @@ export interface MarketResearchData {
     insights: string[];
     adoptionDrivers: string[];
   };
+  detailed_calculations?: Record<string, MarketMetricDetail>;
 }
+
+
 
 export interface GenerateResponse {
   product_name: string;

@@ -1,66 +1,69 @@
 import { useState } from 'react'
 import apiClient from '../services/apiClient'
 
-interface BatchPricing {
-  batch_size: string;
-  units: number;
-  unit_cost: number;
-  total_cost: number;
-  retail_price_30ml: number;
-  retail_price_50ml: number;
-  retail_price_100ml: number;
-  wholesale_price: number;
-  profit_margin: number;
-  currency: string;
-}
-
-interface SimpleCostEstimate {
-  batch_pricing: BatchPricing[];
-  total_ingredient_cost: number;
+interface ManufacturingScenario {
+  customer_scale: string;
+  batch_size: number;
+  total_customers: number;
   manufacturing_cost: number;
+  ingredient_cost: number;
   packaging_cost: number;
   overhead_cost: number;
+  total_cost: number;
+  cost_per_unit: number;
+  retail_price: number;
+  wholesale_price: number;
+  profit_margin: number;
+  revenue_potential: number;
+  break_even_customers: number;
   currency: string;
-  pricing_strategy: string;
-  market_positioning: string;
 }
 
-interface CostingRequest {
+interface ManufacturingInsights {
+  small_scale: ManufacturingScenario;
+  medium_scale: ManufacturingScenario;
+  large_scale: ManufacturingScenario;
+  scaling_benefits: string[];
+  risk_factors: string[];
+  market_opportunity: string;
+}
+
+interface ManufacturingRequest {
   formulation: any;
-  batch_sizes: (string | number)[];
   target_market?: string;
   region?: string;
 }
 
-interface CostingResponse {
+interface ManufacturingResponse {
   success: boolean;
   message: string;
-  cost_estimate?: SimpleCostEstimate;
+  manufacturing_insights?: ManufacturingInsights;
   error?: string;
 }
 
 export const useCosting = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [costEstimate, setCostEstimate] = useState<SimpleCostEstimate | null>(null)
+  const [costEstimate, setCostEstimate] = useState<{ manufacturing_insights: ManufacturingInsights } | null>(null)
 
-  const estimateCost = async (request: CostingRequest): Promise<SimpleCostEstimate | null> => {
+  const estimateCost = async (request: ManufacturingRequest): Promise<{ manufacturing_insights: ManufacturingInsights } | null> => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await apiClient.post<CostingResponse>('/costing/estimate', request)
+      const response = await apiClient.post<ManufacturingResponse>('/costing/estimate', request)
       
-      if (response.data.success && response.data.cost_estimate) {
-        setCostEstimate(response.data.cost_estimate)
-        return response.data.cost_estimate
+      if (response.data.success && response.data.manufacturing_insights) {
+        const result = { manufacturing_insights: response.data.manufacturing_insights }
+        setCostEstimate(result)
+        return result
       } else {
-        throw new Error(response.data.error || 'Failed to estimate cost')
+        throw new Error(response.data.error || 'Failed to analyze manufacturing')
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.message || 'Failed to estimate cost'
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to analyze manufacturing'
       setError(errorMessage)
-      console.error('Costing error:', err)
+      console.error('Manufacturing analysis error:', err)
       return null
     } finally {
       setLoading(false)

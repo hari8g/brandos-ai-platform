@@ -45,6 +45,39 @@ const moreInfoPrompts: Record<string, string[]> = {
   ]
 };
 
+function normalizeSuggestion(s: any): Suggestion {
+  // If already a valid Suggestion object
+  if (typeof s === 'object' && typeof s.prompt === 'string' && typeof s.why === 'string' && typeof s.how === 'string') {
+    return s;
+  }
+  // If s is a string, try to parse it
+  if (typeof s === 'string') {
+    try {
+      const parsed = JSON.parse(s);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return {
+          prompt: String(parsed.prompt || s),
+          why: String(parsed.why || ''),
+          how: String(parsed.how || ''),
+        };
+      }
+    } catch {
+      // Not JSON, treat as plain prompt
+      return { prompt: s, why: '', how: '' };
+    }
+  }
+  // If s is an object but missing keys, try to extract them
+  if (typeof s === 'object' && s !== null) {
+    return {
+      prompt: typeof s.prompt === 'string' ? s.prompt : JSON.stringify(s, null, 2),
+      why: typeof s.why === 'string' ? s.why : '',
+      how: typeof s.how === 'string' ? s.how : '',
+    };
+  }
+  // Fallback
+  return { prompt: JSON.stringify(s, null, 2), why: '', how: '' };
+}
+
 export default function PromptInput({
   onResult,
   selectedCategory,
@@ -190,16 +223,7 @@ export default function PromptInput({
       // Always fetch suggestions, regardless of assessment
       const sugResp = await apiClient.post("/query/suggestions", { prompt });
       setSuggestions(
-        sugResp.data.suggestions.map((s: any) => {
-          if (typeof s === 'object' && 'prompt' in s && 'why' in s && 'how' in s) {
-            return s;
-          }
-          return {
-            prompt: typeof s === 'string' ? s : JSON.stringify(s, null, 2),
-            why: s.why || '',
-            how: s.how || ''
-          };
-        })
+        sugResp.data.suggestions.map(normalizeSuggestion)
       );
       
       // Complete the progress
@@ -260,17 +284,15 @@ export default function PromptInput({
           clearInterval(progressInterval);
           return prev;
         }
-        
-        // Update pun every 15% progress
-        const newProgress = prev + Math.random() * 12;
+        // Slower progress: smaller increment, longer interval
+        const newProgress = prev + Math.random() * 4; // was 12
         if (newProgress > (currentPunIndex + 1) * 12.5 && currentPunIndex < formulationPuns.length - 1) {
           currentPunIndex++;
           setLoadingStep(formulationPuns[currentPunIndex].step);
         }
-        
         return newProgress;
       });
-    }, 400);
+    }, 900); // was 400
 
     try {
       // Combine prompt and moreInfo

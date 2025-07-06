@@ -38,6 +38,10 @@ class ScientificReasoning(BaseModel):
     targetAudience: str
     indiaTrends: List[str]
     regulatoryStandards: List[str]
+    psychologicalDrivers: Optional[List[str]] = None
+    valueProposition: Optional[List[str]] = None
+    demographicBreakdown: Optional[Dict[str, str]] = None
+    psychographicProfile: Optional[Dict[str, List[str]]] = None
 
 class CalculationBreakdown(BaseModel):
     """Detailed calculation breakdown for market metrics"""

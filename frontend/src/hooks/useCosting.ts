@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import apiClient from '../services/apiClient'
 
-interface ManufacturingScenario {
-  customer_scale: string;
-  batch_size: number;
-  total_customers: number;
-  manufacturing_cost: number;
-  ingredient_cost: number;
-  packaging_cost: number;
-  overhead_cost: number;
+interface CostingBreakdown {
+  capex: number;
+  opex: number;
   total_cost: number;
   cost_per_unit: number;
   retail_price: number;
@@ -17,6 +12,17 @@ interface ManufacturingScenario {
   revenue_potential: number;
   break_even_customers: number;
   currency: string;
+}
+
+interface ManufacturingScenario {
+  customer_scale: string;
+  batch_size: number;
+  total_customers: number;
+  costing_breakdown: CostingBreakdown;
+  capex_details: Record<string, number>;
+  opex_details: Record<string, number>;
+  pricing_strategy: Record<string, string>;
+  margin_analysis: Record<string, number>;
 }
 
 interface ManufacturingInsights {
@@ -51,7 +57,10 @@ export const useCosting = () => {
     setError(null)
 
     try {
+      console.log('🔍 Sending costing request:', JSON.stringify(request, null, 2))
       const response = await apiClient.post<ManufacturingResponse>('/costing/estimate', request)
+      
+      console.log('📥 Received costing response:', response.data)
       
       if (response.data.success && response.data.manufacturing_insights) {
         const result = { manufacturing_insights: response.data.manufacturing_insights }
@@ -61,6 +70,7 @@ export const useCosting = () => {
         throw new Error(response.data.error || 'Failed to analyze manufacturing')
       }
     } catch (err: any) {
+      console.error('❌ Manufacturing analysis error details:', err.response?.data || err.message)
       const errorMessage = err.response?.data?.error || err.message || 'Failed to analyze manufacturing'
       setError(errorMessage)
       console.error('Manufacturing analysis error:', err)

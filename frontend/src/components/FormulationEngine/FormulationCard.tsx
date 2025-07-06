@@ -8,6 +8,7 @@ import ManufacturingSteps from "./ManufacturingSteps";
 import Branding from "../Branding";
 import { getCategoryColors } from "@/lib/colorUtils";
 import type { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
+import { useMarketSize } from '@/hooks/useMarketSize';
 
 // ─── Helper Section component ─────────────────────────────────
 interface SectionProps {
@@ -56,7 +57,8 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 }) => {
   // Add costing functionality
   const { loading, error, costEstimate, estimateCost, clearCostEstimate } = useCosting();
-  const { loading: brandingLoading, error: brandingError, brandingStrategy, analyzeBranding } = useBranding();
+  const { loading: brandingLoading, error: brandingError, brandingStrategy, analyzeBranding, reset: clearBrandingStrategy } = useBranding();
+  const { loading: marketSizeLoading, error: marketSizeError, marketSizeData, fetchCurrentMarketSize, clearMarketSizeData } = useMarketSize();
   const colors = getCategoryColors(selectedCategory || null);
 
   // Currency formatting function
@@ -110,6 +112,20 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
     };
     await analyzeBranding(request);
     setExpandedSections(prev => ({ ...prev, branding: true }));
+  };
+
+  // Handle market size analysis request
+  const handleMarketSizeRequest = async () => {
+    const request = {
+      product_name: data.product_name,
+      category: selectedCategory || "cosmetics",
+      ingredients: data.ingredients.map(ing => ({
+        name: ing.name,
+        percent: ing.percent
+      }))
+    };
+    await fetchCurrentMarketSize(request);
+    setExpandedSections(prev => ({ ...prev, market_research: true }));
   };
 
   // Validate core data
@@ -192,6 +208,8 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
             targetAudience={data.scientific_reasoning.targetAudience || ""}
             indiaTrends={data.scientific_reasoning.indiaTrends || []}
             regulatoryStandards={data.scientific_reasoning.regulatoryStandards || []}
+            demographicBreakdown={data.scientific_reasoning.demographicBreakdown}
+            psychographicProfile={data.scientific_reasoning.psychographicProfile}
             selectedCategory={selectedCategory}
           />
         </Section>
@@ -205,17 +223,44 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
           onToggle={() => toggleSection("market_research")}
           colors={colors}
         >
-          <MarketResearch
-            tam={data.market_research.tam.marketSize}
-            sam={data.market_research.sam.marketSize}
-            som={data.market_research.tm.marketSize}
-            marketSize={data.market_research.tam.marketSize}
-            growthRate={data.market_research.tam.cagr}
-            keyTrends={data.market_research.tam.insights}
-            competitiveLandscape={data.market_research.tam.competitors}
-            selectedCategory={selectedCategory}
-            marketResearchData={data.market_research}
-          />
+          <div className="mt-4">
+            {/* Market Size Analysis Button */}
+            {!marketSizeData && (
+              <div className="text-center mb-6">
+                <button
+                  onClick={handleMarketSizeRequest}
+                  disabled={marketSizeLoading}
+                  className={`bg-gradient-to-r ${colors.buttonGradient} hover:${colors.buttonHoverGradient} text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {marketSizeLoading ? 'Analyzing Market Size...' : 'Get Current Market Size Analysis'}
+                </button>
+              </div>
+            )}
+
+            {/* Market Research */}
+            <MarketResearch
+              tam={data.market_research.tam.marketSize}
+              sam={data.market_research.sam.marketSize}
+              som={data.market_research.tm.marketSize}
+              marketSize={data.market_research.tam.marketSize}
+              growthRate={data.market_research.tam.cagr}
+              keyTrends={data.market_research.tam.insights}
+              competitiveLandscape={data.market_research.tam.competitors}
+              selectedCategory={selectedCategory}
+              marketResearchData={data.market_research}
+              marketOpportunitySummary={data.scientific_reasoning?.marketOpportunitySummary}
+              currentMarketSizeData={marketSizeData || undefined}
+              productName={data.product_name}
+              ingredients={data.ingredients}
+            />
+
+            {/* Market Size Error */}
+            {marketSizeError && (
+              <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{marketSizeError}</p>
+              </div>
+            )}
+          </div>
         </Section>
       )}
 
@@ -325,7 +370,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
       {/* Manufacturing Insights Section */}
       <Section
-        title="Manufacturing Insights & Scaling Strategy"
+        title="Costing and Pricing Strategy"
         isOpen={expandedSections.costing}
         onToggle={() => toggleSection("costing")}
         colors={colors}
@@ -339,7 +384,7 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
                 disabled={loading}
                 className={`bg-gradient-to-r ${colors.buttonGradient} hover:${colors.buttonHoverGradient} text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {loading ? 'Analyzing...' : 'Get Manufacturing Analysis'}
+                {loading ? 'Analyzing...' : 'Generate Costing and Pricing'}
               </button>
             </div>
           )}

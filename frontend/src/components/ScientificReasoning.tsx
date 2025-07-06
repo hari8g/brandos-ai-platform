@@ -1,30 +1,258 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getCategoryColors } from '@/lib/colorUtils';
+import { useScientificReasoning } from '@/hooks/useScientificReasoning';
+import type { ScientificReasoningRequest } from '@/hooks/useScientificReasoning';
 
 interface ScientificReasoningProps {
-  keyComponents: { name: string; why: string }[];
-  impliedDesire: string;
-  psychologicalDrivers: string[];
-  valueProposition: string[];
-  targetAudience: string;
-  indiaTrends: string[];
-  regulatoryStandards: string[];
   selectedCategory?: string | null;
+  productDescription?: string;
+  targetConcerns?: string[];
+  // New props for passing data directly
+  keyComponents?: Array<{ name: string; why: string }>;
+  impliedDesire?: string;
+  psychologicalDrivers?: string[];
+  valueProposition?: string[];
+  targetAudience?: string;
+  indiaTrends?: string[];
+  regulatoryStandards?: string[];
+  demographicBreakdown?: {
+    age_range: string;
+    income_level: string;
+    lifestyle: string;
+    purchase_behavior: string;
+  };
+  psychographicProfile?: {
+    values: string[];
+    preferences: string[];
+    motivations: string[];
+  };
 }
 
 const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
-  keyComponents,
-  impliedDesire,
-  psychologicalDrivers,
-  valueProposition,
-  targetAudience,
-  indiaTrends,
-  regulatoryStandards,
   selectedCategory,
+  productDescription,
+  targetConcerns,
+  // Direct data props
+  keyComponents: propKeyComponents,
+  impliedDesire: propImpliedDesire,
+  psychologicalDrivers: propPsychologicalDrivers,
+  valueProposition: propValueProposition,
+  targetAudience: propTargetAudience,
+  indiaTrends: propIndiaTrends,
+  regulatoryStandards: propRegulatoryStandards,
+  demographicBreakdown: propDemographicBreakdown,
+  psychographicProfile: propPsychographicProfile,
 }) => {
   const colors = getCategoryColors(selectedCategory || null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['components']));
+  const [activeTab, setActiveTab] = useState('overview');
+  const [hoveredComponent, setHoveredComponent] = useState<number | null>(null);
+  const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
 
+  // Check if we have direct data props
+  const hasDirectData = propKeyComponents && propImpliedDesire;
 
+  // Only make API call if we don't have direct data
+  const request: ScientificReasoningRequest = {
+    category: selectedCategory || undefined,
+    product_description: productDescription,
+    target_concerns: targetConcerns,
+  };
+
+  // Use the scientific reasoning hook only if we don't have direct data
+  const { data: apiData, loading, error } = useScientificReasoning(hasDirectData ? null : request);
+
+  // Use direct props if available, otherwise use API data
+  const data = hasDirectData ? {
+    keyComponents: propKeyComponents,
+    impliedDesire: propImpliedDesire,
+    psychologicalDrivers: propPsychologicalDrivers || [],
+    valueProposition: propValueProposition || [],
+    targetAudience: propTargetAudience || '',
+    indiaTrends: propIndiaTrends || [],
+    regulatoryStandards: propRegulatoryStandards || [],
+    demographicBreakdown: propDemographicBreakdown,
+    psychographicProfile: propPsychographicProfile,
+  } : apiData;
+
+  useEffect(() => {
+    // Simulate analysis progress
+    const timer = setInterval(() => {
+      setAnalysisProgress(prev => {
+        if (prev >= 100) {
+          setIsAnalyzing(false);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Update analysis progress based on loading state or direct data availability
+  useEffect(() => {
+    if (hasDirectData || (!loading && data)) {
+      setIsAnalyzing(false);
+      setAnalysisProgress(100);
+    }
+  }, [loading, data, hasDirectData]);
+
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const toggleDetails = (id: string) => {
+    const newDetails = new Set(showDetails);
+    if (newDetails.has(id)) {
+      newDetails.delete(id);
+    } else {
+      newDetails.add(id);
+    }
+    setShowDetails(newDetails);
+  };
+
+  const getConfidenceScore = (component: { name: string; why: string }) => {
+    // Calculate confidence based on explanation length and keywords
+    const keywords = ['clinical', 'proven', 'effective', 'scientific', 'research', 'study'];
+    const keywordCount = keywords.filter(keyword => 
+      component.why.toLowerCase().includes(keyword)
+    ).length;
+    const lengthScore = Math.min(component.why.length / 100, 1);
+    return Math.min((keywordCount * 0.2 + lengthScore * 0.8) * 100, 100);
+  };
+
+  const getTrendImpact = (trend: string) => {
+    const impactKeywords = ['growing', 'increasing', 'rising', 'surge', 'boom'];
+    const hasImpact = impactKeywords.some(keyword => trend.toLowerCase().includes(keyword));
+    return hasImpact ? 'high' : 'medium';
+  };
+
+  const getComponentCategory = (component: { name: string; why: string }) => {
+    const categories = {
+      'Active': ['peptide', 'retinol', 'vitamin', 'acid'],
+      'Emollient': ['oil', 'butter', 'wax', 'fatty'],
+      'Preservative': ['preservative', 'antimicrobial', 'stabilizer'],
+      'Emulsifier': ['emulsifier', 'surfactant', 'thickener'],
+      'Fragrance': ['fragrance', 'essential', 'aroma']
+    };
+
+    for (const [category, keywords] of Object.entries(categories)) {
+      if (keywords.some(keyword => component.name.toLowerCase().includes(keyword))) {
+        return category;
+      }
+    }
+    return 'Other';
+  };
+
+  // Show loading state only if we're making an API call and don't have direct data
+  if (!hasDirectData && (loading || !data)) {
+    return (
+      <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-8 shadow-sm`}>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <span className="text-white text-lg font-semibold">🧪</span>
+                </div>
+                <div>
+                  <h2 className={`text-3xl font-bold ${colors.text} tracking-tight`}>
+                    Scientific Analysis
+                  </h2>
+                  <p className={`text-sm ${colors.text} opacity-60 mt-1`}>
+                    AI-powered formulation insights
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200">
+                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-blue-700">Analyzing</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className={`text-sm font-medium ${colors.text}`}>
+                Analysis Progress
+              </span>
+              <span className={`text-sm font-medium ${colors.text}`}>
+                {Math.round(analysisProgress)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2 rounded-full transition-all duration-1000 ease-out relative"
+                style={{ width: `${analysisProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
+              </div>
+            </div>
+            <p className={`text-sm ${colors.text} opacity-60`}>
+              <span>Processing scientific data<span className="loading-dots"></span></span>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state only if we're making an API call
+  if (!hasDirectData && error) {
+    return (
+      <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-8 shadow-sm`}>
+        <div className="text-center">
+          <h2 className={`text-2xl font-bold ${colors.text} mb-4`}>
+            Analysis Error
+          </h2>
+          <p className={`text-sm ${colors.text} opacity-60`}>
+            {error}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If we don't have any data, show a message
+  if (!data) {
+    return (
+      <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-8 shadow-sm`}>
+        <div className="text-center">
+          <h2 className={`text-2xl font-bold ${colors.text} mb-4`}>
+            No Scientific Data Available
+          </h2>
+          <p className={`text-sm ${colors.text} opacity-60`}>
+            Scientific reasoning data is not available for this formulation.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract data from the response
+  const {
+    keyComponents,
+    impliedDesire,
+    psychologicalDrivers,
+    valueProposition,
+    targetAudience,
+    indiaTrends,
+    regulatoryStandards,
+    demographicBreakdown,
+    psychographicProfile
+  } = data;
 
   return (
     <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
@@ -113,45 +341,43 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
                 <p className="mt-1 text-sm">{targetAudience}</p>
               </div>
               
-              <div className={`border-t ${colors.border} pt-3`}>
-                <strong className={`${colors.text} text-base`}>Demographic Breakdown:</strong>
-                <ul className="mt-1 space-y-1 text-sm">
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}><strong>Age Range:</strong> 25-45 years (primary), 18-55 years (secondary)</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}><strong>Income Level:</strong> Middle to upper-middle class</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}><strong>Lifestyle:</strong> Health-conscious, value-driven consumers</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}><strong>Purchase Behavior:</strong> Research-oriented, quality-focused</span>
-                  </li>
-                </ul>
-              </div>
+              {demographicBreakdown && (
+                <div className={`border-t ${colors.border} pt-3`}>
+                  <strong className={`${colors.text} text-base`}>Demographic Breakdown:</strong>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    <li className="flex items-start space-x-2">
+                      <span className={`${colors.icon} mt-1`}>•</span>
+                      <span className={`${colors.text}`}><strong>Age Range:</strong> {demographicBreakdown.age_range}</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className={`${colors.icon} mt-1`}>•</span>
+                      <span className={`${colors.text}`}><strong>Income Level:</strong> {demographicBreakdown.income_level}</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className={`${colors.icon} mt-1`}>•</span>
+                      <span className={`${colors.text}`}><strong>Lifestyle:</strong> {demographicBreakdown.lifestyle}</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className={`${colors.icon} mt-1`}>•</span>
+                      <span className={`${colors.text}`}><strong>Purchase Behavior:</strong> {demographicBreakdown.purchase_behavior}</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
               
-              <div className={`border-t ${colors.border} pt-3`}>
-                <strong className={`${colors.text} text-base`}>Psychographic Profile:</strong>
-                <ul className="mt-1 space-y-1 text-sm">
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Values scientific evidence and clinical backing</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Prefers clean, transparent ingredient lists</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <span className={`${colors.icon} mt-1`}>•</span>
-                    <span className={`${colors.text}`}>Willing to pay premium for proven efficacy</span>
-                  </li>
-                </ul>
-              </div>
+              {psychographicProfile && (
+                <div className={`border-t ${colors.border} pt-3`}>
+                  <strong className={`${colors.text} text-base`}>Psychographic Profile:</strong>
+                  <ul className="mt-1 space-y-1 text-sm">
+                    {psychographicProfile.values.map((value, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className={`${colors.icon} mt-1`}>•</span>
+                        <span className={`${colors.text}`}>{value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -206,4 +432,4 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
   );
 };
 
-export default ScientificReasoning; 
+export default ScientificReasoning;

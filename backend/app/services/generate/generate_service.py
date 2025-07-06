@@ -1,10 +1,11 @@
 import os
 import json
-from typing import List
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 from app.models.generate import GenerateRequest, GenerateResponse, IngredientDetail, SupplierInfo
-from typing import Optional
+from app.services.scientific_reasoning_service import ScientificReasoningService
+from app.models.scientific_reasoning import ScientificReasoningRequest
 
 # Load environment variables from the root .env file
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
@@ -134,6 +135,36 @@ def get_formulation_function_definitions():
                                 "regulatoryStandards": {
                                     "type": "array",
                                     "items": {"type": "string"}
+                                },
+                                "demographicBreakdown": {
+                                    "type": "object",
+                                    "properties": {
+                                        "age_range": {"type": "string"},
+                                        "income_level": {"type": "string"},
+                                        "lifestyle": {"type": "string"},
+                                        "purchase_behavior": {"type": "string"}
+                                    }
+                                },
+                                "psychographicProfile": {
+                                    "type": "object",
+                                    "properties": {
+                                        "values": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        },
+                                        "preferences": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        },
+                                        "motivations": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        }
+                                    }
+                                },
+                                "marketOpportunitySummary": {
+                                    "type": "string",
+                                    "description": "Comprehensive Market Opportunity Analysis for Premium Pet Food Formulation"
                                 }
                             }
                         },
@@ -1011,13 +1042,36 @@ Guidelines:
                     converted_steps.append(str(step))
             manufacturing_steps = converted_steps
         
-        # Get scientific reasoning from OpenAI response or use mock data
+        # Get scientific reasoning from OpenAI response or use scientific reasoning service
         scientific_reasoning = data.get('scientific_reasoning')
         
         # Check if the scientific reasoning is comprehensive (has our expected format)
         if not scientific_reasoning or not _is_comprehensive_scientific_reasoning(scientific_reasoning):
-            # Use enhanced mock scientific reasoning if OpenAI didn't provide comprehensive data
-            scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
+            # Use the scientific reasoning service to get real OpenAI data
+            try:
+                scientific_reasoning_service = ScientificReasoningService()
+                scientific_reasoning_request = ScientificReasoningRequest(
+                    category=req.category,
+                    product_description=req.prompt,
+                    target_concerns=None
+                )
+                scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
+                scientific_reasoning = {
+                    "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
+                    "impliedDesire": scientific_reasoning_response.impliedDesire,
+                    "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
+                    "valueProposition": scientific_reasoning_response.valueProposition,
+                    "targetAudience": scientific_reasoning_response.targetAudience,
+                    "indiaTrends": scientific_reasoning_response.indiaTrends,
+                    "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
+                    "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
+                    "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
+                    "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
+                }
+            except Exception as e:
+                print(f"❌ Scientific reasoning service error: {e}")
+                # Fallback to mock data if scientific reasoning service fails
+                scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
         
         # Get market research from OpenAI response or use mock data
         market_research = data.get('market_research')
@@ -1068,16 +1122,18 @@ def _is_comprehensive_scientific_reasoning(scientific_reasoning: dict) -> bool:
     if not all(field in scientific_reasoning for field in required_fields):
         return False
     
-    # Check if keyComponents has functional attributes (not ingredient names)
+    # Check if keyComponents has the expected structure with name and why fields
     key_components = scientific_reasoning.get('keyComponents', [])
     if not key_components:
         return False
     
-    # Check if the first component is a functional attribute (not ingredient-based)
-    first_component = key_components[0].get('name', '')
-    functional_indicators = ['Hydration', 'Brightening', 'Anti-Aging', 'Barrier', 'Nutrition', 'Digestive', 'Immune', 'Stress', 'Energy', 'Sleep']
+    # Check if each component has the required structure
+    for component in key_components:
+        if not isinstance(component, dict) or 'name' not in component or 'why' not in component:
+            return False
     
-    return any(indicator in first_component for indicator in functional_indicators)
+    # If we have all required fields and proper structure, consider it comprehensive
+    return True
 
 def _is_comprehensive_market_research(market_research: dict) -> bool:
     """
@@ -1147,7 +1203,101 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 "FSSAI compliance for pet food manufacturing and labeling requirements",
                 "BIS standards for pet food quality and safety parameters",
                 "Import regulations for pet food ingredients and finished products"
-            ]
+            ],
+            "demographicBreakdown": {
+                "age_range": "25-45 years (primary), 18-55 years (secondary)",
+                "income_level": "Middle to upper-middle class",
+                "lifestyle": "Urban pet parents with disposable income",
+                "purchase_behavior": "Research-oriented, quality-focused, willing to pay premium"
+            },
+            "psychographicProfile": {
+                "values": [
+                    "Pet wellness and health prioritization",
+                    "Scientific validation and clinical backing",
+                    "Transparency in ingredient sourcing"
+                ],
+                "preferences": [
+                    "Premium pet nutrition with proven efficacy",
+                    "Clear ingredient lists and nutritional information",
+                    "Veterinarian-recommended formulations"
+                ],
+                "motivations": [
+                    "Ensuring pet health and longevity",
+                    "Visible improvements in pet energy and condition",
+                    "Peace of mind through quality nutrition"
+                ]
+            },
+            "marketOpportunitySummary": """Comprehensive Market Opportunity Analysis for Premium Pet Food Formulation
+
+MARKET POTENTIAL ASSESSMENT:
+Based on TAM analysis of ₹15,000 Crore for the Indian pet food market, with premium pet food segment (SAM) valued at ₹3,500 Crore, this premium pet nutrition formulation targets a realistic SOM of ₹800 Crore. The market demonstrates strong growth potential with 12.5% CAGR, driven by increasing pet humanization and rising disposable income among urban pet parents.
+
+KEY MARKET OPPORTUNITIES & GROWTH DRIVERS:
+• Growing pet humanization trend with 65% of urban pet owners willing to pay premium for quality nutrition
+• Rising disposable income enabling premium pet food purchases, with 78% of pet parents researching ingredients
+• Increasing awareness of pet nutrition science and health benefits
+• E-commerce pet food sales growing at 45% annually, with premium segment leading growth
+
+COMPETITIVE LANDSCAPE ANALYSIS & DIFFERENTIATION OPPORTUNITIES:
+The premium pet food segment is dominated by international brands (Pedigree, Royal Canin) and established players (Himalaya Pet Food, Drools). Key differentiation opportunities include:
+• Scientific formulation with premium ingredients (Protein-Rich Meat Sources, Essential Fatty Acids, Vitamin & Mineral Complex)
+• Transparent ingredient sourcing and nutritional transparency
+• Health-focused formulations addressing specific pet concerns
+• Indian market-specific formulation considering local pet nutrition needs
+
+STRATEGIC RECOMMENDATIONS FOR MARKET ENTRY & POSITIONING:
+• Position as a premium, science-backed pet nutrition solution with clinical validation
+• Target health-conscious urban pet parents aged 25-45 with disposable income
+• Emphasize health benefits and transparent ingredient sourcing
+• Leverage veterinary partnerships and digital marketing for brand awareness
+
+TARGET SEGMENT ANALYSIS:
+Primary target: Urban pet parents aged 25-45 with middle to upper-middle class income levels. These consumers are health-conscious, research-driven, and willing to invest in premium pet nutrition. They value scientific efficacy, ingredient transparency, and visible health improvements in their pets.
+
+Demographic Profile:
+• Age Range: 25-45 years (primary), 18-55 years (secondary)
+• Income Level: Middle to upper-middle class
+• Lifestyle: Urban pet parents with disposable income
+• Purchase Behavior: Research-oriented, quality-focused, willing to pay premium
+
+Psychographic Profile:
+• Values: Pet wellness and health prioritization, scientific validation, transparency
+• Preferences: Premium pet nutrition with proven efficacy, clear ingredient lists
+• Motivations: Ensuring pet health and longevity, visible improvements in pet condition
+
+PRICING STRATEGY RECOMMENDATIONS:
+• Premium pricing range: ₹500-800 per kg
+• Justification: High-quality ingredients, scientific formulation, health benefits
+• Competitive positioning: Mid to high-end premium segment
+• Value proposition: Cost-effective compared to veterinary prescription diets
+
+DISTRIBUTION CHANNEL RECOMMENDATIONS:
+• Primary: E-commerce platforms (Amazon, Flipkart) capturing 40% of premium sales
+• Secondary: Specialty pet stores and veterinary clinics
+• Tertiary: Direct-to-consumer channels and pet care centers
+• Digital-first approach with omnichannel presence
+
+RISK FACTORS & MITIGATION STRATEGIES:
+• Market Risks: Intense competition from established brands
+  Mitigation: Focus on unique scientific formulation and transparent communication
+• Regulatory Risks: FSSAI compliance requirements
+  Mitigation: Ensure all ingredients meet regulatory standards and maintain proper documentation
+• Economic Risks: Economic downturn affecting premium segment
+  Mitigation: Offer value propositions and flexible pricing strategies
+
+GROWTH PROJECTIONS & SCALABILITY CONSIDERATIONS:
+• Year 1: ₹320 Crore revenue target with 5% market share
+• Year 3: ₹600 Crore revenue with 8% market share
+• Year 5: ₹1,000 Crore revenue with 12% market share
+• Scalability through expanded product portfolio and geographic expansion
+
+INNOVATION OPPORTUNITIES & FUTURE MARKET TRENDS:
+• Personalized pet nutrition based on breed, age, and health conditions
+• Sustainable and clean pet food formulations
+• Integration with veterinary technology and health monitoring
+• Expansion into related categories (treats, supplements, grooming products)
+
+This comprehensive analysis positions the premium pet food formulation for significant market success through strategic positioning, targeted marketing, and continuous innovation in the rapidly growing Indian pet care market."""
         }
     elif category == "wellness":
         return {
@@ -1183,7 +1333,101 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 "FSSAI nutraceutical regulations for supplement manufacturing and labeling",
                 "CDSCO guidelines for health supplement safety and efficacy requirements",
                 "BIS standards for supplement quality and testing protocols"
-            ]
+            ],
+            "demographicBreakdown": {
+                "age_range": "25-55 years (primary), 18-65 years (secondary)",
+                "income_level": "Middle to upper-middle class",
+                "lifestyle": "Health-conscious, wellness-focused consumers",
+                "purchase_behavior": "Research-oriented, quality-focused, preventive healthcare mindset"
+            },
+            "psychographicProfile": {
+                "values": [
+                    "Health consciousness and preventive care",
+                    "Scientific validation and clinical evidence",
+                    "Quality and safety in wellness products"
+                ],
+                "preferences": [
+                    "Clinically proven wellness supplements",
+                    "Transparent ingredient sourcing",
+                    "Pharmaceutical-grade quality standards"
+                ],
+                "motivations": [
+                    "Preventive healthcare and long-term wellness",
+                    "Visible health improvements and outcomes",
+                    "Peace of mind through quality assurance"
+                ]
+            },
+            "marketOpportunitySummary": """Comprehensive Market Opportunity Analysis for Premium Wellness Supplement Formulation
+
+MARKET POTENTIAL ASSESSMENT:
+Based on TAM analysis of ₹25,000 Crore for the Indian nutraceutical and wellness supplement market, with premium wellness segment (SAM) valued at ₹6,000 Crore, this premium wellness supplement formulation targets a realistic SOM of ₹1,200 Crore. The market demonstrates strong growth potential with 15.2% CAGR, driven by increasing health consciousness and rising disposable income among urban consumers.
+
+KEY MARKET OPPORTUNITIES & GROWTH DRIVERS:
+• Growing health consciousness with 72% of urban consumers investing in wellness supplements
+• Rising disposable income enabling premium wellness product purchases
+• Increasing awareness of preventive healthcare and wellness benefits
+• E-commerce wellness sales capturing 60% of market, with science-backed formulations preferred by 85% of consumers
+
+COMPETITIVE LANDSCAPE ANALYSIS & DIFFERENTIATION OPPORTUNITIES:
+The premium wellness supplement segment is dominated by established brands (Himalaya Wellness, Dabur, Patanjali) and international players. Key differentiation opportunities include:
+• Scientific formulation with clinically proven ingredients (Active Therapeutic Compounds, Bioavailability Enhancers, Synergistic Nutrient Complex)
+• Transparent ingredient sourcing and pharmaceutical-grade quality standards
+• Health-focused formulations addressing specific wellness concerns
+• Indian market-specific formulation considering local health needs and preferences
+
+STRATEGIC RECOMMENDATIONS FOR MARKET ENTRY & POSITIONING:
+• Position as a premium, science-backed wellness solution with clinical validation
+• Target health-conscious urban adults aged 25-55 with disposable income
+• Emphasize health benefits and transparent ingredient sourcing
+• Leverage healthcare partnerships and digital marketing for brand awareness
+
+TARGET SEGMENT ANALYSIS:
+Primary target: Health-conscious urban adults aged 25-55 with middle to upper-middle class income levels. These consumers are wellness-focused, research-driven, and willing to invest in premium health solutions. They value clinical evidence, ingredient transparency, and measurable health outcomes.
+
+Demographic Profile:
+• Age Range: 25-55 years (primary), 18-65 years (secondary)
+• Income Level: Middle to upper-middle class
+• Lifestyle: Health-conscious, wellness-focused consumers
+• Purchase Behavior: Research-oriented, quality-focused, preventive healthcare mindset
+
+Psychographic Profile:
+• Values: Health consciousness and preventive care, scientific validation, quality and safety
+• Preferences: Clinically proven wellness supplements, transparent ingredient sourcing
+• Motivations: Preventive healthcare and long-term wellness, visible health improvements
+
+PRICING STRATEGY RECOMMENDATIONS:
+• Premium pricing range: ₹1,000-2,000 per month
+• Justification: Clinically proven ingredients, health benefits, pharmaceutical-grade quality
+• Competitive positioning: Mid to high-end premium segment
+• Value proposition: Cost-effective compared to multiple single-function supplements
+
+DISTRIBUTION CHANNEL RECOMMENDATIONS:
+• Primary: E-commerce platforms capturing 60% of premium wellness sales
+• Secondary: Pharmacies and specialty health stores
+• Tertiary: Direct-to-consumer channels and healthcare centers
+• Digital-first approach with omnichannel presence
+
+RISK FACTORS & MITIGATION STRATEGIES:
+• Market Risks: Intense competition from established brands
+  Mitigation: Focus on unique scientific formulation and transparent communication
+• Regulatory Risks: FSSAI and CDSCO compliance requirements
+  Mitigation: Ensure all ingredients meet regulatory standards and maintain proper documentation
+• Economic Risks: Economic downturn affecting premium segment
+  Mitigation: Offer value propositions and flexible pricing strategies
+
+GROWTH PROJECTIONS & SCALABILITY CONSIDERATIONS:
+• Year 1: ₹480 Crore revenue target with 4% market share
+• Year 3: ₹900 Crore revenue with 6% market share
+• Year 5: ₹1,500 Crore revenue with 8% market share
+• Scalability through expanded product portfolio and geographic expansion
+
+INNOVATION OPPORTUNITIES & FUTURE MARKET TRENDS:
+• Personalized wellness based on individual health profiles and genetic factors
+• Sustainable and clean wellness formulations
+• Integration with healthcare technology and health monitoring
+• Expansion into related categories (functional foods, beauty supplements, sports nutrition)
+
+This comprehensive analysis positions the premium wellness supplement formulation for significant market success through strategic positioning, targeted marketing, and continuous innovation in the rapidly growing Indian wellness market."""
         }
     else:  # cosmetics/skincare
         return {
@@ -1219,7 +1463,30 @@ def _generate_scientific_reasoning(category: str, prompt: str) -> dict:
                 "CDSCO cosmetic regulations for safety and efficacy requirements",
                 "BIS standards for cosmetic quality and testing protocols",
                 "Import regulations for cosmetic ingredients and finished products"
-            ]
+            ],
+            "demographicBreakdown": {
+                "age_range": "18-45 years (primary), 25-55 years (secondary)",
+                "income_level": "Middle to upper-middle class",
+                "lifestyle": "Beauty-conscious, skincare-focused consumers",
+                "purchase_behavior": "Research-oriented, quality-focused, results-driven"
+            },
+            "psychographicProfile": {
+                "values": [
+                    "Beauty consciousness and skin health",
+                    "Scientific validation and clinical evidence",
+                    "Premium quality and ingredient transparency"
+                ],
+                "preferences": [
+                    "Clinically proven skincare formulations",
+                    "Transparent ingredient lists",
+                    "Results-driven beauty products"
+                ],
+                "motivations": [
+                    "Visible skin improvements and anti-aging",
+                    "Confidence through better skin appearance",
+                    "Long-term skin health and maintenance"
+                ]
+            }
         }
 
 def _generate_market_research(category: str, prompt: str) -> dict:
@@ -1711,378 +1978,32 @@ def _generate_market_research(category: str, prompt: str) -> dict:
         }
 
 def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
-    """
-    Fallback mock formulation generator with premium pricing.
-    """
-    category = (req.category or '').lower()
-    market_research = _generate_market_research(category, req.prompt)
-    if category == "pet food":
-        # Pet food mock formulation
-        return GenerateResponse(
-            product_name=f"Premium {category.title()} Formula",
-            reasoning=f"Formulation generated for {req.prompt}. This premium pet food combines high-quality proteins, grains, and supplements for optimal animal health.",
-            ingredients=[
-                IngredientDetail(
-                    name="Chicken Meal",
-                    percent=30.0,
-                    cost_per_100ml=20.0,
-                    why_chosen="High-protein, easily digestible, and palatable for most dogs.",
-                    suppliers=[
-                        SupplierInfo(name="PetPro Foods", contact="Phone: +91-12345-67890", location="Pune, Maharashtra", price_per_unit=180.0),
-                        SupplierInfo(name="Animal Nutrition Inc.", contact="Phone: +91-23456-78901", location="Hyderabad, Telangana", price_per_unit=200.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Brown Rice",
-                    percent=25.0,
-                    cost_per_100ml=10.0,
-                    why_chosen="Provides energy and is gentle on sensitive stomachs.",
-                    suppliers=[
-                        SupplierInfo(name="GrainMasters", contact="Phone: +91-34567-89012", location="Kolkata, West Bengal", price_per_unit=60.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Chicken Fat",
-                    percent=10.0,
-                    cost_per_100ml=30.0,
-                    why_chosen="Enhances flavor and provides essential fatty acids.",
-                    suppliers=[
-                        SupplierInfo(name="Pet Oils", contact="Phone: +91-45678-90123", location="Chennai, Tamil Nadu", price_per_unit=120.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Dried Beet Pulp",
-                    percent=5.0,
-                    cost_per_100ml=15.0,
-                    why_chosen="Source of fiber for digestive health.",
-                    suppliers=[
-                        SupplierInfo(name="FiberPlus", contact="Phone: +91-56789-01234", location="Delhi, NCR", price_per_unit=80.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Vitamin & Mineral Premix",
-                    percent=2.0,
-                    cost_per_100ml=50.0,
-                    why_chosen="Ensures complete and balanced nutrition.",
-                    suppliers=[
-                        SupplierInfo(name="NutriMix", contact="Phone: +91-67890-12345", location="Mumbai, Maharashtra", price_per_unit=300.0)
-                    ]
-                )
-            ],
-            manufacturing_steps=[
-                "Step 1: Mix dry ingredients thoroughly",
-                "Step 2: Add wet ingredients and blend",
-                "Step 3: Extrude or bake as required",
-                "Step 4: Cool and package in airtight bags"
-            ],
-            estimated_cost=600.0,
-            safety_notes=[
-                "Ensure all ingredients are fit for animal consumption.",
-                "Store in a cool, dry place."
-            ],
-            packaging_marketing_inspiration="Premium resealable bags with pet-friendly graphics. Highlight 'Complete & Balanced Nutrition'.",
-            market_trends=[
-                "Grain-free and hypoallergenic diets",
-                "Focus on natural ingredients and supplements"
-            ],
-            competitive_landscape={
-                "price_range": "₹200-800 per kg",
-                "target_demographics": "Dog owners, cat owners, etc.",
-                "distribution_channels": "Pet stores, online, veterinary clinics",
-                "key_competitors": "Brand X, Brand Y, Brand Z"
-            },
-            scientific_reasoning=_generate_scientific_reasoning(category, req.prompt),
-            market_research=market_research
+    """Generate a mock formulation when OpenAI is unavailable"""
+    
+    category = req.category or "cosmetics"
+    
+    # Use scientific reasoning service for real data
+    try:
+        scientific_reasoning_service = ScientificReasoningService()
+        scientific_reasoning_request = ScientificReasoningRequest(
+            category=req.category,
+            product_description=req.prompt,
+            target_concerns=None
         )
-    elif category == "wellness":
-        # Wellness supplement mock formulation
-        return GenerateResponse(
-            product_name=f"Premium {category.title()} Supplement",
-            reasoning=f"Formulation generated for {req.prompt}. This supplement blend combines adaptogens, vitamins, and minerals for daily wellness support.",
-            ingredients=[
-                IngredientDetail(
-                    name="Ashwagandha Extract",
-                    percent=20.0,
-                    cost_per_100ml=150.0,
-                    why_chosen="Adaptogen for stress resilience and energy.",
-                    suppliers=[
-                        SupplierInfo(name="Herbal Roots", contact="Phone: +91-78901-23456", location="Bangalore, Karnataka", price_per_unit=500.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Magnesium Citrate",
-                    percent=15.0,
-                    cost_per_100ml=80.0,
-                    why_chosen="Supports muscle and nerve function.",
-                    suppliers=[
-                        SupplierInfo(name="Mineral Life", contact="Phone: +91-89012-34567", location="Ahmedabad, Gujarat", price_per_unit=200.0)
-                    ]
-                ),
-                IngredientDetail(
-                    name="Vitamin B Complex",
-                    percent=5.0,
-                    cost_per_100ml=100.0,
-                    why_chosen="Supports energy metabolism and cognitive function.",
-                    suppliers=[
-                        SupplierInfo(name="VitaPlus", contact="Phone: +91-90123-45678", location="Pune, Maharashtra", price_per_unit=300.0)
-                    ]
-                )
-            ],
-            manufacturing_steps=[
-                "Step 1: Blend all active and excipient ingredients",
-                "Step 2: Encapsulate or fill into sachets",
-                "Step 3: Package in tamper-evident bottles"
-            ],
-            estimated_cost=400.0,
-            safety_notes=[
-                "Consult a healthcare professional before use.",
-                "Store in a cool, dry place."
-            ],
-            packaging_marketing_inspiration="Eco-friendly bottles with wellness branding. Highlight 'Clinically Studied Ingredients'.",
-            market_trends=[
-                "Adaptogen and herbal blends",
-                "Focus on stress, sleep, and immunity support"
-            ],
-            competitive_landscape={
-                "price_range": "₹300-1200 per bottle",
-                "target_demographics": "Adults, athletes, etc.",
-                "distribution_channels": "Pharmacies, online, wellness stores",
-                "key_competitors": "Brand A, Brand B, Brand C"
-            },
-            scientific_reasoning=_generate_scientific_reasoning(category, req.prompt),
-            market_research=market_research
-        )
-    else:
-        # Cosmetics/skincare mock formulation (original)
-        ingredients = [
-            IngredientDetail(
-                name="Purified Water",
-                percent=65.0,
-                cost_per_100ml=0.5,
-                why_chosen="Pharmaceutical-grade purified water serves as the primary solvent, ensuring the highest purity standards for premium formulations. It's essential for creating a stable, clean base that meets luxury skincare standards.",
-                suppliers=[
-                    SupplierInfo(
-                        name="AquaPure Solutions",
-                        contact="Phone: +91-98765-43210, Email: info@aquapure.com",
-                        location="Mumbai, Maharashtra",
-                        price_per_unit=0.25,
-                        price_per_100ml=0.33
-                    ),
-                    SupplierInfo(
-                        name="Clean Water Co.",
-                        contact="Phone: +91-87654-32109, Email: sales@cleanwater.co.in",
-                        location="Delhi, NCR",
-                        price_per_unit=0.35,
-                        price_per_100ml=0.46
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Hyaluronic Acid (1%)",
-                percent=2.0,
-                cost_per_100ml=45.0,
-                why_chosen="High-molecular-weight hyaluronic acid provides intense hydration and plumping effects. This premium-grade ingredient creates a smooth, dewy finish and helps reduce fine lines and wrinkles.",
-                suppliers=[
-                    SupplierInfo(
-                        name="ChemCorp India",
-                        contact="Phone: +91-76543-21098, Email: hyaluronic@chemcorp.in",
-                        location="Ahmedabad, Gujarat",
-                        price_per_unit=2200.0,
-                        price_per_100ml=0.90
-                    ),
-                    SupplierInfo(
-                        name="Natural Ingredients Ltd",
-                        contact="Phone: +91-65432-10987, Email: info@naturalingredients.com",
-                        location="Bangalore, Karnataka",
-                        price_per_unit=2800.0,
-                        price_per_100ml=1.14
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Niacinamide (5%)",
-                percent=5.0,
-                cost_per_100ml=35.0,
-                why_chosen="Pharmaceutical-grade niacinamide brightens skin tone, reduces hyperpigmentation, and strengthens the skin barrier. This concentration is optimal for visible results while maintaining skin tolerance.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Vitamins & More",
-                        contact="Phone: +91-54321-09876, Email: niacinamide@vitamins.co.in",
-                        location="Pune, Maharashtra",
-                        price_per_unit=1800.0,
-                        price_per_100ml=1.75
-                    ),
-                    SupplierInfo(
-                        name="Premium Actives",
-                        contact="Phone: +91-43210-98765, Email: sales@premiumactives.com",
-                        location="Chennai, Tamil Nadu",
-                        price_per_unit=2200.0,
-                        price_per_100ml=2.14
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Glycerin (Vegetable)",
-                percent=8.0,
-                cost_per_100ml=12.0,
-                why_chosen="Vegetable-derived glycerin is a superior humectant that attracts moisture from the environment. This premium grade ensures maximum hydration without stickiness, suitable for sensitive skin.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Organic Solutions",
-                        contact="Phone: +91-32109-87654, Email: glycerin@organic.in",
-                        location="Hyderabad, Telangana",
-                        price_per_unit=600.0,
-                        price_per_100ml=0.96
-                    ),
-                    SupplierInfo(
-                        name="Green Chemistry",
-                        contact="Phone: +91-21098-76543, Email: info@greenchemistry.com",
-                        location="Kolkata, West Bengal",
-                        price_per_unit=750.0,
-                        price_per_100ml=1.20
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Ceramide Complex",
-                percent=3.0,
-                cost_per_100ml=28.0,
-                why_chosen="A proprietary blend of ceramides that mimics the skin's natural lipid barrier. This premium complex strengthens skin resilience, reduces moisture loss, and provides long-lasting protection.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Lipid Sciences",
-                        contact="Phone: +91-10987-65432, Email: ceramides@lipidsciences.in",
-                        location="Mumbai, Maharashtra",
-                        price_per_unit=1400.0,
-                        price_per_100ml=0.84
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Vitamin E (Tocopherol)",
-                percent=1.0,
-                cost_per_100ml=18.0,
-                why_chosen="Natural vitamin E provides antioxidant protection against free radicals and environmental damage. This premium grade helps maintain skin elasticity and promotes healing.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Vitamin World",
-                        contact="Phone: +91-09876-54321, Email: vitamine@vitaminworld.co.in",
-                        location="Delhi, NCR",
-                        price_per_unit=900.0,
-                        price_per_100ml=0.18
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Preservative System",
-                percent=1.0,
-                cost_per_100ml=8.0,
-                why_chosen="A broad-spectrum preservative system that ensures product stability and safety throughout its shelf life. This premium blend is gentle on skin while providing maximum protection.",
-                suppliers=[
-                    SupplierInfo(
-                        name="PreserveTech Solutions",
-                        contact="Phone: +91-54321-09876, Email: sales@preservetech.in",
-                        location="Pune, Maharashtra",
-                        price_per_unit=400.0,
-                        price_per_100ml=0.08
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Fragrance (Natural)",
-                percent=0.5,
-                cost_per_100ml=15.0,
-                why_chosen="A carefully crafted natural fragrance blend that provides a luxurious sensory experience without irritating sensitive skin. This premium fragrance enhances the overall user experience.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Natural Scents",
-                        contact="Phone: +91-43210-98765, Email: info@naturalscents.in",
-                        location="Mysore, Karnataka",
-                        price_per_unit=750.0,
-                        price_per_100ml=0.08
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="Thickening Agent",
-                percent=2.5,
-                cost_per_100ml=6.0,
-                why_chosen="A premium natural thickening agent that creates the perfect texture - not too thick, not too runny. This ensures optimal application and absorption.",
-                suppliers=[
-                    SupplierInfo(
-                        name="Texture Solutions",
-                        contact="Phone: +91-32109-87654, Email: thickeners@texture.in",
-                        location="Ahmedabad, Gujarat",
-                        price_per_unit=300.0,
-                        price_per_100ml=0.15
-                    )
-                ]
-            ),
-            IngredientDetail(
-                name="pH Adjuster",
-                percent=0.5,
-                cost_per_100ml=4.0,
-                why_chosen="A gentle pH adjuster that maintains the optimal pH level (5.5-6.0) for skin health. This ensures maximum ingredient efficacy and skin compatibility.",
-                suppliers=[
-                    SupplierInfo(
-                        name="pH Solutions",
-                        contact="Phone: +91-21098-76543, Email: ph@phsolutions.in",
-                        location="Bangalore, Karnataka",
-                        price_per_unit=200.0,
-                        price_per_100ml=0.02
-                    )
-                ]
-            )
-        ]
-        
-        # Calculate total ingredient cost
-        total_ingredient_cost = sum(ing.cost_per_100ml * ing.percent / 100 for ing in ingredients)
-        
-        # Premium pricing structure
-        manufacturing_cost = total_ingredient_cost * 0.15  # 15% of ingredient cost
-        packaging_cost = total_ingredient_cost * 0.25      # 25% of ingredient cost
-        quality_control = total_ingredient_cost * 0.10     # 10% of ingredient cost
-        total_cost = total_ingredient_cost + manufacturing_cost + packaging_cost + quality_control
-        
-        return GenerateResponse(
-            product_name=f"Premium {req.category or 'Skincare'} Serum",
-            reasoning=f"Formulation generated based on request: {req.prompt}. This premium formulation combines cutting-edge active ingredients with pharmaceutical-grade excipients. Each ingredient was carefully selected for its proven efficacy and premium positioning. The formulation follows luxury skincare standards with optimal concentrations for visible results while maintaining skin safety and tolerance.",
-            ingredients=ingredients,
-            manufacturing_steps=[
-                "Step 1: Sanitize all equipment and work surfaces with 70% isopropyl alcohol in a clean room environment",
-                "Step 2: Heat purified water to 75°C in a stainless steel vessel with continuous monitoring",
-                "Step 3: Add glycerin and niacinamide to the water phase and stir until completely dissolved",
-                "Step 4: Cool the mixture to 45°C while maintaining gentle agitation under controlled conditions",
-                "Step 5: Add hyaluronic acid solution and stir for 10 minutes to ensure proper hydration",
-                "Step 6: Incorporate ceramide complex and vitamin E with gentle mixing to maintain stability",
-                "Step 7: Add preservative system and stir for 5 minutes to ensure uniform distribution",
-                "Step 8: Adjust pH to 5.8 ± 0.2 using gentle pH adjuster with continuous monitoring",
-                "Step 9: Add natural fragrance and thickening agent with final mixing for 3 minutes",
-                "Step 10: Perform quality control tests including pH, viscosity, and appearance",
-                "Step 11: Transfer to clean, sanitized premium packaging under controlled conditions",
-                "Step 12: Label with batch number and expiry date, store in temperature-controlled environment"
-            ],
-            estimated_cost=total_cost,
-            safety_notes=[
-                "Patch test before first use, especially for sensitive skin",
-                "Avoid contact with eyes and mucous membranes",
-                "Discontinue use if irritation occurs",
-                "Store in a cool, dry place away from direct sunlight",
-                "Keep out of reach of children"
-            ],
-            packaging_marketing_inspiration="Premium glass bottles with airless pump technology and minimalist luxury branding. Emphasize 'Clinically Proven Ingredients' and 'Dermatologist Tested' claims. Use sustainable packaging materials and include detailed ingredient transparency.",
-            market_trends=[
-                "Clean beauty movement gaining momentum",
-                "Science-backed formulations preferred",
-                "Multi-functional products in demand",
-                "Sustainable packaging requirements"
-            ],
-            competitive_landscape={
-                "price_range": "₹800-2500 per 30ml",
-                "target_demographics": "Women aged 25-45 with disposable income",
-                "distribution_channels": "Online, specialty stores, department stores",
-                "key_competitors": "L'Oreal, Estee Lauder, Clinique, The Ordinary"
-            },
-            scientific_reasoning=_generate_scientific_reasoning(category, req.prompt),
-            market_research=market_research
-        )
+        scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
+        scientific_reasoning = {
+            "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
+            "impliedDesire": scientific_reasoning_response.impliedDesire,
+            "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
+            "valueProposition": scientific_reasoning_response.valueProposition,
+            "targetAudience": scientific_reasoning_response.targetAudience,
+            "indiaTrends": scientific_reasoning_response.indiaTrends,
+            "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
+            "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
+            "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
+            "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
+        }
+    except Exception as e:
+        print(f"❌ Scientific reasoning service error in mock: {e}")
+        # Fallback to hardcoded data
+        scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)

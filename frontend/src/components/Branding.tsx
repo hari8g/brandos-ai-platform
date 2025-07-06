@@ -77,7 +77,6 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className={`w-3 h-3 rounded-full ${colors.icon} animate-pulse`}></div>
           <span className={`text-xs font-semibold ${colors.text} opacity-70 tracking-wide uppercase`}>
             Brand Development
           </span>
@@ -91,20 +90,21 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
           { key: 'social', label: 'Social Media', icon: '📱' },
           { key: 'strategy', label: 'Strategy', icon: '📋' }
         ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setSelectedTab(tab.key as 'names' | 'social' | 'strategy')}
-            className={`
-              flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300
-              ${selectedTab === tab.key 
-                ? `${colors.bg} text-white shadow-lg transform scale-105` 
-                : `${colors.text} hover:${colors.lightBg} hover:scale-102`
-              }
-            `}
-          >
-            <span className="text-lg">{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
+          <div key={tab.key} className="relative group flex-1">
+            <button
+              onClick={() => setSelectedTab(tab.key as 'names' | 'social' | 'strategy')}
+              className={`
+                relative flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300
+                ${selectedTab === tab.key 
+                  ? `${colors.bg} text-white shadow-lg transform scale-105` 
+                  : `${colors.text} hover:${colors.lightBg} hover:scale-102`
+                }
+              `}
+            >
+              <span className="text-lg">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          </div>
         ))}
       </div>
 
@@ -127,9 +127,10 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-6">
               {brandingStrategy.brand_name_suggestions.map((suggestion, index) => (
-                <div key={index} className={`bg-white/80 border ${colors.border} rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105`}>
+                <div key={index} className="relative group">
+                  <div className={`relative bg-white/80 border ${colors.border} rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105`}>
                   <div className="flex items-center justify-between mb-4">
                     <h5 className={`font-bold text-xl ${colors.text} tracking-tight`}>
                       {suggestion.name}
@@ -156,6 +157,7 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
                     </div>
                   </div>
                 </div>
+                </div>
               ))}
             </div>
           </div>
@@ -165,7 +167,7 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
       {selectedTab === 'social' && (
         <div className="space-y-8">
           {/* Social Media Channels */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-8">
             {brandingStrategy.social_media_channels.map((channel, index) => (
               <div key={index} className={`${colors.cardBg} border ${colors.border} rounded-2xl p-8 shadow-lg`}>
                 <div className="flex items-center space-x-4 mb-6">
@@ -285,13 +287,25 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
                 </p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {brandingStrategy.visual_identity_guidelines.map((guideline, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className={`w-2.5 h-2.5 rounded-full ${colors.icon} mt-2.5 flex-shrink-0`}></div>
-                  <span className={`text-base ${colors.text} leading-relaxed font-medium`}>
-                    {guideline}
-                  </span>
+                <div key={index} className="relative group">
+                  {/* Animated color blob on hover */}
+                  <div className={`
+                    absolute -inset-1 rounded-xl bg-gradient-to-r ${colors.gradient} opacity-60 blur-lg animate-glow z-0 
+                    group-hover:opacity-80 transition opacity-0 group-hover:opacity-60
+                  `}></div>
+                  
+                  <div className={`relative flex items-start space-x-4 p-4 rounded-xl border transition-all duration-300 hover:shadow-md ${colors.lightBg} ${colors.border} hover:scale-[1.02]`}>
+                  <div className={`w-6 h-6 rounded-full ${colors.bg} flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-base ${colors.text} leading-relaxed font-medium break-words`}>
+                      {guideline}
+                    </p>
+                  </div>
+                </div>
                 </div>
               ))}
             </div>
@@ -312,13 +326,25 @@ const Branding: React.FC<BrandingProps> = ({ brandingStrategy, selectedCategory 
                 </p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {brandingStrategy.marketing_messaging.map((message, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-400 mt-2.5 flex-shrink-0"></div>
-                  <span className={`text-base ${colors.text} leading-relaxed font-medium`}>
-                    {message}
-                  </span>
+                <div key={index} className="relative group">
+                  {/* Animated color blob on hover */}
+                  <div className={`
+                    absolute -inset-1 rounded-xl bg-gradient-to-r ${colors.gradient} opacity-60 blur-lg animate-glow z-0 
+                    group-hover:opacity-80 transition opacity-0 group-hover:opacity-60
+                  `}></div>
+                  
+                  <div className={`relative flex items-start space-x-4 p-4 rounded-xl border transition-all duration-300 hover:shadow-md bg-blue-50 border-blue-200 hover:scale-[1.02]`}>
+                  <div className={`w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-base ${colors.text} leading-relaxed font-medium break-words`}>
+                      {message}
+                    </p>
+                  </div>
+                </div>
                 </div>
               ))}
             </div>

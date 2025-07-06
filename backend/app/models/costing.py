@@ -2,14 +2,9 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 from .generate import GenerateResponse
 
-class ManufacturingScenario(BaseModel):
-    customer_scale: str  # "1000", "10k", "10k_plus"
-    batch_size: int
-    total_customers: int
-    manufacturing_cost: float
-    ingredient_cost: float
-    packaging_cost: float
-    overhead_cost: float
+class CostingBreakdown(BaseModel):
+    capex: float  # Capital expenditure
+    opex: float   # Operational expenditure
     total_cost: float
     cost_per_unit: float
     retail_price: float
@@ -18,6 +13,16 @@ class ManufacturingScenario(BaseModel):
     revenue_potential: float
     break_even_customers: int
     currency: str = "INR"
+
+class ManufacturingScenario(BaseModel):
+    customer_scale: str  # "1000", "10k", "10k_plus"
+    batch_size: int
+    total_customers: int
+    costing_breakdown: CostingBreakdown
+    capex_details: Dict[str, float]  # Detailed CAPEX breakdown
+    opex_details: Dict[str, float]   # Detailed OPEX breakdown
+    pricing_strategy: Dict[str, str]  # Pricing strategy details
+    margin_analysis: Dict[str, float] # Margin analysis details
 
 class ManufacturingInsights(BaseModel):
     small_scale: ManufacturingScenario

@@ -12,6 +12,27 @@ interface MarketResearchProps {
   competitiveLandscape: string[];
   selectedCategory?: string | null;
   marketResearchData?: MarketResearchData;
+  marketOpportunitySummary?: string;
+  currentMarketSizeData?: {
+    current_market_size?: string;
+    growth_rate?: string;
+    market_drivers?: string[];
+    competitive_landscape?: string[];
+    pricing_analysis?: {
+      average_price_range: string;
+      premium_segment_percentage: string;
+      price_drivers: string[];
+    };
+    distribution_channels?: string[];
+    methodology?: string;
+    data_sources?: string[];
+    confidence_level?: string;
+    product_segment?: string;
+    ingredient_premium_factor?: string;
+    unique_selling_points?: string[];
+  };
+  productName: string;
+  ingredients: Array<{ name: string; percent: number }>;
 }
 
 interface MetricInfo {
@@ -147,6 +168,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
   competitiveLandscape,
   selectedCategory,
   marketResearchData,
+  marketOpportunitySummary,
+  currentMarketSizeData,
+  productName,
+  ingredients,
 }) => {
   const colors = getCategoryColors(selectedCategory || null);
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null);
@@ -176,32 +201,32 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
           `}></div>
           
           {/* Content */}
-          <div className="relative p-4">
+          <div className="relative p-4 md:p-6">
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center space-x-3">
                 <div className={`
-                  w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                  w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-sm md:text-base
                   ${colors.lightBg} ${colors.border} border
                   group-hover:scale-110 transition-transform duration-200
                 `}>
                   {info.icon}
                 </div>
                 <div>
-                  <h4 className={`font-semibold ${colors.text} text-sm`}>{label}</h4>
+                  <h4 className={`font-semibold ${colors.text} text-sm md:text-base`}>{label}</h4>
                   <p className={`text-xs ${colors.text} opacity-70`}>Click to learn more</p>
                 </div>
               </div>
               
               {/* Expand/Collapse Icon */}
               <div className={`
-                w-6 h-6 rounded-full flex items-center justify-center
+                w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center
                 ${colors.lightBg} ${colors.border} border
                 transition-all duration-300 ease-out
                 ${isExpanded ? 'rotate-180 bg-blue-50 border-blue-200' : 'group-hover:bg-blue-50 group-hover:border-blue-200'}
               `}>
                 <svg 
-                  className={`w-3 h-3 ${colors.text} transition-transform duration-300`}
+                  className={`w-3 h-3 md:w-4 md:h-4 ${colors.text} transition-transform duration-300`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -212,10 +237,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             </div>
             
             {/* Value Display */}
-            <div className={`${colors.text} text-lg font-bold mb-2`}>{value}</div>
+            <div className={`${colors.text} text-lg md:text-xl font-bold mb-2 md:mb-3`}>{value}</div>
             
             {/* Quick Description */}
-            <p className={`${colors.text} text-xs opacity-80 leading-relaxed`}>
+            <p className={`${colors.text} text-xs md:text-sm opacity-80 leading-relaxed`}>
               {info.description}
             </p>
           </div>
@@ -224,52 +249,52 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
         {/* Expanded Content Panel */}
         {isExpanded && (
           <div className={`
-            mt-3 rounded-xl border overflow-hidden
+            mt-3 md:mt-4 rounded-xl border overflow-hidden
             ${colors.border} ${colors.lightBg}
             animate-in slide-in-from-top-3 duration-300 ease-out
             shadow-xl shadow-blue-500/10
           `}>
-            <div className="p-4 space-y-4">
+            <div className="p-4 md:p-6 space-y-4 md:space-y-6">
               {/* Section Header */}
               <div className="flex items-center space-x-2 mb-4">
                 <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
                   {info.icon}
                 </div>
-                <h5 className={`font-semibold ${colors.text} text-sm`}>{info.title}</h5>
+                <h5 className={`font-semibold ${colors.text} text-sm md:text-base`}>{info.title}</h5>
               </div>
               
               {/* Information Sections */}
-              <div className="space-y-4">
+              <div className="space-y-4 md:space-y-6">
                 {/* Description */}
-                <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                  <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                  <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                     <span className="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>
                     Overview
                   </h6>
-                  <p className={`${colors.text} text-xs leading-relaxed`}>{info.description}</p>
+                  <p className={`${colors.text} text-xs md:text-sm leading-relaxed`}>{info.description}</p>
                 </div>
 
                 {/* Detailed Calculation (if available) */}
                 {info.detailedCalculation && (
-                  <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                    <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                  <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                    <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                       <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
                       Detailed Calculation
                     </h6>
                     
                     {/* Formula */}
                     <div className="mb-3">
-                      <p className={`${colors.text} text-xs font-mono bg-gray-50 p-2 rounded border`}>
+                      <p className={`${colors.text} text-xs md:text-sm font-mono bg-gray-50 p-2 md:p-3 rounded border`}>
                         {info.detailedCalculation.formula}
                       </p>
                     </div>
 
                     {/* Variables */}
                     <div className="mb-3">
-                      <h6 className={`font-medium ${colors.text} text-xs mb-1 block`}>Variables:</h6>
-                      <div className="grid grid-cols-2 gap-2">
+                      <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-1 block`}>Variables:</h6>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {Object.entries(info.detailedCalculation.variables).map(([key, value]: [string, any]) => (
-                          <div key={key} className="flex justify-between text-xs">
+                          <div key={key} className="flex justify-between text-xs md:text-sm">
                             <span className={`${colors.text} opacity-70`}>{key.replace(/_/g, ' ')}:</span>
                             <span className={`${colors.text} font-mono`}>{value}</span>
                           </div>
@@ -279,10 +304,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
                     {/* Calculation Steps */}
                     <div className="mb-3">
-                      <h6 className={`font-medium ${colors.text} text-xs mb-1 block`}>Calculation Steps:</h6>
+                      <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-1 block`}>Calculation Steps:</h6>
                       <div className="space-y-1">
                         {info.detailedCalculation.calculation_steps.map((step: string, index: number) => (
-                          <div key={index} className={`${colors.text} text-xs leading-relaxed`}>
+                          <div key={index} className={`${colors.text} text-xs md:text-sm leading-relaxed`}>
                             {step}
                           </div>
                         ))}
@@ -291,10 +316,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
                     {/* Assumptions */}
                     <div className="mb-3">
-                      <h6 className={`font-medium ${colors.text} text-xs mb-1 block`}>Key Assumptions:</h6>
+                      <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-1 block`}>Key Assumptions:</h6>
                       <ul className="space-y-1">
                         {info.detailedCalculation.assumptions.map((assumption: string, index: number) => (
-                          <li key={index} className={`${colors.text} text-xs leading-relaxed flex items-start`}>
+                          <li key={index} className={`${colors.text} text-xs md:text-sm leading-relaxed flex items-start`}>
                             <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 mr-2 flex-shrink-0"></span>
                             {assumption}
                           </li>
@@ -304,10 +329,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
                     {/* Data Sources */}
                     <div className="mb-3">
-                      <h6 className={`font-medium ${colors.text} text-xs mb-1 block`}>Data Sources:</h6>
+                      <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-1 block`}>Data Sources:</h6>
                       <ul className="space-y-1">
                         {info.detailedCalculation.data_sources.map((source: string, index: number) => (
-                          <li key={index} className={`${colors.text} text-xs leading-relaxed flex items-start`}>
+                          <li key={index} className={`${colors.text} text-xs md:text-sm leading-relaxed flex items-start`}>
                             <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
                             {source}
                           </li>
@@ -317,8 +342,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
                     {/* Confidence Level */}
                     <div>
-                      <h6 className={`font-medium ${colors.text} text-xs mb-1 block`}>Confidence Level:</h6>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
+                      <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-1 block`}>Confidence Level:</h6>
+                      <span className={`text-xs md:text-sm px-2 py-1 rounded-full ${
                         info.detailedCalculation.confidence_level.includes('High') 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-yellow-100 text-yellow-800'
@@ -331,46 +356,113 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                 
                 {/* Basic Calculation (fallback) */}
                 {!info.detailedCalculation && (
-                  <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                    <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                  <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                    <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                       <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
                       How it's calculated
                     </h6>
-                    <p className={`${colors.text} text-xs leading-relaxed mb-2`}>{info.explanation}</p>
-                    <div className={`p-2 bg-gray-50 rounded text-xs font-mono ${colors.text} border border-gray-200`}>
+                    <p className={`${colors.text} text-xs md:text-sm leading-relaxed mb-2`}>{info.explanation}</p>
+                    <div className={`p-2 md:p-3 bg-gray-50 rounded text-xs md:text-sm font-mono ${colors.text} border border-gray-200`}>
                       {info.calculation}
+                    </div>
+                  </div>
+                )}
+
+                {/* Calculation Inputs & Rationale for Market Size */}
+                {metric === "Market Size" && currentMarketSizeData && (
+                  <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                    <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
+                      <span className="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>
+                      Calculation Inputs & Rationale
+                    </h6>
+                    <div className="space-y-3">
+                      {/* Product Name & Category */}
+                      {productName && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Product Name:</span>
+                          <span className={`${colors.text} ml-2`}>{productName}</span>
+                        </div>
+                      )}
+                      {selectedCategory && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Product Category:</span>
+                          <span className={`${colors.text} ml-2`}>{selectedCategory}</span>
+                        </div>
+                      )}
+                      {/* Ingredient List */}
+                      {ingredients && Array.isArray(ingredients) && ingredients.length > 0 && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Ingredients:</span>
+                          <ul className="ml-4 mt-1 space-y-1">
+                            {ingredients.map((ing, idx) => (
+                              <li key={idx} className={`${colors.text} flex items-start`}>
+                                <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                                <span>{ing.name} ({ing.percent}%)</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {/* Market Segment */}
+                      {currentMarketSizeData.product_segment && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Market Segment:</span>
+                          <span className={`${colors.text} ml-2`}>{currentMarketSizeData.product_segment}</span>
+                        </div>
+                      )}
+                      {/* Methodology */}
+                      {currentMarketSizeData.methodology && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Methodology:</span>
+                          <p className={`${colors.text} mt-1 leading-relaxed`}>{currentMarketSizeData.methodology}</p>
+                        </div>
+                      )}
+                      {/* Unique Selling Points */}
+                      {currentMarketSizeData.unique_selling_points && currentMarketSizeData.unique_selling_points.length > 0 && (
+                        <div className="text-xs md:text-sm">
+                          <span className={`font-medium ${colors.text}`}>Unique Selling Points:</span>
+                          <ul className="ml-4 mt-1 space-y-1">
+                            {currentMarketSizeData.unique_selling_points.map((usp, idx) => (
+                              <li key={idx} className={`${colors.text} flex items-start`}>
+                                <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                                <span>{usp}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
                 
                 {/* Example */}
-                <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                  <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                  <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                     <span className="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
                     Example
                   </h6>
-                  <p className={`${colors.text} text-xs leading-relaxed italic`}>{info.example}</p>
+                  <p className={`${colors.text} text-xs md:text-sm leading-relaxed italic`}>{info.example}</p>
                 </div>
                 
                 {/* Significance */}
-                <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                  <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                  <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                     <span className="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>
                     Why it matters
                   </h6>
-                  <p className={`${colors.text} text-xs leading-relaxed`}>{info.significance}</p>
+                  <p className={`${colors.text} text-xs md:text-sm leading-relaxed`}>{info.significance}</p>
                 </div>
 
                 {/* Insights (if available) */}
                 {info.insights && info.insights.length > 0 && (
-                  <div className="bg-white/50 rounded-lg p-3 border border-gray-100">
-                    <h6 className={`font-medium ${colors.text} text-xs mb-2 flex items-center`}>
+                  <div className="bg-white/50 rounded-lg p-3 md:p-4 border border-gray-100">
+                    <h6 className={`font-medium ${colors.text} text-xs md:text-sm mb-2 flex items-center`}>
                       <span className="w-2 h-2 rounded-full bg-indigo-400 mr-2"></span>
                       Key Insights
                     </h6>
                     <ul className="space-y-1">
                       {info.insights.map((insight, index) => (
-                        <li key={index} className={`${colors.text} text-xs leading-relaxed flex items-start`}>
+                        <li key={index} className={`${colors.text} text-xs md:text-sm leading-relaxed flex items-start`}>
                           <span className="w-1 h-1 rounded-full bg-indigo-400 mt-1.5 mr-2 flex-shrink-0"></span>
                           {insight}
                         </li>
@@ -387,30 +479,30 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
   };
 
   return (
-    <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-6`}>
+    <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-4 md:p-6 lg:p-8`}>
       {/* Header with Instructions */}
-      <div className={`mb-6 p-4 ${colors.lightBg} rounded-xl border ${colors.border} border-dashed`}>
+      <div className={`mb-6 p-4 md:p-6 ${colors.lightBg} rounded-xl border ${colors.border} border-dashed`}>
         <div className="flex items-start space-x-3">
           <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center text-sm`}>
             💡
           </div>
           <div className="flex-1">
-            <h3 className={`font-semibold ${colors.text} text-sm mb-1`}>Interactive Market Metrics</h3>
-            <p className={`${colors.text} text-xs leading-relaxed`}>
+            <h3 className={`font-semibold ${colors.text} text-sm md:text-base mb-1`}>Interactive Market Metrics</h3>
+            <p className={`${colors.text} text-xs md:text-sm leading-relaxed`}>
               Click on any metric card below to see detailed explanations of how these market measurements are calculated and their strategic importance for your business planning.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {/* Market Size Analysis */}
         <div>
           <div className="flex items-center space-x-3 mb-4">
             <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
               📊
             </div>
-            <h4 className={`text-lg font-semibold ${colors.text}`}>Market Size Analysis</h4>
+            <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Size Analysis</h4>
           </div>
           <div className="space-y-4">
             <MetricCard metric="TAM" value={tam} label="TAM (Total Addressable Market)" />
@@ -425,11 +517,19 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
               📈
             </div>
-            <h4 className={`text-lg font-semibold ${colors.text}`}>Market Metrics & Growth</h4>
+            <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Metrics & Growth</h4>
           </div>
           <div className="space-y-4">
-            <MetricCard metric="Market Size" value={marketSize} label="Current Market Size" />
-            <MetricCard metric="Growth Rate" value={growthRate} label="Growth Rate (CAGR)" />
+            <MetricCard 
+              metric="Market Size" 
+              value={currentMarketSizeData?.current_market_size || marketSize} 
+              label="Current Market Size" 
+            />
+            <MetricCard 
+              metric="Growth Rate" 
+              value={currentMarketSizeData?.growth_rate || growthRate} 
+              label="Growth Rate (CAGR)" 
+            />
           </div>
         </div>
 
@@ -442,16 +542,54 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
               </div>
               <h4 className={`text-lg font-semibold ${colors.text}`}>Key Market Trends</h4>
             </div>
-            <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4`}>
-              <div className="space-y-3">
+            <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4 md:p-6`}>
+              <div className="space-y-4">
                 {keyTrends.map((trend, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <div className="flex-1">
-                      <div className={`${colors.text} text-sm leading-relaxed`}>{trend}</div>
+                  <div 
+                    key={index} 
+                    className={`
+                      relative group p-4 rounded-lg border transition-all duration-300 ease-out
+                      ${colors.cardBg} ${colors.border}
+                      hover:shadow-lg hover:shadow-blue-500/10 hover:scale-[1.02]
+                      hover:border-blue-200
+                    `}
+                  >
+                    {/* Trend Number Badge */}
+                    <div className={`
+                      absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                      ${colors.bg} ${colors.text} border-2 border-white shadow-sm
+                    `}>
+                      {index + 1}
                     </div>
+                    
+                    {/* Trend Content */}
+                    <div className="pt-2">
+                      <div className={`${colors.text} text-sm leading-relaxed`}>
+                        {trend}
+                      </div>
+                    </div>
+                    
+                    {/* Hover Effect Overlay */}
+                    <div className={`
+                      absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/20 
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg
+                    `}></div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Trends Summary */}
+              <div className={`mt-6 p-4 rounded-lg ${colors.cardBg} border ${colors.border}`}>
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
+                    📊
+                  </div>
+                  <h5 className={`font-semibold ${colors.text} text-sm`}>Trends Summary</h5>
+                </div>
+                <p className={`${colors.text} text-xs leading-relaxed opacity-80`}>
+                  These {keyTrends.length} key trends represent the most significant market drivers and opportunities 
+                  for the {selectedCategory?.toLowerCase() || 'product'} category in the Indian market.
+                </p>
               </div>
             </div>
           </div>
@@ -466,16 +604,78 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
               </div>
               <h4 className={`text-lg font-semibold ${colors.text}`}>Competitive Landscape</h4>
             </div>
-            <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4`}>
-              <div className="space-y-3">
+            <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4 md:p-6`}>
+              {/* Competitors Grid */}
+              <div className="space-y-4 mb-6">
                 {competitiveLandscape.map((competitor, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <div className="flex-1">
-                      <div className={`${colors.text} text-sm leading-relaxed`}>{competitor}</div>
+                  <div 
+                    key={index} 
+                    className={`
+                      relative group p-4 rounded-lg border transition-all duration-300 ease-out
+                      ${colors.cardBg} ${colors.border}
+                      hover:shadow-lg hover:shadow-blue-500/10 hover:scale-[1.02]
+                      hover:border-blue-200 cursor-pointer
+                    `}
+                  >
+                    {/* Competitor Icon */}
+                    <div className={`
+                      w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-3
+                      ${colors.lightBg} ${colors.border} border
+                      group-hover:scale-110 transition-transform duration-200
+                    `}>
+                      🏢
                     </div>
+                    
+                    {/* Competitor Name */}
+                    <div className={`font-medium ${colors.text} text-sm leading-tight`}>
+                      {competitor}
+                    </div>
+                    
+                    {/* Hover Effect Overlay */}
+                    <div className={`
+                      absolute inset-0 bg-gradient-to-br from-blue-50/0 to-blue-50/20 
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg
+                    `}></div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Competitive Analysis Summary */}
+              <div className={`p-4 rounded-lg ${colors.cardBg} border ${colors.border}`}>
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
+                    📈
+                  </div>
+                  <h5 className={`font-semibold ${colors.text} text-sm`}>Competitive Analysis</h5>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Market Position */}
+                  <div className="space-y-2">
+                    <h6 className={`font-medium ${colors.text} text-xs`}>Market Position</h6>
+                    <p className={`${colors.text} text-xs leading-relaxed opacity-80`}>
+                      {selectedCategory?.toLowerCase() === 'pet food' 
+                        ? 'Established players dominate with premium positioning opportunities'
+                        : selectedCategory?.toLowerCase() === 'wellness'
+                        ? 'Growing market with room for innovative formulations'
+                        : 'Competitive landscape with strong brand loyalty factors'
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* Differentiation Opportunities */}
+                  <div className="space-y-2">
+                    <h6 className={`font-medium ${colors.text} text-xs`}>Differentiation Opportunities</h6>
+                    <p className={`${colors.text} text-xs leading-relaxed opacity-80`}>
+                      {selectedCategory?.toLowerCase() === 'pet food'
+                        ? 'Focus on scientific formulation and transparent ingredient sourcing'
+                        : selectedCategory?.toLowerCase() === 'wellness'
+                        ? 'Emphasize clinical validation and health benefits'
+                        : 'Highlight premium ingredients and proven results'
+                      }
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -490,167 +690,175 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             <h4 className={`text-lg font-semibold ${colors.text}`}>Market Opportunity Summary</h4>
           </div>
           <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4`}>
-            <div className="space-y-4">
-              <div className={`${colors.text} text-sm leading-relaxed`}>
-                <strong className={`${colors.text}`}>Market Potential:</strong>
-                <p className="mt-2">
-                  Based on the TAM of {tam}, SAM of {sam}, and SOM of {som}, this {selectedCategory?.toLowerCase() || 'product'} market presents significant opportunities for growth and market penetration.
-                </p>
+            {marketOpportunitySummary ? (
+              <div className="space-y-4">
+                <div className={`${colors.text} text-sm leading-relaxed whitespace-pre-line`}>
+                  {marketOpportunitySummary}
+                </div>
               </div>
-              
+            ) : (
+              <div className="space-y-4">
+                <div className={`${colors.text} text-sm leading-relaxed`}>
+                  <strong className={`${colors.text}`}>Market Potential:</strong>
+                  <p className="mt-2">
+                    Based on the TAM of {tam}, SAM of {sam}, and SOM of {som}, this {selectedCategory?.toLowerCase() || 'product'} market presents significant opportunities for growth and market penetration.
+                  </p>
+                </div>
+                
+                <div className={`border-t ${colors.border} pt-4`}>
+                  <strong className={`${colors.text}`}>Key Opportunities:</strong>
+                  <ul className="mt-2 space-y-2 text-sm">
+                    <li className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                      <span className={`${colors.text}`}>
+                        {selectedCategory?.toLowerCase() === 'pet food' 
+                          ? 'Growing pet humanization trend with premium pet food demand increasing'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Rising health consciousness driving premium wellness supplement demand'
+                          : 'Growing beauty consciousness driving premium cosmetic product demand'
+                        }
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                      <span className={`${colors.text}`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Opportunity to capture market share through premium pet nutrition innovation'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Opportunity to capture market share through clinically proven supplement formulations'
+                          : 'Opportunity to capture market share through innovative beauty formulations'
+                        }
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                      <span className={`${colors.text}`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Potential for premium positioning with high-quality pet food ingredients'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Potential for premium positioning with science-backed wellness ingredients'
+                          : 'Potential for premium positioning with high-quality beauty ingredients'
+                        }
+                      </span>
+                    </li>
+                    <li className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                      <span className={`${colors.text}`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Room for differentiation in competitive pet food landscape'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Room for differentiation in competitive wellness supplement landscape'
+                          : 'Room for differentiation in competitive beauty product landscape'
+                        }
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Strategic Advice Section */}
+                <div className={`border-t ${colors.border} pt-4`}>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
+                      💡
+                    </div>
+                    <strong className={`${colors.text} text-base`}>Strategic Advice for {selectedCategory?.toLowerCase() || 'Product'} Market:</strong>
+                  </div>
+                  <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-3`}>
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                        <span className={`${colors.text}`}>
+                          <strong>Target Segment:</strong> {' '}
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Focus on health-conscious pet owners in urban areas who prioritize premium nutrition for their pets'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Focus on health-conscious adults aged 25-55 who prioritize preventive healthcare and wellness'
+                            : 'Focus on beauty-conscious women aged 18-45 who prioritize premium skincare and beauty products'
+                          }
+                        </span>
+                      </li>
+                      <li className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                        <span className={`${colors.text}`}>
+                          <strong>Competitive Strategy:</strong> {' '}
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Differentiate through premium ingredients, scientific formulations, and transparent pet nutrition education'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Differentiate through clinically proven ingredients, transparent labeling, and health education content'
+                            : 'Differentiate through premium ingredients, scientific formulations, and beauty education content'
+                          }
+                        </span>
+                      </li>
+                      <li className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                        <span className={`${colors.text}`}>
+                          <strong>Market Entry:</strong> {' '}
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Start with premium pet food targeting specific health concerns, then expand to broader pet nutrition'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Start with targeted wellness supplements for specific health goals, then expand to broader wellness'
+                            : 'Start with targeted beauty products for specific skin concerns, then expand to broader beauty'
+                          }
+                        </span>
+                      </li>
+                      <li className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                        <span className={`${colors.text}`}>
+                          <strong>Pricing Strategy:</strong> {' '}
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Premium pricing (₹500-800/kg) justified by high-quality ingredients and scientific formulation'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Premium pricing (₹1000-2000/month) justified by clinically proven ingredients and health benefits'
+                            : 'Premium pricing (₹1000-3000/unit) justified by high-quality ingredients and proven results'
+                          }
+                        </span>
+                      </li>
+                      <li className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                        <span className={`${colors.text}`}>
+                          <strong>Distribution:</strong> {' '}
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'E-commerce platforms, specialty pet stores, veterinary clinics, and direct-to-consumer channels'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'E-commerce platforms, pharmacies, specialty health stores, and direct-to-consumer channels'
+                            : 'E-commerce platforms, specialty beauty stores, department stores, and direct-to-consumer channels'
+                          }
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Market Research Insights */}
+            {marketResearchData?.tam?.insights && marketResearchData.tam.insights.length > 0 && (
               <div className={`border-t ${colors.border} pt-4`}>
-                <strong className={`${colors.text}`}>Key Opportunities:</strong>
+                <strong className={`${colors.text}`}>Market Insights:</strong>
                 <ul className="mt-2 space-y-2 text-sm">
-                  <li className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <span className={`${colors.text}`}>
-                      {selectedCategory?.toLowerCase() === 'pet food' 
-                        ? 'Growing pet humanization trend with premium pet food demand increasing'
-                        : selectedCategory?.toLowerCase() === 'wellness'
-                        ? 'Rising health consciousness driving premium wellness supplement demand'
-                        : 'Growing beauty consciousness driving premium cosmetic product demand'
-                      }
-                    </span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <span className={`${colors.text}`}>
-                      {selectedCategory?.toLowerCase() === 'pet food'
-                        ? 'Opportunity to capture market share through premium pet nutrition innovation'
-                        : selectedCategory?.toLowerCase() === 'wellness'
-                        ? 'Opportunity to capture market share through clinically proven supplement formulations'
-                        : 'Opportunity to capture market share through innovative beauty formulations'
-                      }
-                    </span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <span className={`${colors.text}`}>
-                      {selectedCategory?.toLowerCase() === 'pet food'
-                        ? 'Potential for premium positioning with high-quality pet food ingredients'
-                        : selectedCategory?.toLowerCase() === 'wellness'
-                        ? 'Potential for premium positioning with science-backed wellness ingredients'
-                        : 'Potential for premium positioning with high-quality beauty ingredients'
-                      }
-                    </span>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                    <span className={`${colors.text}`}>
-                      {selectedCategory?.toLowerCase() === 'pet food'
-                        ? 'Room for differentiation in competitive pet food landscape'
-                        : selectedCategory?.toLowerCase() === 'wellness'
-                        ? 'Room for differentiation in competitive wellness supplement landscape'
-                        : 'Room for differentiation in competitive beauty product landscape'
-                      }
-                    </span>
-                  </li>
+                  {marketResearchData.tam.insights.slice(0, 3).map((insight, index) => (
+                    <li key={index} className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
+                      <span className={`${colors.text}`}>{insight}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
+            )}
 
-              {/* Strategic Advice Section */}
+            {/* Competitive Landscape */}
+            {marketResearchData?.tam?.competitors && marketResearchData.tam.competitors.length > 0 && (
               <div className={`border-t ${colors.border} pt-4`}>
-                <div className="flex items-center space-x-2 mb-3">
-                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                    💡
-                  </div>
-                  <strong className={`${colors.text} text-base`}>Strategic Advice for {selectedCategory?.toLowerCase() || 'Product'} Market:</strong>
-                </div>
-                <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-3`}>
-                  <ul className="space-y-3 text-sm">
-                    <li className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                      <span className={`${colors.text}`}>
-                        <strong>Target Segment:</strong> {' '}
-                        {selectedCategory?.toLowerCase() === 'pet food'
-                          ? 'Focus on health-conscious pet owners in urban areas who prioritize premium nutrition for their pets'
-                          : selectedCategory?.toLowerCase() === 'wellness'
-                          ? 'Focus on health-conscious adults aged 25-55 who prioritize preventive healthcare and wellness'
-                          : 'Focus on beauty-conscious women aged 18-45 who prioritize premium skincare and beauty products'
-                        }
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                      <span className={`${colors.text}`}>
-                        <strong>Competitive Strategy:</strong> {' '}
-                        {selectedCategory?.toLowerCase() === 'pet food'
-                          ? 'Differentiate through premium ingredients, scientific formulations, and transparent pet nutrition education'
-                          : selectedCategory?.toLowerCase() === 'wellness'
-                          ? 'Differentiate through clinically proven ingredients, transparent labeling, and health education content'
-                          : 'Differentiate through premium ingredients, scientific formulations, and beauty education content'
-                        }
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                      <span className={`${colors.text}`}>
-                        <strong>Market Entry:</strong> {' '}
-                        {selectedCategory?.toLowerCase() === 'pet food'
-                          ? 'Start with premium pet food targeting specific health concerns, then expand to broader pet nutrition'
-                          : selectedCategory?.toLowerCase() === 'wellness'
-                          ? 'Start with targeted wellness supplements for specific health goals, then expand to broader wellness'
-                          : 'Start with targeted beauty products for specific skin concerns, then expand to broader beauty'
-                        }
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                      <span className={`${colors.text}`}>
-                        <strong>Pricing Strategy:</strong> {' '}
-                        {selectedCategory?.toLowerCase() === 'pet food'
-                          ? 'Premium pricing (₹500-800/kg) justified by high-quality ingredients and scientific formulation'
-                          : selectedCategory?.toLowerCase() === 'wellness'
-                          ? 'Premium pricing (₹1000-2000/month) justified by clinically proven ingredients and health benefits'
-                          : 'Premium pricing (₹1000-3000/unit) justified by high-quality ingredients and proven results'
-                        }
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                      <span className={`${colors.text}`}>
-                        <strong>Distribution:</strong> {' '}
-                        {selectedCategory?.toLowerCase() === 'pet food'
-                          ? 'E-commerce platforms, specialty pet stores, veterinary clinics, and direct-to-consumer channels'
-                          : selectedCategory?.toLowerCase() === 'wellness'
-                          ? 'E-commerce platforms, pharmacies, specialty health stores, and direct-to-consumer channels'
-                          : 'E-commerce platforms, specialty beauty stores, department stores, and direct-to-consumer channels'
-                        }
-                      </span>
-                    </li>
-                  </ul>
+                <strong className={`${colors.text}`}>Key Competitors:</strong>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {marketResearchData.tam.competitors.slice(0, 5).map((competitor, index) => (
+                    <span key={index} className={`text-xs px-2 py-1 rounded-full ${colors.lightBg} ${colors.border} border`}>
+                      {competitor}
+                    </span>
+                  ))}
                 </div>
               </div>
-              
-              {/* Market Research Insights */}
-              {marketResearchData?.tam?.insights && marketResearchData.tam.insights.length > 0 && (
-                <div className={`border-t ${colors.border} pt-4`}>
-                  <strong className={`${colors.text}`}>Market Insights:</strong>
-                  <ul className="mt-2 space-y-2 text-sm">
-                    {marketResearchData.tam.insights.slice(0, 3).map((insight, index) => (
-                      <li key={index} className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${colors.icon} mt-2 flex-shrink-0`}></div>
-                        <span className={`${colors.text}`}>{insight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Competitive Landscape */}
-              {marketResearchData?.tam?.competitors && marketResearchData.tam.competitors.length > 0 && (
-                <div className={`border-t ${colors.border} pt-4`}>
-                  <strong className={`${colors.text}`}>Key Competitors:</strong>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {marketResearchData.tam.competitors.slice(0, 5).map((competitor, index) => (
-                      <span key={index} className={`text-xs px-2 py-1 rounded-full ${colors.lightBg} ${colors.border} border`}>
-                        {competitor}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>

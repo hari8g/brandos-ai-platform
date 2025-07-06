@@ -28,6 +28,18 @@ export interface ScientificReasoning {
   regulatoryStandards: string[];
   psychologicalDrivers?: string[];
   valueProposition?: string[];
+  demographicBreakdown?: {
+    age_range: string;
+    income_level: string;
+    lifestyle: string;
+    purchase_behavior: string;
+  };
+  psychographicProfile?: {
+    values: string[];
+    preferences: string[];
+    motivations: string[];
+  };
+  marketOpportunitySummary?: string;
 }
 
 export interface CalculationBreakdown {
@@ -72,8 +84,6 @@ export interface MarketResearchData {
   detailed_calculations?: Record<string, MarketMetricDetail>;
 }
 
-
-
 export interface GenerateResponse {
   product_name: string;
   reasoning: string;
@@ -86,4 +96,44 @@ export interface GenerateResponse {
   competitive_landscape?: Record<string, any>;
   scientific_reasoning?: ScientificReasoning;
   market_research?: MarketResearchData;
+}
+
+export interface CostingBreakdown {
+  capex: number;
+  opex: number;
+  total_cost: number;
+  cost_per_unit: number;
+  retail_price: number;
+  wholesale_price: number;
+  profit_margin: number;
+  revenue_potential: number;
+  break_even_customers: number;
+  currency: string;
+}
+
+export interface ManufacturingScenario {
+  customer_scale: string;
+  batch_size: number;
+  total_customers: number;
+  costing_breakdown: CostingBreakdown;
+  capex_details: Record<string, number>;
+  opex_details: Record<string, number>;
+  pricing_strategy: Record<string, string>;
+  margin_analysis: Record<string, number>;
+}
+
+export interface ManufacturingInsights {
+  small_scale: ManufacturingScenario;
+  medium_scale: ManufacturingScenario;
+  large_scale: ManufacturingScenario;
+  scaling_benefits: string[];
+  risk_factors: string[];
+  market_opportunity: string;
+}
+
+export interface CostEstimate {
+  success: boolean;
+  message: string;
+  manufacturing_insights?: ManufacturingInsights;
+  error?: string;
 } 

@@ -40,101 +40,684 @@ function App() {
     return <LandingPage onComplete={() => setSubscribed(true)} />;
   }
 
+
+
   const generatePDF = async () => {
-    if (!formulationRef.current) return;
+    if (!formulationRef.current) {
+      console.error('❌ FormulationRef not found');
+      alert('Error: Formulation data not found');
+      return;
+    }
+
+    if (!formulations[0]) {
+      console.error('❌ No formulation data available');
+      alert('Error: No formulation data available');
+      return;
+    }
 
     try {
-      document.documentElement.classList.add('pdf-export-root');
-      const button = document.querySelector('[data-download-button]') as HTMLButtonElement;
+      console.log('📄 Starting comprehensive PDF report generation...');
+      
+      // Find the download button more reliably - try multiple selectors
+      let button = document.querySelector('[data-download-button]') as HTMLButtonElement;
+      if (!button) {
+        // Fallback: try to find button by text content
+        const allButtons = document.querySelectorAll('button');
+        button = Array.from(allButtons).find(btn => 
+          btn.textContent?.includes('Download Formulation')
+        ) as HTMLButtonElement;
+      }
+      
       if (button) {
         button.disabled = true;
-        button.innerHTML = '<span>Generating PDF…</span>';
+        button.innerHTML = '<span>Generating Report…</span>';
+        console.log('✅ Download button found and updated');
+      } else {
+        console.warn('⚠️ Download button not found, continuing without UI update');
       }
-
-      // Build a hidden container for PDF
-      const pdfContainer = document.createElement('div');
-      Object.assign(pdfContainer.style, {
-        width: '800px',
-        padding: '20px',
-        background: '#fff',
-        color: '#000',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
-        lineHeight: '1.4',
-        position: 'absolute',
-        left: '-9999px',
-        top: '0'
-      });
 
       const f = formulations[0];
-      pdfContainer.innerHTML = `
-        <div style="text-align:center; margin-bottom:30px;">
-          <h1 style="font-size:24px;">${f.product_name}</h1>
-          <p style="color:#666;">Formulation Report — ${new Date().toLocaleDateString()}</p>
-        </div>
-        <!-- reasoning -->
-        <section style="margin-bottom:20px;">
-          <h2>🧠 Scientific Reasoning & Process</h2>
-          <pre style="background:#f8f9fa;padding:15px;border:1px solid #dee2e6;">${f.reasoning}</pre>
-        </section>
-        <!-- ingredients -->
-        <section style="margin-bottom:20px;">
-          <h2>🧴 Ingredients & Formulation</h2>
-          ${f.ingredients.map((ing: any) => `
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #dee2e6;">
-              <span><strong>${ing.name}</strong> — ₹${ing.cost_per_100ml}/100ml</span>
-              <span>${ing.percent}%</span>
-            </div>
-          `).join('')}
-        </section>
-        <!-- cost -->
-        <section style="margin-bottom:20px;">
-          <h2>💰 Cost Analysis</h2>
-          <div style="background:#f8f9fa;padding:15px;border:1px solid #dee2e6;">
-            <div style="display:flex;justify-content:space-between;">
-              <strong>100 ml total:</strong><strong>₹${f.estimated_cost}</strong>
-            </div>
-          </div>
-        </section>
-        <!-- safety -->
-        <section style="margin-bottom:20px;">
-          <h2>🛡️ Safety Assessment</h2>
-          <ul>${f.safety_notes.map((n: string) => `<li>${n}</li>`).join('')}</ul>
-        </section>
-      `;
-
-      document.body.appendChild(pdfContainer);
-      const canvas = await html2canvas(pdfContainer, { background: '#fff', width: 800 });
-      document.body.removeChild(pdfContainer);
-      document.documentElement.classList.remove('pdf-export-root');
-
-      const imgData = canvas.toDataURL('image/png');
+      console.log('📊 Formulation data for comprehensive report:', f);
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW - 20;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      let posY = 10;
-      let remH = imgH;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let yPosition = 20;
 
-      pdf.addImage(imgData, 'PNG', 10, posY, imgW, imgH);
-      while (remH > pageH - 20) {
-        remH -= (pageH - 20);
-        posY = 10 - remH;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, posY, imgW, imgH);
+      // Helper function to add text with word wrapping
+      const addText = (text: string, y: number, fontSize: number = 12, isBold: boolean = false) => {
+        pdf.setFontSize(fontSize);
+        if (isBold) pdf.setFont('helvetica', 'bold');
+        else pdf.setFont('helvetica', 'normal');
+        
+        const lines = pdf.splitTextToSize(text, contentWidth);
+        pdf.text(lines, margin, y);
+        return y + (lines.length * fontSize * 0.4);
+      };
+
+      // Helper function to add section header
+      const addSectionHeader = (title: string, y: number) => {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(title, margin, y);
+        return y + 8;
+      };
+
+      // Helper function to add subsection header
+      const addSubsectionHeader = (title: string, y: number) => {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(title, margin, y);
+        return y + 6;
+      };
+
+      // Helper function to add regular text
+      const addRegularText = (text: string, y: number) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        const lines = pdf.splitTextToSize(text, contentWidth);
+        pdf.text(lines, margin, y);
+        return y + (lines.length * 10 * 0.4) + 2;
+      };
+
+      // Helper function to add list item
+      const addListItem = (text: string, y: number) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        const lines = pdf.splitTextToSize(`• ${text}`, contentWidth);
+        pdf.text(lines, margin, y);
+        return y + (lines.length * 10 * 0.4) + 1;
+      };
+
+      // Helper function to add numbered item
+      const addNumberedItem = (text: string, y: number, number: number) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0, 0, 0);
+        const lines = pdf.splitTextToSize(`${number}. ${text}`, contentWidth);
+        pdf.text(lines, margin, y);
+        return y + (lines.length * 10 * 0.4) + 1;
+      };
+
+      // Check if we need a new page
+      const checkNewPage = (requiredSpace: number) => {
+        if (yPosition + requiredSpace > pdf.internal.pageSize.getHeight() - margin) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+      };
+
+      // Page 1: Title and Executive Summary
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Product Formulation Report', margin, yPosition);
+      yPosition += 20;
+
+      // Add timestamp
+      const now = new Date();
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, margin, yPosition);
+      yPosition += 15;
+
+      // Product Query
+      if (f.query) {
+        yPosition = addSectionHeader('Product Overview', yPosition);
+        yPosition = addRegularText(`Product Query: ${f.query}`, yPosition);
+        yPosition += 5;
       }
 
-      pdf.save(`${f.product_name.replace(/\s+/g, '_')}_report.pdf`);
+      // Executive Summary
+      yPosition = addSectionHeader('Executive Summary', yPosition);
+      const summaryText = `This comprehensive report provides detailed analysis of the product formulation, including manufacturing insights, market research, branding strategy, and scientific reasoning. The report covers all aspects from initial concept to market-ready formulation with supporting data and strategic recommendations.`;
+      yPosition = addRegularText(summaryText, yPosition);
+      yPosition += 10;
+
+      // Formulation Details
+      if (f.ingredients && f.ingredients.length > 0) {
+        yPosition = addSectionHeader('Formulation Details', yPosition);
+        
+        // Ingredients with detailed information
+        yPosition = addSubsectionHeader('Ingredient Composition & Analysis:', yPosition);
+        f.ingredients.forEach((ingredient: any, index: number) => {
+          const ingredientText = `${ingredient.name} - ${ingredient.percentage || ingredient.percent}%`;
+          yPosition = addNumberedItem(ingredientText, yPosition, index + 1);
+          
+          // Add why chosen rationale
+          if (ingredient.why_chosen) {
+            const rationaleText = `   Rationale: ${ingredient.why_chosen}`;
+            yPosition = addRegularText(rationaleText, yPosition);
+          }
+          
+          // Add cost information
+          if (ingredient.cost_per_100ml) {
+            const costText = `   Cost: ₹${ingredient.cost_per_100ml}/100ml`;
+            yPosition = addRegularText(costText, yPosition);
+          }
+          
+          // Add supplier information
+          if (ingredient.suppliers && ingredient.suppliers.length > 0) {
+            yPosition = addRegularText(`   Suppliers:`, yPosition);
+            ingredient.suppliers.forEach((supplier: any, supplierIndex: number) => {
+              const supplierText = `     ${supplierIndex + 1}. ${supplier.name} - ${supplier.location}`;
+              yPosition = addRegularText(supplierText, yPosition);
+              if (supplier.contact) {
+                yPosition = addRegularText(`       Contact: ${supplier.contact}`, yPosition);
+              }
+              if (supplier.price_per_unit) {
+                yPosition = addRegularText(`       Price: ₹${supplier.price_per_unit}/unit`, yPosition);
+              }
+            });
+          }
+          yPosition += 2;
+        });
+        yPosition += 3;
+
+        // Manufacturing Steps
+        if (f.manufacturing_steps && f.manufacturing_steps.length > 0) {
+          yPosition = addSubsectionHeader('Manufacturing Process:', yPosition);
+          f.manufacturing_steps.forEach((step: any, index: number) => {
+            yPosition = addNumberedItem(step, yPosition, index + 1);
+          });
+          yPosition += 3;
+        }
+
+        // Key Benefits
+        if (f.key_benefits && f.key_benefits.length > 0) {
+          yPosition = addSubsectionHeader('Product Benefits:', yPosition);
+          f.key_benefits.forEach((benefit: any) => {
+            yPosition = addListItem(benefit, yPosition);
+          });
+          yPosition += 3;
+        }
+      }
+
+      // Manufacturing Insights
+      if (f.manufacturing_insights) {
+        checkNewPage(80);
+        yPosition = addSectionHeader('Manufacturing & Cost Analysis', yPosition);
+        
+        const insights = f.manufacturing_insights;
+        
+        // CAPEX
+        if (insights.capex) {
+          yPosition = addSubsectionHeader('Capital Expenditure (CAPEX):', yPosition);
+          Object.entries(insights.capex).forEach(([scale, amount]) => {
+            yPosition = addRegularText(`${scale.charAt(0).toUpperCase() + scale.slice(1)} Scale: $${amount}`, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // OPEX
+        if (insights.opex) {
+          yPosition = addSubsectionHeader('Operating Expenditure (OPEX):', yPosition);
+          Object.entries(insights.opex).forEach(([scale, amount]) => {
+            yPosition = addRegularText(`${scale.charAt(0).toUpperCase() + scale.slice(1)} Scale: $${amount}`, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Margins
+        if (insights.margins) {
+          yPosition = addSubsectionHeader('Profit Margins:', yPosition);
+          Object.entries(insights.margins).forEach(([scale, margin]) => {
+            yPosition = addRegularText(`${scale.charAt(0).toUpperCase() + scale.slice(1)} Scale: ${margin}%`, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Pricing
+        if (insights.pricing) {
+          yPosition = addSubsectionHeader('Recommended Pricing Strategy:', yPosition);
+          Object.entries(insights.pricing).forEach(([scale, price]) => {
+            yPosition = addRegularText(`${scale.charAt(0).toUpperCase() + scale.slice(1)} Scale: $${price}`, yPosition);
+          });
+          yPosition += 3;
+        }
+      }
+
+      // Market Research - Comprehensive Analysis
+      if (f.market_research) {
+        checkNewPage(150);
+        yPosition = addSectionHeader('Market Research & Analysis', yPosition);
+        
+        const research = f.market_research;
+        
+        // TAM Analysis
+        if (research.tam) {
+          yPosition = addSubsectionHeader('Total Addressable Market (TAM):', yPosition);
+          yPosition = addRegularText(`Market Size: ${research.tam.marketSize}`, yPosition);
+          yPosition = addRegularText(`CAGR: ${research.tam.cagr}`, yPosition);
+          if (research.tam.methodology) {
+            yPosition = addRegularText(`Methodology: ${research.tam.methodology}`, yPosition);
+          }
+          if (research.tam.insights && research.tam.insights.length > 0) {
+            yPosition = addRegularText('Key Insights:', yPosition);
+            research.tam.insights.forEach((insight: any) => {
+              yPosition = addListItem(insight, yPosition);
+            });
+          }
+          if (research.tam.competitors && research.tam.competitors.length > 0) {
+            yPosition = addRegularText('Key Competitors:', yPosition);
+            research.tam.competitors.forEach((competitor: any) => {
+              yPosition = addListItem(competitor, yPosition);
+            });
+          }
+          yPosition += 3;
+        }
+
+        // SAM Analysis
+        if (research.sam) {
+          yPosition = addSubsectionHeader('Serviceable Addressable Market (SAM):', yPosition);
+          yPosition = addRegularText(`Market Size: ${research.sam.marketSize}`, yPosition);
+          if (research.sam.methodology) {
+            yPosition = addRegularText(`Methodology: ${research.sam.methodology}`, yPosition);
+          }
+          if (research.sam.segments && research.sam.segments.length > 0) {
+            yPosition = addRegularText('Market Segments:', yPosition);
+            research.sam.segments.forEach((segment: any) => {
+              yPosition = addListItem(segment, yPosition);
+            });
+          }
+          if (research.sam.insights && research.sam.insights.length > 0) {
+            yPosition = addRegularText('Key Insights:', yPosition);
+            research.sam.insights.forEach((insight: any) => {
+              yPosition = addListItem(insight, yPosition);
+            });
+          }
+          if (research.sam.distribution && research.sam.distribution.length > 0) {
+            yPosition = addRegularText('Distribution Channels:', yPosition);
+            research.sam.distribution.forEach((channel: any) => {
+              yPosition = addListItem(channel, yPosition);
+            });
+          }
+          yPosition += 3;
+        }
+
+        // TM Analysis
+        if (research.tm) {
+          yPosition = addSubsectionHeader('Target Market (TM):', yPosition);
+          yPosition = addRegularText(`Market Size: ${research.tm.marketSize}`, yPosition);
+          if (research.tm.targetUsers) {
+            yPosition = addRegularText(`Target Users: ${research.tm.targetUsers}`, yPosition);
+          }
+          if (research.tm.revenue) {
+            yPosition = addRegularText(`Revenue Potential: ${research.tm.revenue}`, yPosition);
+          }
+          if (research.tm.methodology) {
+            yPosition = addRegularText(`Methodology: ${research.tm.methodology}`, yPosition);
+          }
+          if (research.tm.insights && research.tm.insights.length > 0) {
+            yPosition = addRegularText('Key Insights:', yPosition);
+            research.tm.insights.forEach((insight: any) => {
+              yPosition = addListItem(insight, yPosition);
+            });
+          }
+          if (research.tm.adoptionDrivers && research.tm.adoptionDrivers.length > 0) {
+            yPosition = addRegularText('Adoption Drivers:', yPosition);
+            research.tm.adoptionDrivers.forEach((driver: any) => {
+              yPosition = addListItem(driver, yPosition);
+            });
+          }
+          yPosition += 3;
+        }
+
+        // Current Market Size (if available)
+        if (research.current_market_size) {
+          yPosition = addSubsectionHeader('Current Market Size:', yPosition);
+          yPosition = addRegularText(`$${research.current_market_size}`, yPosition);
+          yPosition += 3;
+        }
+
+        // Detailed Calculations
+        if (research.detailed_calculations) {
+          yPosition = addSubsectionHeader('Detailed Market Calculations:', yPosition);
+          Object.entries(research.detailed_calculations).forEach(([metric, details]: [string, any]) => {
+            yPosition = addRegularText(`${metric}:`, yPosition);
+            if (details.formula) yPosition = addRegularText(`  Formula: ${details.formula}`, yPosition);
+            if (details.variables) {
+              yPosition = addRegularText(`  Variables:`, yPosition);
+              Object.entries(details.variables).forEach(([varName, value]: [string, any]) => {
+                yPosition = addRegularText(`    ${varName}: ${value}`, yPosition);
+              });
+            }
+            if (details.calculation_steps && details.calculation_steps.length > 0) {
+              yPosition = addRegularText(`  Calculation Steps:`, yPosition);
+              details.calculation_steps.forEach((step: any, index: number) => {
+                yPosition = addNumberedItem(step, yPosition, index + 1);
+              });
+            }
+            if (details.assumptions && details.assumptions.length > 0) {
+              yPosition = addRegularText(`  Assumptions:`, yPosition);
+              details.assumptions.forEach((assumption: any) => {
+                yPosition = addListItem(assumption, yPosition);
+              });
+            }
+            if (details.data_sources && details.data_sources.length > 0) {
+              yPosition = addRegularText(`  Data Sources:`, yPosition);
+              details.data_sources.forEach((source: any) => {
+                yPosition = addListItem(source, yPosition);
+              });
+            }
+            if (details.confidence_level) {
+              yPosition = addRegularText(`  Confidence Level: ${details.confidence_level}`, yPosition);
+            }
+            yPosition += 2;
+          });
+          yPosition += 3;
+        }
+      }
+
+      // Packaging & Marketing Inspiration
+      if (f.packaging_marketing_inspiration || f.market_trends || f.competitive_landscape) {
+        checkNewPage(80);
+        yPosition = addSectionHeader('Packaging & Marketing Strategy', yPosition);
+        
+        // Packaging Inspiration
+        if (f.packaging_marketing_inspiration) {
+          yPosition = addSubsectionHeader('Packaging Design & Inspiration:', yPosition);
+          yPosition = addRegularText(f.packaging_marketing_inspiration, yPosition);
+          yPosition += 3;
+        }
+
+        // Market Trends
+        if (f.market_trends && f.market_trends.length > 0) {
+          yPosition = addSubsectionHeader('Current Market Trends:', yPosition);
+          f.market_trends.forEach((trend: any) => {
+            yPosition = addListItem(trend, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Competitive Landscape
+        if (f.competitive_landscape) {
+          yPosition = addSubsectionHeader('Competitive Landscape Analysis:', yPosition);
+          Object.entries(f.competitive_landscape).forEach(([key, value]) => {
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            yPosition = addRegularText(`${formattedKey}: ${value}`, yPosition);
+          });
+          yPosition += 3;
+        }
+      }
+
+      // Branding Strategy - Comprehensive Analysis
+      if (f.branding_strategy) {
+        checkNewPage(120);
+        yPosition = addSectionHeader('Branding & Marketing Strategy', yPosition);
+        
+        const branding = f.branding_strategy;
+        
+        // Brand Name Suggestions with details
+        if (branding.brand_name_suggestions && branding.brand_name_suggestions.length > 0) {
+          yPosition = addSubsectionHeader('Brand Name Recommendations:', yPosition);
+          branding.brand_name_suggestions.forEach((suggestion: any, index: number) => {
+            yPosition = addNumberedItem(`${suggestion.name}`, yPosition, index + 1);
+            if (suggestion.meaning) {
+              yPosition = addRegularText(`   Meaning: ${suggestion.meaning}`, yPosition);
+            }
+            if (suggestion.category) {
+              yPosition = addRegularText(`   Category: ${suggestion.category}`, yPosition);
+            }
+            if (suggestion.reasoning) {
+              yPosition = addRegularText(`   Reasoning: ${suggestion.reasoning}`, yPosition);
+            }
+            if (suggestion.availability_check) {
+              yPosition = addRegularText(`   Availability: ${suggestion.availability_check}`, yPosition);
+            }
+            yPosition += 1;
+          });
+          yPosition += 3;
+        }
+
+        // Social Media Channels
+        if (branding.social_media_channels && branding.social_media_channels.length > 0) {
+          yPosition = addSubsectionHeader('Social Media Strategy:', yPosition);
+          branding.social_media_channels.forEach((channel: any, index: number) => {
+            yPosition = addNumberedItem(`${channel.platform}`, yPosition, index + 1);
+            if (channel.content_strategy) {
+              yPosition = addRegularText(`   Content Strategy: ${channel.content_strategy}`, yPosition);
+            }
+            if (channel.target_audience) {
+              yPosition = addRegularText(`   Target Audience: ${channel.target_audience}`, yPosition);
+            }
+            if (channel.post_frequency) {
+              yPosition = addRegularText(`   Post Frequency: ${channel.post_frequency}`, yPosition);
+            }
+            if (channel.content_ideas && channel.content_ideas.length > 0) {
+              yPosition = addRegularText(`   Content Ideas:`, yPosition);
+              channel.content_ideas.forEach((idea: any) => {
+                yPosition = addListItem(idea, yPosition);
+              });
+            }
+            if (channel.hashtag_strategy && channel.hashtag_strategy.length > 0) {
+              yPosition = addRegularText(`   Hashtag Strategy:`, yPosition);
+              channel.hashtag_strategy.forEach((hashtag: any) => {
+                yPosition = addListItem(hashtag, yPosition);
+              });
+            }
+            if (channel.engagement_tips && channel.engagement_tips.length > 0) {
+              yPosition = addRegularText(`   Engagement Tips:`, yPosition);
+              channel.engagement_tips.forEach((tip: any) => {
+                yPosition = addListItem(tip, yPosition);
+              });
+            }
+            yPosition += 2;
+          });
+          yPosition += 3;
+        }
+
+        // Overall Branding Theme
+        if (branding.overall_branding_theme) {
+          yPosition = addSubsectionHeader('Overall Branding Theme:', yPosition);
+          yPosition = addRegularText(branding.overall_branding_theme, yPosition);
+          yPosition += 3;
+        }
+
+        // Brand Personality
+        if (branding.brand_personality) {
+          yPosition = addSubsectionHeader('Brand Personality:', yPosition);
+          yPosition = addRegularText(branding.brand_personality, yPosition);
+          yPosition += 3;
+        }
+
+        // Visual Identity Guidelines
+        if (branding.visual_identity_guidelines && branding.visual_identity_guidelines.length > 0) {
+          yPosition = addSubsectionHeader('Visual Identity Guidelines:', yPosition);
+          branding.visual_identity_guidelines.forEach((guideline: any) => {
+            yPosition = addListItem(guideline, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Marketing Messaging
+        if (branding.marketing_messaging && branding.marketing_messaging.length > 0) {
+          yPosition = addSubsectionHeader('Marketing Messaging:', yPosition);
+          branding.marketing_messaging.forEach((message: any) => {
+            yPosition = addListItem(message, yPosition);
+          });
+          yPosition += 3;
+        }
+      }
+
+      // Scientific Reasoning - Comprehensive Analysis
+      if (f.scientific_reasoning) {
+        checkNewPage(120);
+        yPosition = addSectionHeader('Scientific Foundation & Evidence', yPosition);
+        
+        const reasoning = f.scientific_reasoning;
+        
+        // Key Components
+        if (reasoning.keyComponents && reasoning.keyComponents.length > 0) {
+          yPosition = addSubsectionHeader('Key Components Analysis:', yPosition);
+          reasoning.keyComponents.forEach((component: any, index: number) => {
+            yPosition = addNumberedItem(`${component.name}`, yPosition, index + 1);
+            if (component.why) {
+              yPosition = addRegularText(`   Why: ${component.why}`, yPosition);
+            }
+          });
+          yPosition += 3;
+        }
+
+        // Implied Desire
+        if (reasoning.impliedDesire) {
+          yPosition = addSubsectionHeader('Implied Consumer Desire:', yPosition);
+          yPosition = addRegularText(reasoning.impliedDesire, yPosition);
+          yPosition += 3;
+        }
+
+        // Psychological Drivers
+        if (reasoning.psychologicalDrivers && reasoning.psychologicalDrivers.length > 0) {
+          yPosition = addSubsectionHeader('Psychological Drivers:', yPosition);
+          reasoning.psychologicalDrivers.forEach((driver: any) => {
+            yPosition = addListItem(driver, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Value Proposition
+        if (reasoning.valueProposition && reasoning.valueProposition.length > 0) {
+          yPosition = addSubsectionHeader('Value Proposition:', yPosition);
+          reasoning.valueProposition.forEach((value: any) => {
+            yPosition = addListItem(value, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Target Audience
+        if (reasoning.targetAudience) {
+          yPosition = addSubsectionHeader('Target Audience Analysis:', yPosition);
+          yPosition = addRegularText(reasoning.targetAudience, yPosition);
+          yPosition += 3;
+        }
+
+        // India Trends
+        if (reasoning.indiaTrends && reasoning.indiaTrends.length > 0) {
+          yPosition = addSubsectionHeader('India-Specific Trends:', yPosition);
+          reasoning.indiaTrends.forEach((trend: any) => {
+            yPosition = addListItem(trend, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Regulatory Standards
+        if (reasoning.regulatoryStandards && reasoning.regulatoryStandards.length > 0) {
+          yPosition = addSubsectionHeader('Regulatory Standards & Compliance:', yPosition);
+          reasoning.regulatoryStandards.forEach((standard: any) => {
+            yPosition = addListItem(standard, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Demographic Breakdown
+        if (reasoning.demographicBreakdown) {
+          yPosition = addSubsectionHeader('Demographic Analysis:', yPosition);
+          const demo = reasoning.demographicBreakdown;
+          if (demo.age_range) yPosition = addRegularText(`Age Range: ${demo.age_range}`, yPosition);
+          if (demo.income_level) yPosition = addRegularText(`Income Level: ${demo.income_level}`, yPosition);
+          if (demo.lifestyle) yPosition = addRegularText(`Lifestyle: ${demo.lifestyle}`, yPosition);
+          if (demo.purchase_behavior) yPosition = addRegularText(`Purchase Behavior: ${demo.purchase_behavior}`, yPosition);
+          yPosition += 3;
+        }
+
+        // Psychographic Profile
+        if (reasoning.psychographicProfile) {
+          yPosition = addSubsectionHeader('Psychographic Profile:', yPosition);
+          const psycho = reasoning.psychographicProfile;
+          if (psycho.values && psycho.values.length > 0) {
+            yPosition = addRegularText('Values:', yPosition);
+            psycho.values.forEach((value: any) => {
+              yPosition = addListItem(value, yPosition);
+            });
+          }
+          if (psycho.preferences && psycho.preferences.length > 0) {
+            yPosition = addRegularText('Preferences:', yPosition);
+            psycho.preferences.forEach((pref: any) => {
+              yPosition = addListItem(pref, yPosition);
+            });
+          }
+          if (psycho.motivations && psycho.motivations.length > 0) {
+            yPosition = addRegularText('Motivations:', yPosition);
+            psycho.motivations.forEach((motivation: any) => {
+              yPosition = addListItem(motivation, yPosition);
+            });
+          }
+          yPosition += 3;
+        }
+
+        // Market Opportunity Summary
+        if (reasoning.marketOpportunitySummary) {
+          yPosition = addSubsectionHeader('Market Opportunity Summary:', yPosition);
+          yPosition = addRegularText(reasoning.marketOpportunitySummary, yPosition);
+          yPosition += 3;
+        }
+      }
+
+      // Safety Assessment
+      if (f.safety_notes && f.safety_notes.length > 0) {
+        checkNewPage(60);
+        yPosition = addSectionHeader('Safety Assessment & Compliance', yPosition);
+        
+        yPosition = addSubsectionHeader('Safety Notes & Considerations:', yPosition);
+        f.safety_notes.forEach((note: any) => {
+          yPosition = addListItem(note, yPosition);
+        });
+        yPosition += 3;
+      }
+
+      // Cost Analysis
+      if (f.estimated_cost) {
+        checkNewPage(40);
+        yPosition = addSectionHeader('Cost Analysis', yPosition);
+        
+        yPosition = addSubsectionHeader('Estimated Production Cost:', yPosition);
+        yPosition = addRegularText(`Total Cost per 100ml: ₹${f.estimated_cost}`, yPosition);
+        yPosition += 3;
+      }
+
+      // Conclusion
+      checkNewPage(40);
+      yPosition = addSectionHeader('Conclusion & Recommendations', yPosition);
+      const conclusionText = `This comprehensive analysis provides a complete roadmap for product development, from formulation to market entry. The combination of scientific validation, market analysis, and strategic positioning creates a strong foundation for successful product commercialization.`;
+      yPosition = addRegularText(conclusionText, yPosition);
+
+      // Save the PDF
+      const filename = `comprehensive_formulation_report_${Date.now()}.pdf`;
+      pdf.save(filename);
+      
+      console.log('✅ Comprehensive PDF report generated successfully:', filename);
+      alert(`Comprehensive report downloaded as ${filename}`);
 
       if (button) {
         button.disabled = false;
         button.innerHTML = '<span>Download Formulation</span>';
       }
     } catch (err) {
-      console.error('PDF generation failed:', err);
-      document.documentElement.classList.remove('pdf-export-root');
-      alert('Error generating PDF');
+      console.error('❌ PDF generation failed:', err);
+      
+      // More specific error messages
+      if (err instanceof Error) {
+        if (err.message.includes('jsPDF')) {
+          alert('Error: Could not create PDF file. Please try again.');
+        } else {
+          alert(`Error generating PDF: ${err.message}`);
+        }
+      } else {
+        alert('Error generating PDF. Please try again.');
+      }
+      
+      // Reset button state on error
+      const button = document.querySelector('[data-download-button]') as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = '<span>Download Formulation</span>';
+      }
     }
   };
 

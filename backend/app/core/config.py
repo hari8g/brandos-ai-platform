@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     MAILCHIMP_SERVER_PREFIX: Optional[str] = None
     MAILCHIMP_LIST_ID: Optional[str] = None
 
+    # OpenAI Configuration
+    OPENAI_API_KEY: Optional[str] = None
+
     model_config = {
         "extra": "allow"
     }

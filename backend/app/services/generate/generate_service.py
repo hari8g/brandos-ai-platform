@@ -943,7 +943,7 @@ Guidelines:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=4000,
+            max_tokens=3000,  # Reduced from 4000 for 25% token reduction
             tools=get_formulation_function_definitions(),
             tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
         )

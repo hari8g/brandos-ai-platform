@@ -27,35 +27,11 @@ from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion
 def get_extraction_prompt(user_prompt: str, category: Optional[str] = None) -> str:
     category = category or ""
     if category == "pet food":
-        return f'''
-        You are a pet food formulation expert.
-        From this user input:
-          "{user_prompt}"
-        Return strict JSON with keys:
-          - product_type (e.g. "grain-free dog food")
-          - form (e.g. "kibble", "wet food", "treat")
-          - concern (e.g. "allergies", "sensitive stomach")
-        '''
+        return f'Extract from "{user_prompt}": product_type (e.g. "grain-free dog food"), form (e.g. "kibble", "wet food"), concern (e.g. "allergies") as JSON'
     elif category == "wellness":
-        return f'''
-        You are a wellness supplement formulation expert.
-        From this user input:
-          "{user_prompt}"
-        Return strict JSON with keys:
-          - product_type (e.g. "adaptogen blend powder")
-          - form (e.g. "capsule", "powder", "gummy")
-          - concern (e.g. "stress resilience", "immune support")
-        '''
+        return f'Extract from "{user_prompt}": product_type (e.g. "adaptogen powder"), form (e.g. "capsule", "powder"), concern (e.g. "stress relief") as JSON'
     else:
-        return f'''
-        You are a cosmetic formulation expert.
-        From this user input:
-          "{user_prompt}"
-        Return strict JSON with keys:
-          - product_type (e.g. "anti-aging face cream")
-          - form (e.g. "cream", "serum", "gel")
-          - concern (e.g. "wrinkle reduction", "hydration")
-        '''
+        return f'Extract from "{user_prompt}": product_type (e.g. "anti-aging cream"), form (e.g. "cream", "serum"), concern (e.g. "wrinkles") as JSON'
 
 def extract_product_info(user_prompt: str, category: Optional[str] = None) -> dict:
     extraction_prompt = get_extraction_prompt(user_prompt, category)
@@ -64,10 +40,10 @@ def extract_product_info(user_prompt: str, category: Optional[str] = None) -> di
             return {"product_type": "<product>", "form": "<form>", "concern": "<concern>"}
         
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": extraction_prompt}],
             temperature=0,
-            max_tokens=200,
+            max_tokens=100,
             tools=get_extraction_function_definitions(),
             tool_choice={"type": "function", "function": {"name": "extract_product_info"}}
         )
@@ -147,7 +123,7 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
             model="gpt-4",
             messages=[{"role": "user", "content": suggestion_prompt}],
             temperature=0,
-            max_tokens=800,
+            max_tokens=600,
             tools=get_suggestions_function_definitions(),
             tool_choice={"type": "function", "function": {"name": "generate_suggestions"}}
         )

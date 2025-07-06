@@ -26,6 +26,7 @@ from app.routers.branding import router as branding_router
 from app.routers.query_router import router as query_suggestions_router
 from app.routers.mailchimp_router import router as mailchimp_router
 from app.routers.auth_router import router as auth_router
+from app.routers.optimization import router as optimization_router
 
 app.include_router(query_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(formulation_router, prefix=settings.API_PREFIX + "/v1")
@@ -34,6 +35,7 @@ app.include_router(branding_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(query_suggestions_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(mailchimp_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(auth_router, prefix=settings.API_PREFIX + "/v1")
+app.include_router(optimization_router, prefix=settings.API_PREFIX + "/v1")
 
 # 4) serve static files (frontend build)
 try:

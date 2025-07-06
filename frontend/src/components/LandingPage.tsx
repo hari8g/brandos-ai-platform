@@ -62,7 +62,7 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
 
   // Typewriter effect for headline
   const [text] = useTypewriter({
-    words: ['shape the future of formulation before anyone else'],
+    words: ['scrtch.ai lets you rethink,remix and re-formulate - smarter, faster, your way'],
     loop: 1,
     typeSpeed: 100,
     deleteSpeed: 50,
@@ -189,7 +189,168 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section id="hero" className="relative min-h-screen bg-gradient-to-br from-purple-700 to-pink-500 flex items-center justify-center px-4">
+      <section id="hero" className="relative min-h-screen bg-gradient-to-br from-purple-700 to-pink-500 flex items-center justify-center px-4 overflow-hidden">
+        {/* Enhanced Animated Creation Blob */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Primary Morphing Blob */}
+          <motion.div
+            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-violet-500/40 via-purple-500/35 to-fuchsia-500/40 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.3, 0.9, 1.2, 1],
+              rotate: [0, 90, 180, 270, 360],
+              borderRadius: ["50%", "40%", "60%", "30%", "50%"],
+              x: [0, 20, -15, 10, 0],
+              y: [0, -10, 15, -5, 0],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          {/* Secondary Orbiting Blob */}
+          <motion.div
+            className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-cyan-400/30 via-blue-500/25 to-indigo-500/30 rounded-full blur-2xl"
+            animate={{
+              scale: [1.2, 0.8, 1.4, 1, 1.2],
+              rotate: [360, 180, 0, 270, 360],
+              borderRadius: ["30%", "50%", "40%", "60%", "30%"],
+              x: [0, -25, 15, -10, 0],
+              y: [0, 20, -15, 10, 0],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2
+            }}
+          />
+          
+          {/* Tertiary Floating Blob */}
+          <motion.div
+            className="absolute bottom-1/3 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-400/35 via-rose-500/30 to-orange-400/35 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.4, 0.7, 1.3, 1],
+              rotate: [180, 270, 0, 90, 180],
+              borderRadius: ["40%", "60%", "35%", "55%", "40%"],
+              x: [0, -20, 25, -15, 0],
+              y: [0, 15, -20, 10, 0],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 4
+            }}
+          />
+          
+          {/* Glowing Core */}
+          <motion.div
+            className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-r from-yellow-300/60 via-orange-400/50 to-red-400/60 rounded-full blur-xl"
+            animate={{
+              scale: [1, 1.5, 0.8, 1.3, 1],
+              opacity: [0.6, 1, 0.4, 0.8, 0.6],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1
+            }}
+          />
+          
+          {/* Enhanced Floating Particles */}
+          <motion.div
+            className="absolute top-1/4 right-1/3 w-6 h-6 bg-gradient-to-r from-white/60 to-cyan-200/60 rounded-full shadow-lg"
+            animate={{
+              y: [0, -30, -10, -40, 0],
+              x: [0, 15, -10, 20, 0],
+              opacity: [0.6, 1, 0.8, 0.9, 0.6],
+              scale: [0.8, 1.3, 1, 1.2, 0.8],
+            }}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute top-3/4 left-1/3 w-4 h-4 bg-gradient-to-r from-purple-300/70 to-pink-300/70 rounded-full shadow-md"
+            animate={{
+              y: [0, -25, -5, -35, 0],
+              x: [0, -20, 15, -25, 0],
+              opacity: [0.7, 1, 0.6, 0.9, 0.7],
+              scale: [0.7, 1.4, 0.9, 1.1, 0.7],
+            }}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.5
+            }}
+          />
+          <motion.div
+            className="absolute top-1/2 right-1/3 w-3 h-3 bg-gradient-to-r from-pink-300/80 to-rose-300/80 rounded-full shadow-sm"
+            animate={{
+              y: [0, -40, -15, -50, 0],
+              x: [0, 25, -20, 30, 0],
+              opacity: [0.5, 1, 0.7, 0.8, 0.5],
+              scale: [0.6, 1.5, 0.8, 1.3, 0.6],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 3
+            }}
+          />
+          
+          {/* Sparkle Effects */}
+          <motion.div
+            className="absolute top-1/3 left-1/2 w-2 h-2 bg-yellow-300/90 rounded-full"
+            animate={{
+              y: [0, -15, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 1.5, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.5
+            }}
+          />
+          <motion.div
+            className="absolute top-2/3 right-1/3 w-1.5 h-1.5 bg-cyan-300/90 rounded-full"
+            animate={{
+              y: [0, -20, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 2, 0],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1.2
+            }}
+          />
+          <motion.div
+            className="absolute bottom-1/4 left-1/2 w-1 h-1 bg-pink-300/90 rounded-full"
+            animate={{
+              y: [0, -25, 0],
+              opacity: [0, 1, 0],
+              scale: [0, 2.5, 0],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2
+            }}
+          />
+        </div>
+
         {/* Dynamic Tooltip */}
         {showTooltip && (
           <div className="absolute top-8 right-8 max-w-xs bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-xl border border-white/20 animate-pulse">
@@ -222,7 +383,7 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
 
           {/* Sub-headline */}
           <p className="text-lg md:text-xl text-gray-100 mt-4 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Join our closed beta and unlock AI-driven recipe generation tailored to your product vision.
+            Join our closed beta and unlock the power of scrtch.ai on what it can do to your product vision.
           </p>
 
           {/* CTA Buttons */}

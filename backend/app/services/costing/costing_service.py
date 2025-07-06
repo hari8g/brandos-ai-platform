@@ -27,173 +27,23 @@ except Exception as e:
 
 def create_costing_prompt(formulation: GenerateResponse, category: str) -> str:
     """
-    Create a comprehensive prompt for costing analysis.
+    Create an optimized costing prompt without verbose JSON examples.
     """
     prompt = f"""
-    You are a senior manufacturing and financial analyst specializing in {category} production in India.
+    You are a senior manufacturing and financial analyst specializing in product costing and pricing strategies.
     
-    Analyze the following formulation and provide detailed costing analysis for three manufacturing scales:
+    Analyze manufacturing costs for: {formulation.product_name}
+    Category: {category}
     
-    PRODUCT: {formulation.product_name}
-    CATEGORY: {category}
-    INGREDIENTS: {', '.join([f"{ing.name} ({ing.percent}%)" for ing in formulation.ingredients])}
+    Provide comprehensive analysis including:
+    - CAPEX/OPEX breakdown for small, medium, and large scale operations
+    - Detailed pricing strategy and margin analysis
+    - Scaling benefits and risk factors
+    - Market opportunity assessment
     
-    Provide a comprehensive costing analysis including:
-    
-    1. CAPEX (Capital Expenditure) - Equipment, machinery, facility setup
-    2. OPEX (Operational Expenditure) - Raw materials, labor, utilities, packaging
-    3. Pricing Strategy - Wholesale and retail pricing
-    4. Margin Analysis - Profit margins and break-even analysis
-    
-    For each scale (Small: 1,000 customers, Medium: 10,000 customers, Large: 50,000+ customers),
-    provide realistic Indian market costs and pricing.
-    
-    Return the analysis as a JSON object with the following structure:
-    {{
-        "small_scale": {{
-            "batch_size": 1000,
-            "total_customers": 1000,
-            "costing_breakdown": {{
-                "capex": 500000,
-                "opex": 150000,
-                "total_cost": 650000,
-                "cost_per_unit": 650,
-                "retail_price": 1200,
-                "wholesale_price": 900,
-                "profit_margin": 45.5,
-                "revenue_potential": 1200000,
-                "break_even_customers": 542
-            }},
-            "capex_details": {{
-                "equipment": 200000,
-                "machinery": 150000,
-                "facility_setup": 100000,
-                "quality_control": 50000
-            }},
-            "opex_details": {{
-                "raw_materials": 80000,
-                "labor": 30000,
-                "utilities": 15000,
-                "packaging": 15000,
-                "quality_assurance": 10000
-            }},
-            "pricing_strategy": {{
-                "wholesale_markup": "30%",
-                "retail_markup": "85%",
-                "competitive_positioning": "Premium",
-                "target_margin": "45%"
-            }},
-            "margin_analysis": {{
-                "gross_margin": 45.5,
-                "operating_margin": 35.2,
-                "net_margin": 28.8,
-                "break_even_point": 542
-            }}
-        }},
-        "medium_scale": {{
-            "batch_size": 10000,
-            "total_customers": 10000,
-            "costing_breakdown": {{
-                "capex": 1200000,
-                "opex": 800000,
-                "total_cost": 2000000,
-                "cost_per_unit": 200,
-                "retail_price": 450,
-                "wholesale_price": 320,
-                "profit_margin": 55.6,
-                "revenue_potential": 4500000,
-                "break_even_customers": 4444
-            }},
-            "capex_details": {{
-                "equipment": 400000,
-                "machinery": 350000,
-                "facility_setup": 250000,
-                "quality_control": 200000
-            }},
-            "opex_details": {{
-                "raw_materials": 400000,
-                "labor": 150000,
-                "utilities": 80000,
-                "packaging": 100000,
-                "quality_assurance": 70000
-            }},
-            "pricing_strategy": {{
-                "wholesale_markup": "60%",
-                "retail_markup": "125%",
-                "competitive_positioning": "Mid-Premium",
-                "target_margin": "55%"
-            }},
-            "margin_analysis": {{
-                "gross_margin": 55.6,
-                "operating_margin": 45.3,
-                "net_margin": 38.9,
-                "break_even_point": 4444
-            }}
-        }},
-        "large_scale": {{
-            "batch_size": 50000,
-            "total_customers": 50000,
-            "costing_breakdown": {{
-                "capex": 2500000,
-                "opex": 3000000,
-                "total_cost": 5500000,
-                "cost_per_unit": 110,
-                "retail_price": 280,
-                "wholesale_price": 200,
-                "profit_margin": 60.7,
-                "revenue_potential": 14000000,
-                "break_even_customers": 19643
-            }},
-            "capex_details": {{
-                "equipment": 800000,
-                "machinery": 700000,
-                "facility_setup": 500000,
-                "quality_control": 500000
-            }},
-            "opex_details": {{
-                "raw_materials": 1500000,
-                "labor": 500000,
-                "utilities": 300000,
-                "packaging": 400000,
-                "quality_assurance": 300000
-            }},
-            "pricing_strategy": {{
-                "wholesale_markup": "82%",
-                "retail_markup": "155%",
-                "competitive_positioning": "Mass Premium",
-                "target_margin": "60%"
-            }},
-            "margin_analysis": {{
-                "gross_margin": 60.7,
-                "operating_margin": 52.4,
-                "net_margin": 45.1,
-                "break_even_point": 19643
-            }}
-        }},
-        "scaling_benefits": [
-            "Economies of scale reduce per-unit costs by 40-70%",
-            "Bulk purchasing power for raw materials and packaging",
-            "Automated manufacturing processes become viable",
-            "Distribution networks become more efficient",
-            "Marketing costs spread across larger customer base"
-        ],
-        "risk_factors": [
-            "Higher upfront investment required for scaling",
-            "Increased inventory management complexity",
-            "Need for larger storage and distribution facilities",
-            "Market demand uncertainty at larger scales",
-            "Competition intensifies with scale"
-        ],
-        "market_opportunity": "Manufacturing {formulation.product_name} presents a scalable opportunity with potential revenue of ₹14,000,000 at full scale, requiring strategic scaling decisions based on market demand and capital availability."
-    }}
-    
-    Guidelines:
-    - Use realistic Indian market costs and pricing
-    - Consider category-specific requirements (cosmetics, pet food, wellness)
-    - Include detailed breakdowns for CAPEX and OPEX
-    - Provide competitive pricing strategies
-    - Calculate realistic profit margins and break-even points
-    - Consider economies of scale effects
+    Use realistic Indian market costs and pricing.
+    Consider category-specific requirements and economies of scale effects.
+    Calculate realistic profit margins and break-even points.
     """
     return prompt
 

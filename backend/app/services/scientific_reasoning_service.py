@@ -39,38 +39,22 @@ class ScientificReasoningService:
         
         prompt = f"""
         You are a senior cosmetic chemist and market research analyst specializing in the Indian beauty market. 
-        Create a comprehensive scientific reasoning analysis for: {product_desc}
+        Create comprehensive scientific reasoning analysis for: {product_desc}
         
-        Generate detailed, realistic, and scientifically accurate information for each section:
+        Generate detailed, realistic, and scientifically accurate information:
         
-        1. KEY COMPONENTS: List 4-6 key ingredients with their scientific names and detailed reasoning for why each was chosen
-        2. IMPLIED DESIRE: Describe the primary consumer desire this formulation addresses
-        3. PSYCHOLOGICAL DRIVERS: List 3-4 consumer psychology factors influencing this product
-        4. VALUE PROPOSITION: List 3-4 unique selling points and competitive advantages
+        1. KEY COMPONENTS: List 4-6 key ingredients with scientific names and detailed reasoning
+        2. IMPLIED DESIRE: Primary consumer desire this formulation addresses
+        3. PSYCHOLOGICAL DRIVERS: 3-4 consumer psychology factors
+        4. VALUE PROPOSITION: 3-4 unique selling points and competitive advantages
         5. TARGET AUDIENCE: Detailed demographic and psychographic description
-        6. DEMOGRAPHIC BREAKDOWN: Provide specific demographic details including age range, income level, lifestyle, and purchase behavior
-        7. PSYCHOGRAPHIC PROFILE: Provide detailed psychographic information including values, preferences, and motivations
-        8. INDIA TRENDS: List 3-4 current market trends in India relevant to this formulation
-        9. REGULATORY STANDARDS: List 3-4 Indian regulatory and health claims standards
-        10. MARKET OPPORTUNITY SUMMARY: Provide a comprehensive, exhaustive market opportunity analysis that includes:
-            - Market potential assessment based on TAM, SAM, and SOM analysis
-            - Key market opportunities and growth drivers
-            - Competitive landscape analysis and differentiation opportunities
-            - Strategic recommendations for market entry and positioning
-            - Target segment analysis with detailed demographic and psychographic insights
-            - Pricing strategy recommendations with justification
-            - Distribution channel recommendations
-            - Risk factors and mitigation strategies
-            - Growth projections and scalability considerations
-            - Innovation opportunities and future market trends
+        6. DEMOGRAPHIC BREAKDOWN: Age range, income level, lifestyle, purchase behavior
+        7. PSYCHOGRAPHIC PROFILE: Values, preferences, and motivations
+        8. INDIA TRENDS: 3-4 current market trends in India
+        9. REGULATORY STANDARDS: 3-4 Indian regulatory and health claims standards
+        10. MARKET OPPORTUNITY SUMMARY: Comprehensive market analysis including market potential, competitive landscape, strategic recommendations, target segment analysis, pricing strategy, distribution channels, risk factors, growth projections, and innovation opportunities
         
-        Focus on:
-        - Scientific accuracy and ingredient efficacy
-        - Indian market relevance and consumer behavior
-        - Current trends and regulatory compliance
-        - Realistic and detailed explanations
-        - Specific demographic and psychographic insights for the Indian market
-        - Comprehensive market opportunity analysis with actionable insights
+        Focus on scientific accuracy, Indian market relevance, current trends, and regulatory compliance.
         """
         
         return prompt

@@ -76,35 +76,21 @@ class MarketResearchService:
         
         Analyze the CURRENT market size for this SPECIFIC product formulation:
         
-        PRODUCT DETAILS:
-        - Product Name: {product_name}
-        - Category: {category}
-        - Market Segment: {market_segment}
-        - Ingredient Complexity: {complexity_factor:.1f}/10
+        PRODUCT: {product_name}
+        CATEGORY: {category}
+        SEGMENT: {market_segment}
+        COMPLEXITY: {complexity_factor:.1f}/10
         
-        INGREDIENT ANALYSIS:
-        - Total Ingredients: {len(ingredients)}
-        - Premium Ingredients: {', '.join(premium_ingredients) if premium_ingredients else 'None'}
-        - Scientific Ingredients: {', '.join(scientific_ingredients) if scientific_ingredients else 'None'}
-        - Natural Ingredients: {', '.join(natural_ingredients) if natural_ingredients else 'None'}
-        - Functional Ingredients: {', '.join(functional_ingredients) if functional_ingredients else 'None'}
+        INGREDIENTS: {ingredients_desc}
         
-        FORMULATION: {ingredients_desc}
-        
-        CALCULATION METHODOLOGY:
-        1. Base Market Size: Start with the total market size for {category} in India
-        2. Segment Adjustment: Apply {market_segment} segment percentage
-        3. Ingredient Premium Factor: Adjust based on premium/scientific ingredients
-        4. Complexity Multiplier: Apply complexity factor of {complexity_factor:.1f}
-        5. Product Uniqueness: Consider specific ingredient combinations
-        6. Competitive Positioning: Analyze similar products in this exact segment
-        
-        Provide a PRECISE calculation of the current market size for this EXACT product formulation, not the general category.
-        Consider:
-        - How many consumers would buy THIS specific product with THESE exact ingredients?
-        - What is the price point for THIS formulation?
-        - What is the market share for similar products with comparable ingredients?
-        - How does the ingredient combination affect market positioning?
+        Provide PRECISE calculation for this EXACT product formulation:
+        - Current market size in Indian Rupees
+        - Growth rate for this specific segment
+        - Market drivers and competitive landscape
+        - Pricing analysis and distribution channels
+        - Methodology and confidence level
+        - Product segment and ingredient premium factor
+        - Unique selling points based on ingredient combination
         
         Be extremely specific to this product's unique characteristics.
         """

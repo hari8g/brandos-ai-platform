@@ -62,7 +62,7 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
 
   // Typewriter effect for headline
   const [text] = useTypewriter({
-    words: ['scrtch.ai lets you rethink,remix and re-formulate - smarter, faster, your way'],
+    words: ['Make it yours from scrtch!'],
     loop: 1,
     typeSpeed: 100,
     deleteSpeed: 50,
@@ -383,7 +383,7 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
 
           {/* Sub-headline */}
           <p className="text-lg md:text-xl text-gray-100 mt-4 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Join our closed beta and unlock the power of scrtch.ai on what it can do to your product vision.
+            Imagine having an R&D, Compliance, Marketing and Branding team - All in one intutive engine. Join our beta to experience it.
           </p>
 
           {/* CTA Buttons */}

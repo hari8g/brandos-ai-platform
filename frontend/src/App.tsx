@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { PromptInput } from './components/FormulationEngine';
 import { FormulationCard } from './components/FormulationEngine';
+import { MultimodalFormulation } from './components/MultimodalFormulation';
 import LandingPage from './components/LandingPage';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -14,6 +15,7 @@ function App() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
+  const [inputMode, setInputMode] = useState<'text' | 'multimodal'>('text');
   const formulationRef = useRef<HTMLDivElement>(null);
   const promptInputRef = useRef<HTMLDivElement>(null);
 
@@ -39,8 +41,6 @@ function App() {
   if (!subscribed) {
     return <LandingPage onComplete={() => setSubscribed(true)} />;
   }
-
-
 
   const generatePDF = async () => {
     if (!formulationRef.current) {
@@ -796,16 +796,55 @@ function App() {
           ))}
         </div>
 
+        {/* Input Mode Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg p-1 shadow-lg">
+            <div className="flex">
+              <button
+                onClick={() => setInputMode('text')}
+                className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  inputMode === 'text'
+                    ? 'bg-purple-500 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Text-Only
+              </button>
+              <button
+                onClick={() => setInputMode('multimodal')}
+                className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  inputMode === 'multimodal'
+                    ? 'bg-purple-500 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Multi-Modal
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Prompt Input */}
         <div ref={promptInputRef}>
-          <PromptInput
-            onResult={(data) => {
-              console.log('🔄 App.tsx received data:', data);
-              setFormulations([data]);
-              setIsGenerated(true);
-            }}
-            selectedCategory={selectedCategory}
-          />
+          {inputMode === 'text' ? (
+            <PromptInput
+              onResult={(data) => {
+                console.log('🔄 App.tsx received data:', data);
+                setFormulations([data]);
+                setIsGenerated(true);
+              }}
+              selectedCategory={selectedCategory}
+            />
+          ) : (
+            <MultimodalFormulation
+              onResult={(data) => {
+                console.log('🔄 App.tsx received multimodal data:', data);
+                setFormulations([data]);
+                setIsGenerated(true);
+              }}
+              selectedCategory={selectedCategory}
+            />
+          )}
         </div>
 
         {/* Reset */}

@@ -262,14 +262,37 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     print("✅ OpenAI client is available, proceeding with API call")
     
     try:
-        # Phase 2: Use adaptive prompt optimization
-        optimized_prompt = prompt_optimizer.create_formulation_prompt(
-            req.prompt,
-            product_type=req.category,
-            category=category,
-            requirements=[req.target_cost] if req.target_cost else [],
-            region="India"
+        # Phase 2: Use adaptive prompt optimization only if the prompt is not already comprehensive
+        # Check if the prompt is already a detailed formulation request
+        is_comprehensive_prompt = (
+            len(req.prompt) > 200 and (
+                "Formulate a" in req.prompt or
+                "Create a" in req.prompt or
+                "Develop a" in req.prompt or
+                "body wash" in req.prompt.lower() or
+                "body lotion" in req.prompt.lower() or
+                "face cream" in req.prompt.lower() or
+                "shampoo" in req.prompt.lower() or
+                "conditioner" in req.prompt.lower() or
+                "serum" in req.prompt.lower() or
+                "moisturizer" in req.prompt.lower()
+            )
         )
+        
+        if is_comprehensive_prompt:
+            print("🎯 Using original comprehensive prompt without optimization")
+            print(f"🎯 Original prompt: {req.prompt[:100]}...")
+            optimized_prompt = req.prompt
+        else:
+            print("🔄 Using prompt optimization")
+            optimized_prompt = prompt_optimizer.create_formulation_prompt(
+                req.prompt,
+                product_type=req.category,
+                category=category,
+                requirements=[req.target_cost] if req.target_cost else [],
+                region="India"
+            )
+            print(f"🔄 Optimized prompt: {optimized_prompt[:100]}...")
         
         # Create the system prompt with Phase 2 optimizations
         if category == "pet food":

@@ -71,7 +71,7 @@ class MultiModalFusionService:
             )
     
     def _create_fused_prompt(self, text_prompt: str, image_insights: Dict[str, Any], strategy: str) -> str:
-        """Create a fused prompt combining text and image insights"""
+        """Create a natural language fused prompt combining text and image insights"""
         if not image_insights:
             return text_prompt
         
@@ -82,40 +82,133 @@ class MultiModalFusionService:
         packaging_style = image_insights.get("packaging_style", "")
         formulation_hints = image_insights.get("formulation_hints", [])
         target_audience = image_insights.get("target_audience_hints", [])
+        product_insights = image_insights.get("product_insights", [])
+        brand_name = image_insights.get("brand_name", "")
+        market_positioning = image_insights.get("market_positioning", "")
         
-        # Build enhanced prompt based on strategy
-        if strategy == "enhanced":
-            enhanced_parts = [text_prompt]
+        # Create natural language components
+        def create_natural_context():
+            context_parts = []
             
             if product_type:
-                enhanced_parts.append(f"Product type from image: {product_type}")
+                context_parts.append(f"this appears to be a {product_type}")
+            
+            if brand_name:
+                context_parts.append(f"from {brand_name}")
             
             if visual_elements:
-                enhanced_parts.append(f"Visual elements: {', '.join(visual_elements)}")
+                visual_desc = ", ".join(visual_elements[:3])  # Limit to first 3 elements
+                context_parts.append(f"featuring {visual_desc}")
             
             if color_scheme:
-                enhanced_parts.append(f"Color scheme: {color_scheme}")
+                context_parts.append(f"with a {color_scheme} aesthetic")
             
             if packaging_style:
-                enhanced_parts.append(f"Packaging style: {packaging_style}")
-            
-            if formulation_hints:
-                enhanced_parts.append(f"Formulation hints: {', '.join(formulation_hints)}")
+                context_parts.append(f"packaged in {packaging_style}")
             
             if target_audience:
-                enhanced_parts.append(f"Target audience indicators: {', '.join(target_audience)}")
+                audience_desc = ", ".join(target_audience[:2])  # Limit to first 2 hints
+                context_parts.append(f"aimed at {audience_desc}")
             
-            return " | ".join(enhanced_parts)
+            if market_positioning:
+                context_parts.append(f"positioned as {market_positioning}")
+            
+            return " ".join(context_parts) if context_parts else ""
+        
+        def create_formulation_guidance():
+            if formulation_hints:
+                ingredients = ", ".join(formulation_hints[:3])  # Limit to first 3 hints
+                return f"Consider incorporating {ingredients} to match the product's visual identity and market positioning."
+            return ""
+        
+        def create_product_insights():
+            if product_insights:
+                insights = ". ".join(product_insights[:2])  # Limit to first 2 insights
+                return f"The image suggests {insights.lower()}"
+            return ""
+        
+        # Build natural language prompt based on strategy
+        if strategy == "enhanced":
+            # Comprehensive natural language fusion
+            natural_context = create_natural_context()
+            formulation_guidance = create_formulation_guidance()
+            product_insights = create_product_insights()
+            
+            enhanced_parts = []
+            
+            # Start with natural observation
+            if natural_context:
+                enhanced_parts.append(f"Looking at this product image, I can see {natural_context}.")
+            
+            # Add product insights if available
+            if product_insights:
+                enhanced_parts.append(product_insights + ".")
+            
+            # Add user's requirements
+            if text_prompt.strip():
+                enhanced_parts.append(f"Your requirements include: {text_prompt.strip()}")
+            
+            # Add formulation guidance
+            if formulation_guidance:
+                enhanced_parts.append(formulation_guidance)
+            
+            # Add strategic direction
+            enhanced_parts.append("Please develop a formulation that harmonizes your specifications with these visual and market insights to create a compelling product that resonates with the target audience.")
+            
+            return " ".join(enhanced_parts)
         
         elif strategy == "balanced":
-            # Equal weight to text and image
-            image_context = f"Based on image analysis: {product_type} with {', '.join(visual_elements)} styling"
-            return f"{text_prompt} | {image_context}"
+            # Balanced natural language fusion
+            natural_context = create_natural_context()
+            formulation_guidance = create_formulation_guidance()
+            
+            enhanced_parts = []
+            
+            # Start with user's requirements
+            if text_prompt.strip():
+                enhanced_parts.append(f"Your product requirements: {text_prompt.strip()}")
+            
+            # Add balanced image context
+            if natural_context:
+                enhanced_parts.append(f"Combined with visual analysis showing {natural_context}.")
+            
+            # Add formulation guidance
+            if formulation_guidance:
+                enhanced_parts.append(formulation_guidance)
+            
+            # Add balanced direction
+            enhanced_parts.append("Please create a formulation that balances your requirements with the visual insights for optimal product development.")
+            
+            return " ".join(enhanced_parts)
         
         elif strategy == "image_primary":
-            # Prioritize image insights
-            image_context = f"Product: {product_type} | Style: {', '.join(visual_elements)} | Colors: {color_scheme} | Packaging: {packaging_style}"
-            return f"{image_context} | Additional requirements: {text_prompt}"
+            # Image-first natural language fusion
+            natural_context = create_natural_context()
+            formulation_guidance = create_formulation_guidance()
+            product_insights = create_product_insights()
+            
+            enhanced_parts = []
+            
+            # Start with image-driven context
+            if natural_context:
+                enhanced_parts.append(f"Based on the image analysis, {natural_context}.")
+            
+            # Add product insights
+            if product_insights:
+                enhanced_parts.append(product_insights + ".")
+            
+            # Add formulation guidance
+            if formulation_guidance:
+                enhanced_parts.append(formulation_guidance)
+            
+            # Add user requirements as additional considerations
+            if text_prompt.strip():
+                enhanced_parts.append(f"Additionally, please incorporate these requirements: {text_prompt.strip()}")
+            
+            # Add strategic direction
+            enhanced_parts.append("Develop a formulation that builds upon the visual identity while addressing your specific needs.")
+            
+            return " ".join(enhanced_parts)
         
         else:
             return text_prompt
@@ -148,6 +241,43 @@ class MultiModalFusionService:
                         target_cost: Optional[str] = None, strategy: str = "enhanced") -> MultiModalResponse:
         """Analyze image and fuse with text prompt in one operation"""
         try:
+            print(f"🔍 analyze_and_fuse called with text_prompt length: {len(text_prompt)}")
+            print(f"🔍 text_prompt preview: {text_prompt[:100]}...")
+            
+            # Check if this is a direct formulation request (from selected suggestion)
+            # If the text_prompt is already a comprehensive prompt, use it directly
+            is_comprehensive_prompt = (
+                len(text_prompt) > 200 and (
+                    "Looking at this product image" in text_prompt or 
+                    "Based on the image analysis" in text_prompt or
+                    "Formulate a" in text_prompt or
+                    "Create a" in text_prompt or
+                    "Develop a" in text_prompt
+                )
+            )
+            
+            if is_comprehensive_prompt:
+                print("🎯 Using direct formulation with selected prompt")
+                print(f"🎯 Prompt content: {text_prompt}")
+                # Generate formulation directly using the provided prompt
+                generate_request = GenerateRequest(
+                    prompt=text_prompt,
+                    category=category,
+                    target_cost=target_cost
+                )
+                
+                formulation = generate_formulation(generate_request)
+                
+                return MultiModalResponse(
+                    success=True,
+                    fused_prompt=text_prompt,
+                    image_insights={},
+                    text_enhancements=[],
+                    formulation=formulation.dict() if formulation else None
+                )
+            
+            # Otherwise, proceed with normal fusion process
+            print("🔄 Using fusion process")
             # First analyze the image
             image_analysis = image_analysis_service.analyze_image(image_data, text_prompt, category)
             
@@ -160,9 +290,9 @@ class MultiModalFusionService:
                     error=image_analysis.error
                 )
             
-            # Create multi-modal request
+            # Create multi-modal request with the enhanced prompt from image analysis
             multimodal_request = MultiModalRequest(
-                text_prompt=text_prompt,
+                text_prompt=image_analysis.enhanced_prompt if image_analysis.enhanced_prompt else text_prompt,
                 category=category,
                 target_cost=target_cost,
                 image_analysis=image_analysis.image_analysis,

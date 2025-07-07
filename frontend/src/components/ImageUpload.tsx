@@ -97,7 +97,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept={accept}
+        accept="image/*"
+        capture="environment"
         onChange={handleFileInputChange}
         className="hidden"
         disabled={disabled}
@@ -167,14 +168,22 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               </div>
               <div>
                 <p className="text-lg font-medium text-gray-900">
-                  {isDragOver ? 'Drop your image here' : 'Upload an image'}
+                  {isDragOver ? 'Drop your image here' : 'Upload or Take Photo'}
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Drag and drop an image, or click to browse
+                  Drag and drop an image, or click to browse or use your camera
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
                   Supports: JPG, PNG, GIF (Max {maxSize}MB)
                 </p>
+                <button
+                  type="button"
+                  className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                  onClick={handleClick}
+                  disabled={disabled}
+                >
+                  Upload or Take Photo
+                </button>
               </div>
             </div>
           </motion.div>

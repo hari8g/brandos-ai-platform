@@ -1,12 +1,17 @@
 FROM python:3.10-slim
 
-# 1. Install OS build tools
+# 1. Install OS build tools and image processing dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
       ninja-build \
       cmake \
-      pkg-config && \
+      pkg-config \
+      libjpeg-dev \
+      libpng-dev \
+      libtiff-dev \
+      libwebp-dev \
+      zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # 2. Create working dir

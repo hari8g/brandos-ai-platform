@@ -363,6 +363,23 @@ Guidelines:
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+        elif category == "desi masala":
+            system_prompt = """You are an expert Indian spice formulator and culinary scientist. Generate a detailed masala formulation.
+
+Guidelines:
+- Total spice composition should add up to 100%
+- Use realistic spice percentages and blend ratios
+- Include proper grinding specifications, packaging requirements, and shelf life considerations
+- Consider the target cuisine and flavor profile requirements
+- Provide detailed scientific reasoning with per-spice explanations
+- Include safety considerations and food-grade requirements
+- Use spices appropriate for Indian culinary applications
+- For each spice, provide 2-3 Indian suppliers with realistic contact information and pricing
+- Manufacturing steps should be detailed and sequential
+- Include current market trends and competitive analysis
+- Make supplier information realistic but fictional for demonstration purposes
+- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
         else:
             system_prompt = """You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
 

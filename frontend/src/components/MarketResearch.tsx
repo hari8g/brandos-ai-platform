@@ -711,6 +711,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Rising health consciousness driving premium functional beverage demand'
                           : selectedCategory?.toLowerCase() === 'textiles'
                           ? 'Rising sustainability consciousness driving premium textile demand'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Growing demand for authentic Indian spice blends and traditional flavors'
                           : 'Growing beauty consciousness driving premium cosmetic product demand'
                         }
                       </span>
@@ -726,6 +728,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Opportunity to capture market share through functional beverage innovation'
                           : selectedCategory?.toLowerCase() === 'textiles'
                           ? 'Opportunity to capture market share through sustainable textile innovation'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Opportunity to capture market share through authentic spice blend innovation'
                           : 'Opportunity to capture market share through innovative beauty formulations'
                         }
                       </span>
@@ -741,6 +745,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Potential for premium positioning with functional beverage ingredients'
                           : selectedCategory?.toLowerCase() === 'textiles'
                           ? 'Potential for premium positioning with sustainable textile materials'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Potential for premium positioning with authentic Indian spice blends'
                           : 'Potential for premium positioning with high-quality beauty ingredients'
                         }
                       </span>
@@ -752,11 +758,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Room for differentiation in competitive pet food landscape'
                           : selectedCategory?.toLowerCase() === 'wellness'
                           ? 'Room for differentiation in competitive wellness supplement landscape'
-                          : selectedCategory?.toLowerCase() === 'beverages'
-                          ? 'Room for differentiation in competitive beverage landscape'
-                          : selectedCategory?.toLowerCase() === 'textiles'
-                          ? 'Room for differentiation in competitive textile landscape'
-                          : 'Room for differentiation in competitive beauty product landscape'
+                          : 'Room for differentiation in competitive beverage landscape'
                         }
                       </span>
                     </li>

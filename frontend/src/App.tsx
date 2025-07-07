@@ -57,6 +57,7 @@ function App() {
 
     try {
       console.log('📄 Starting comprehensive PDF report generation...');
+      console.log('📊 Formulation data structure:', Object.keys(formulations[0]));
       
       // Find the download button more reliably - try multiple selectors
       let button = document.querySelector('[data-download-button]') as HTMLButtonElement;
@@ -79,14 +80,29 @@ function App() {
       const f = formulations[0];
       console.log('📊 Formulation data for comprehensive report:', f);
       
+      // Validate essential data
+      if (!f.product_name) {
+        throw new Error('Product name is missing from formulation data');
+      }
+      
+      if (!f.ingredients || f.ingredients.length === 0) {
+        throw new Error('Ingredients data is missing from formulation data');
+      }
+      
+      console.log('✅ Data validation passed');
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
       const contentWidth = pageWidth - (margin * 2);
       let yPosition = 20;
 
+      console.log('📄 PDF document created successfully');
+      
       // Helper function to add text with word wrapping
       const addText = (text: string, y: number, fontSize: number = 12, isBold: boolean = false) => {
+        if (!text) return y;
         pdf.setFontSize(fontSize);
         if (isBold) pdf.setFont('helvetica', 'bold');
         else pdf.setFont('helvetica', 'normal');
@@ -116,6 +132,7 @@ function App() {
 
       // Helper function to add regular text
       const addRegularText = (text: string, y: number) => {
+        if (!text) return y;
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
@@ -126,6 +143,7 @@ function App() {
 
       // Helper function to add list item
       const addListItem = (text: string, y: number) => {
+        if (!text) return y;
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
@@ -136,6 +154,7 @@ function App() {
 
       // Helper function to add numbered item
       const addNumberedItem = (text: string, y: number, number: number) => {
+        if (!text) return y;
         pdf.setFontSize(10);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0, 0, 0);
@@ -144,9 +163,22 @@ function App() {
         return y + (lines.length * 10 * 0.4) + 1;
       };
 
+      // Helper function to add table-like data
+      const addTableRow = (label: string, value: string, y: number) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`${label}:`, margin, y);
+        
+        pdf.setFont('helvetica', 'normal');
+        const lines = pdf.splitTextToSize(value, contentWidth - 60);
+        pdf.text(lines, margin + 60, y);
+        return y + (lines.length * 10 * 0.4) + 1;
+      };
+
       // Check if we need a new page
       const checkNewPage = (requiredSpace: number) => {
-        if (yPosition + requiredSpace > pdf.internal.pageSize.getHeight() - margin) {
+        if (yPosition + requiredSpace > pageHeight - margin) {
           pdf.addPage();
           yPosition = 20;
         }
@@ -156,7 +188,7 @@ function App() {
       pdf.setFontSize(24);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 0, 0);
-      pdf.text('Product Formulation Report', margin, yPosition);
+      pdf.text('Comprehensive Product Formulation Report', margin, yPosition);
       yPosition += 20;
 
       // Add timestamp
@@ -167,21 +199,28 @@ function App() {
       pdf.text(`Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`, margin, yPosition);
       yPosition += 15;
 
-      // Product Query
-      if (f.query) {
-        yPosition = addSectionHeader('Product Overview', yPosition);
-        yPosition = addRegularText(`Product Query: ${f.query}`, yPosition);
-        yPosition += 5;
+      // Product Overview
+      yPosition = addSectionHeader('Product Overview', yPosition);
+      if (f.product_name) {
+        yPosition = addTableRow('Product Name', f.product_name, yPosition);
       }
+      if (f.query) {
+        yPosition = addTableRow('Original Query', f.query, yPosition);
+      }
+      if (selectedCategory) {
+        yPosition = addTableRow('Category', selectedCategory, yPosition);
+      }
+      yPosition += 5;
 
       // Executive Summary
       yPosition = addSectionHeader('Executive Summary', yPosition);
-      const summaryText = `This comprehensive report provides detailed analysis of the product formulation, including manufacturing insights, market research, branding strategy, and scientific reasoning. The report covers all aspects from initial concept to market-ready formulation with supporting data and strategic recommendations.`;
+      const summaryText = `This comprehensive report provides detailed analysis of the product formulation, including manufacturing insights, market research, branding strategy, and scientific reasoning. The report covers all aspects from initial concept to market-ready formulation with supporting data and strategic recommendations. The formulation has been optimized for the Indian market with consideration for local suppliers, regulatory requirements, and market trends.`;
       yPosition = addRegularText(summaryText, yPosition);
       yPosition += 10;
 
       // Formulation Details
       if (f.ingredients && f.ingredients.length > 0) {
+        checkNewPage(100);
         yPosition = addSectionHeader('Formulation Details', yPosition);
         
         // Ingredients with detailed information
@@ -237,11 +276,20 @@ function App() {
           });
           yPosition += 3;
         }
+
+        // Safety Notes
+        if (f.safety_notes && f.safety_notes.length > 0) {
+          yPosition = addSubsectionHeader('Safety Considerations:', yPosition);
+          f.safety_notes.forEach((note: any) => {
+            yPosition = addListItem(note, yPosition);
+          });
+          yPosition += 3;
+        }
       }
 
       // Manufacturing Insights
       if (f.manufacturing_insights) {
-        checkNewPage(80);
+        checkNewPage(120);
         yPosition = addSectionHeader('Manufacturing & Cost Analysis', yPosition);
         
         const insights = f.manufacturing_insights;
@@ -279,6 +327,31 @@ function App() {
           Object.entries(insights.pricing).forEach(([scale, price]) => {
             yPosition = addRegularText(`${scale.charAt(0).toUpperCase() + scale.slice(1)} Scale: $${price}`, yPosition);
           });
+          yPosition += 3;
+        }
+
+        // Scaling Benefits
+        if (insights.scaling_benefits && insights.scaling_benefits.length > 0) {
+          yPosition = addSubsectionHeader('Scaling Benefits:', yPosition);
+          insights.scaling_benefits.forEach((benefit: any) => {
+            yPosition = addListItem(benefit, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Risk Factors
+        if (insights.risk_factors && insights.risk_factors.length > 0) {
+          yPosition = addSubsectionHeader('Risk Factors:', yPosition);
+          insights.risk_factors.forEach((risk: any) => {
+            yPosition = addListItem(risk, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Market Opportunity
+        if (insights.market_opportunity) {
+          yPosition = addSubsectionHeader('Market Opportunity:', yPosition);
+          yPosition = addRegularText(insights.market_opportunity, yPosition);
           yPosition += 3;
         }
       }
@@ -373,6 +446,31 @@ function App() {
         if (research.current_market_size) {
           yPosition = addSubsectionHeader('Current Market Size:', yPosition);
           yPosition = addRegularText(`$${research.current_market_size}`, yPosition);
+          yPosition += 3;
+        }
+
+        // Growth Rate
+        if (research.growth_rate) {
+          yPosition = addSubsectionHeader('Market Growth Rate:', yPosition);
+          yPosition = addRegularText(`${research.growth_rate}`, yPosition);
+          yPosition += 3;
+        }
+
+        // Key Trends
+        if (research.key_trends && research.key_trends.length > 0) {
+          yPosition = addSubsectionHeader('Key Market Trends:', yPosition);
+          research.key_trends.forEach((trend: any) => {
+            yPosition = addListItem(trend, yPosition);
+          });
+          yPosition += 3;
+        }
+
+        // Competitive Landscape
+        if (research.competitive_landscape && research.competitive_landscape.length > 0) {
+          yPosition = addSubsectionHeader('Competitive Landscape:', yPosition);
+          research.competitive_landscape.forEach((competitor: any) => {
+            yPosition = addListItem(competitor, yPosition);
+          });
           yPosition += 3;
         }
 
@@ -659,18 +757,6 @@ function App() {
         }
       }
 
-      // Safety Assessment
-      if (f.safety_notes && f.safety_notes.length > 0) {
-        checkNewPage(60);
-        yPosition = addSectionHeader('Safety Assessment & Compliance', yPosition);
-        
-        yPosition = addSubsectionHeader('Safety Notes & Considerations:', yPosition);
-        f.safety_notes.forEach((note: any) => {
-          yPosition = addListItem(note, yPosition);
-        });
-        yPosition += 3;
-      }
-
       // Cost Analysis
       if (f.estimated_cost) {
         checkNewPage(40);
@@ -681,15 +767,42 @@ function App() {
         yPosition += 3;
       }
 
+      // Additional Data (if available)
+      if (f.additional_data) {
+        checkNewPage(60);
+        yPosition = addSectionHeader('Additional Analysis', yPosition);
+        
+        Object.entries(f.additional_data).forEach(([key, value]) => {
+          const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          yPosition = addSubsectionHeader(`${formattedKey}:`, yPosition);
+          if (Array.isArray(value)) {
+            value.forEach((item: any) => {
+              yPosition = addListItem(item, yPosition);
+            });
+          } else {
+            yPosition = addRegularText(String(value), yPosition);
+          }
+          yPosition += 3;
+        });
+      }
+
       // Conclusion
       checkNewPage(40);
       yPosition = addSectionHeader('Conclusion & Recommendations', yPosition);
-      const conclusionText = `This comprehensive analysis provides a complete roadmap for product development, from formulation to market entry. The combination of scientific validation, market analysis, and strategic positioning creates a strong foundation for successful product commercialization.`;
+      const conclusionText = `This comprehensive analysis provides a complete roadmap for product development, from formulation to market entry. The combination of scientific validation, market analysis, and strategic positioning creates a strong foundation for successful product commercialization. The formulation has been optimized for the Indian market with consideration for local suppliers, regulatory requirements, and market trends. This report serves as a complete business case for the product launch.`;
       yPosition = addRegularText(conclusionText, yPosition);
 
       // Save the PDF
       const filename = `comprehensive_formulation_report_${Date.now()}.pdf`;
-      pdf.save(filename);
+      console.log('💾 Attempting to save PDF as:', filename);
+      
+      try {
+        pdf.save(filename);
+        console.log('✅ PDF saved successfully');
+      } catch (saveError) {
+        console.error('❌ Error saving PDF:', saveError);
+        throw new Error(`Failed to save PDF: ${saveError}`);
+      }
       
       console.log('✅ Comprehensive PDF report generated successfully:', filename);
       alert(`Comprehensive report downloaded as ${filename}`);
@@ -700,6 +813,43 @@ function App() {
       }
     } catch (err) {
       console.error('❌ PDF generation failed:', err);
+      
+      // Try fallback PDF generation
+      try {
+        console.log('🔄 Attempting fallback PDF generation...');
+        const fallbackPdf = new jsPDF('p', 'mm', 'a4');
+        const f = formulations[0];
+        
+        fallbackPdf.setFontSize(16);
+        fallbackPdf.setFont('helvetica', 'bold');
+        fallbackPdf.text('Product Formulation Report', 20, 20);
+        
+        fallbackPdf.setFontSize(12);
+        fallbackPdf.setFont('helvetica', 'normal');
+        fallbackPdf.text(`Product: ${f.product_name || 'Unknown'}`, 20, 40);
+        
+        if (f.ingredients && f.ingredients.length > 0) {
+          fallbackPdf.text('Ingredients:', 20, 60);
+          f.ingredients.forEach((ingredient: any, index: number) => {
+            const text = `${index + 1}. ${ingredient.name} - ${ingredient.percentage || ingredient.percent}%`;
+            fallbackPdf.text(text, 30, 70 + (index * 10));
+          });
+        }
+        
+        const fallbackFilename = `simple_formulation_report_${Date.now()}.pdf`;
+        fallbackPdf.save(fallbackFilename);
+        console.log('✅ Fallback PDF generated successfully');
+        alert(`Simple report downloaded as ${fallbackFilename}`);
+        
+        const button = document.querySelector('[data-download-button]') as HTMLButtonElement;
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = '<span>Download Formulation</span>';
+        }
+        return;
+      } catch (fallbackError) {
+        console.error('❌ Fallback PDF generation also failed:', fallbackError);
+      }
       
       // More specific error messages
       if (err instanceof Error) {
@@ -772,6 +922,15 @@ function App() {
               gradient: "from-red-400 via-pink-400 to-purple-400",
               hoverGradient: "from-red-500 via-pink-500 to-purple-500",
               description: "Fabric & Materials"
+            },
+            { 
+              label: "Desi Masala", 
+              value: "desi masala", 
+              icon: "🌶️",
+              gradient: "from-yellow-400 via-orange-400 to-red-400",
+              hoverGradient: "from-yellow-500 via-orange-500 to-red-500",
+              description: "Indian Spices & Blends",
+              isNew: true
             }
           ].map(cat => (
             <button
@@ -788,6 +947,13 @@ function App() {
               {/* Glow effect for selected */}
               {selectedCategory === cat.value && (
                 <div className={`absolute -inset-2 bg-gradient-to-r ${cat.gradient} rounded-2xl blur opacity-75 animate-pulse`}></div>
+              )}
+              
+              {/* NEW badge */}
+              {cat.isNew && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+                  NEW
+                </div>
               )}
               
               <div className="relative z-10 flex flex-col items-center">

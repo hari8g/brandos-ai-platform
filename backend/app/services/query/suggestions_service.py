@@ -66,6 +66,16 @@ def get_extraction_prompt(user_prompt: str, category: Optional[str] = None) -> s
           - form (e.g. "woven", "knit", "non-woven")
           - concern (e.g. "moisture-wicking", "sustainability", "comfort")
         '''
+    elif category == "desi masala":
+        return f'''
+        You are an Indian spice and masala formulation expert.
+        From this user input:
+          "{user_prompt}"
+        Return strict JSON with keys:
+          - product_type (e.g. "traditional garam masala blend")
+          - form (e.g. "powder", "paste", "whole spices")
+          - concern (e.g. "authentic flavor", "heat level", "shelf life")
+        '''
     else:
         return f'''
         You are a cosmetic formulation expert.
@@ -311,6 +321,24 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
                 prompt=f"Formulate a {category} product optimized for {base_prompt}. Focus on stability, safety, and regulatory compliance.",
                 why="Technical considerations ensure the formulation is safe, stable, and compliant",
                 how="Mention stability requirements, safety concerns, and regulatory considerations in your prompt"
+            )
+        ]
+    elif category == "desi masala":
+        suggestions = [
+            Suggestion(
+                prompt=f"Create a {category} blend for {base_prompt}. Include key spices, target cuisine type, and desired flavor profile.",
+                why="Adding specific spice combinations and flavor details helps create authentic formulations",
+                how="Specify exact spices, ratios, and flavor expectations in your prompt"
+            ),
+            Suggestion(
+                prompt=f"Develop a premium {category} solution for {base_prompt}. Consider packaging, shelf life, and target market preferences.",
+                why="Market positioning and shelf life details help create commercially viable products",
+                how="Include target audience, packaging preferences, and shelf life requirements in your formulation request"
+            ),
+            Suggestion(
+                prompt=f"Formulate a {category} product optimized for {base_prompt}. Focus on authenticity, safety, and food-grade compliance.",
+                why="Technical considerations ensure the formulation is authentic, safe, and compliant",
+                how="Mention authenticity requirements, safety concerns, and food-grade considerations in your prompt"
             )
         ]
     else:

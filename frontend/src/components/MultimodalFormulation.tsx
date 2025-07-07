@@ -402,6 +402,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       case 'wellness': return '🌱';
       case 'beverages': return '🥤';
       case 'textiles': return '🧵';
+      case 'desi masala': return '🌶️';
       default: return '🔬';
     }
   };
@@ -413,6 +414,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       case 'wellness': return 'Health & Wellness';
       case 'beverages': return 'Beverages & Drinks';
       case 'textiles': return 'Textiles & Materials';
+      case 'desi masala': return 'Desi Masala & Spices';
       default: return 'Product Formulation';
     }
   };
@@ -462,6 +464,13 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         "Who is your target audience? (age, lifestyle, fashion preferences...)",
         "Any specific materials or properties you want to include?",
         "What's your desired construction? (woven, knit, non-woven...)"
+      ],
+      "desi masala": [
+        "Describe your masala blend: cuisine type, flavor profile, heat level...",
+        "What traditional dishes are you targeting? (biryani, tandoori, chaat...)",
+        "Who is your target audience? (home cooks, restaurants, food manufacturers...)",
+        "Any specific spices or ingredients you want to include?",
+        "What's your desired format? (powder, paste, whole spices...)"
       ]
     };
 

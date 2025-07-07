@@ -58,5 +58,17 @@ export const categoryPrompts: Record<string, string[]> = {
     "Organic merino wool for temperature-regulating base layers",
     "Bamboo charcoal fabric for odor-resistant socks",
     "Plant-based leather alternative for vegan accessories"
+  ],
+  "desi masala": [
+    "Garam masala blend for traditional Indian cooking",
+    "Tandoori spice mix for authentic restaurant flavors",
+    "Chaat masala blend for street food seasoning",
+    "Biryani masala for aromatic rice dishes",
+    "Pav bhaji masala for Mumbai street food",
+    "Rasam powder for South Indian soup seasoning",
+    "Sambar powder for lentil-based dishes",
+    "Pickle masala for preserving vegetables",
+    "Tea masala blend for chai preparation",
+    "Kebab masala for grilled meat dishes"
   ]
 };

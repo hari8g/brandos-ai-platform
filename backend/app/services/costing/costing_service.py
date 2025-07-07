@@ -262,6 +262,8 @@ def calculate_manufacturing_scenarios(formulation: GenerateResponse) -> Manufact
         category = "beverages"
     elif "textile" in formulation.product_name.lower() or "fabric" in formulation.product_name.lower() or "material" in formulation.product_name.lower():
         category = "textiles"
+    elif "masala" in formulation.product_name.lower() or "spice" in formulation.product_name.lower() or "blend" in formulation.product_name.lower():
+        category = "desi masala"
     
     # Fetch costing data from OpenAI
     costing_data = fetch_costing_from_openai(formulation, category)
@@ -358,6 +360,8 @@ def analyze_manufacturing(request: ManufacturingRequest) -> ManufacturingInsight
         category = "beverages"
     elif "textile" in formulation.product_name.lower() or "fabric" in formulation.product_name.lower() or "material" in formulation.product_name.lower():
         category = "textiles"
+    elif "masala" in formulation.product_name.lower() or "spice" in formulation.product_name.lower() or "blend" in formulation.product_name.lower():
+        category = "desi masala"
     
     print(f"🏷️ Category: {category}")
     

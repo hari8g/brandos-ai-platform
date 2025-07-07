@@ -297,6 +297,19 @@ export default function PromptInput({
           bg: 'bg-red-50',
           icon: 'text-red-700'
         };
+      case 'desi masala':
+        return {
+          primary: 'yellow',
+          secondary: 'orange',
+          tertiary: 'red',
+          gradient: 'from-yellow-400 via-orange-400 to-red-400',
+          hoverGradient: 'from-yellow-500 via-orange-500 to-red-500',
+          text: 'text-yellow-600',
+          border: 'border-yellow-200',
+          focus: 'focus:border-yellow-500 focus:ring-yellow-200',
+          bg: 'bg-yellow-50',
+          icon: 'text-yellow-700'
+        };
       default:
         return {
           primary: 'purple',

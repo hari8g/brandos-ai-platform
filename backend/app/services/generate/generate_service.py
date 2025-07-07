@@ -7,6 +7,12 @@ from app.models.generate import GenerateRequest, GenerateResponse, IngredientDet
 from app.services.scientific_reasoning_service import ScientificReasoningService
 from app.models.scientific_reasoning import ScientificReasoningRequest
 
+# Phase 2 Optimization imports
+from app.utils.advanced_compression import compress_api_response, CompressionLevel
+from app.services.cache_service import get_cached_formulation, cache_formulation
+from app.services.adaptive_prompt_service import prompt_optimizer
+from app.services.streaming_service import streaming_middleware
+
 # Load environment variables from the root .env file
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
@@ -234,19 +240,40 @@ def get_formulation_function_definitions():
 
 def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     """
-    Use OpenAI to generate a real formulation based on the request.
+    Use OpenAI to generate a real formulation based on the request with Phase 2 optimizations.
     """
     print(f"🔍 Starting formulation generation for: {req.prompt}")
     category = (req.category or '').lower()
+    
+    # Phase 2: Check cache first
+    try:
+        cached_response = get_cached_formulation(req.prompt, {"category": category})
+        if cached_response:
+            print("✅ Using cached formulation response")
+            return GenerateResponse(**cached_response)
+    except Exception as e:
+        print(f"⚠️ Cache check failed: {e}")
+    
     # Check if OpenAI client is available
     if not client:
         print("🔄 Using fallback mock formulation (OpenAI not available)")
         return _generate_mock_formulation(req)
+    
     print("✅ OpenAI client is available, proceeding with API call")
+    
     try:
-        # Create the prompt for OpenAI
+        # Phase 2: Use adaptive prompt optimization
+        optimized_prompt = prompt_optimizer.create_formulation_prompt(
+            req.prompt,
+            product_type=req.category,
+            category=category,
+            requirements=[req.target_cost] if req.target_cost else [],
+            region="India"
+        )
+        
+        # Create the system prompt with Phase 2 optimizations
         if category == "pet food":
-            system_prompt = """You are an expert pet food formulator and animal nutritionist. Generate a detailed pet food formulation based on the user's request.
+            system_prompt = """You are an expert pet food formulator. Generate a detailed pet food formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -263,7 +290,7 @@ Guidelines:
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
         elif category == "wellness":
-            system_prompt = """You are an expert wellness supplement formulator and nutritionist. Generate a detailed supplement formulation based on the user's request.
+            system_prompt = """You are an expert wellness supplement formulator. Generate a detailed supplement formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -280,7 +307,7 @@ Guidelines:
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
         else:
-            system_prompt = """You are an expert cosmetic formulator and chemist. Generate a detailed cosmetic formulation based on the user's request.
+            system_prompt = """You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -298,15 +325,15 @@ Guidelines:
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
 
         user_prompt = f"""
-        Create a formulation for: {req.prompt}
+        Create a formulation for: {optimized_prompt}
         Category: {req.category or 'General'}
         Target cost: {req.target_cost or 'Not specified'}
         
         Please provide a complete, safe, and effective formulation with detailed ingredient rationales, local supplier information, and step-by-step manufacturing instructions.
         """
 
-        print(f"📤 Sending request to OpenAI...")
-        print(f"📝 User prompt: {user_prompt[:100]}...")
+        print(f"📤 Sending optimized request to OpenAI...")
+        print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
         # Call OpenAI with function calling
         response = client.chat.completions.create(
@@ -426,30 +453,43 @@ Guidelines:
             # Ensure detailed calculations are always included, even if OpenAI provided market research
             if not market_research.get('detailed_calculations'):
                 # Get the detailed calculations from our function and merge them
-                detailed_market_research = _generate_market_research(req.category or 'cosmetics', req.prompt)
-                market_research['detailed_calculations'] = detailed_market_research.get('detailed_calculations', {})
+                detailed_calculations = _generate_market_research(req.category or 'cosmetics', req.prompt).get('detailed_calculations', {})
+                market_research['detailed_calculations'] = detailed_calculations
         
-        result = GenerateResponse(
-            product_name=data.get('product_name', f"Custom {req.category or 'Product'}"),
+        # Create the response
+        response_data = GenerateResponse(
+            product_name=data.get('product_name', 'Generated Product'),
             reasoning=data.get('reasoning', 'No reasoning provided'),
             ingredients=ingredients,
             manufacturing_steps=manufacturing_steps,
             estimated_cost=float(data.get('estimated_cost', 0)),
             safety_notes=data.get('safety_notes', []),
-            packaging_marketing_inspiration=data.get('packaging_marketing_inspiration'),
-            market_trends=data.get('market_trends'),
-            competitive_landscape=data.get('competitive_landscape'),
+            packaging_marketing_inspiration=data.get('packaging_marketing_inspiration', 'No packaging inspiration provided'),
+            market_trends=data.get('market_trends', []),
+            competitive_landscape=data.get('competitive_landscape', {}),
             scientific_reasoning=scientific_reasoning,
             market_research=market_research
         )
         
-        print(f"✅ Successfully generated formulation: {result.product_name}")
-        return result
+        # Phase 2: Cache the response (non-async for now)
+        try:
+            cache_formulation(req.prompt, response_data.dict(), {"category": category})
+            print("✅ Response cached successfully")
+        except Exception as e:
+            print(f"⚠️ Caching failed: {e}")
+        
+        # Phase 2: Apply response compression
+        try:
+            compressed_response, compression_stats = compress_api_response(response_data.dict(), CompressionLevel.MEDIUM)
+            print(f"✅ Response compressed: {compression_stats.reduction_percentage:.1f}% reduction")
+        except Exception as e:
+            print(f"⚠️ Compression failed: {e}")
+            compressed_response = response_data.dict()
+        
+        return response_data
         
     except Exception as e:
-        print(f"❌ OpenAI API error: {e}")
-        print(f"🔍 Error type: {type(e).__name__}")
-        # Fallback to mock data if OpenAI fails
+        print(f"❌ Error in formulation generation: {e}")
         return _generate_mock_formulation(req)
 
 def _is_comprehensive_scientific_reasoning(scientific_reasoning: dict) -> bool:

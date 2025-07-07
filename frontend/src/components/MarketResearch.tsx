@@ -94,7 +94,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
       calculation: 'TAM = Total Potential Customers × Average Revenue Per Customer',
       example: getCategorySpecificExample('TAM', category),
       significance: 'Helps understand the maximum market potential and guides long-term strategic planning.',
-      icon: '🌍'
+      icon: 'T'
     },
     'SAM': {
       title: 'Serviceable Addressable Market (SAM)',
@@ -103,7 +103,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
       calculation: 'SAM = TAM × Addressable Market Percentage',
       example: getCategorySpecificExample('SAM', category),
       significance: 'Represents the realistic market opportunity given your current capabilities and constraints.',
-      icon: '🎯'
+      icon: 'S'
     },
     'SOM': {
       title: 'Serviceable Obtainable Market (SOM)',
@@ -112,7 +112,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
       calculation: 'SOM = SAM × Target Market Share Percentage',
       example: getCategorySpecificExample('SOM', category),
       significance: 'Your actual revenue target and the basis for financial projections and business planning.',
-      icon: '💰'
+      icon: 'O'
     },
     'Market Size': {
       title: 'Current Market Size',
@@ -121,7 +121,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
       calculation: 'Market Size = Current Sales Volume × Average Market Price',
       example: getCategorySpecificExample('Market Size', category),
       significance: 'Shows the current market opportunity and baseline for growth projections.',
-      icon: '📊'
+      icon: 'M'
     },
     'Growth Rate': {
       title: 'Market Growth Rate (CAGR)',
@@ -130,7 +130,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
       calculation: 'CAGR = (End Value / Start Value)^(1/Years) - 1',
       example: getCategorySpecificExample('Growth Rate', category),
       significance: 'Indicates market momentum and helps forecast future market size and revenue potential.',
-      icon: '📈'
+      icon: 'G'
     }
   };
   
@@ -141,7 +141,7 @@ const getMetricInfo = (metric: string, detailedData?: any, category?: string): M
     calculation: '',
     example: '',
     significance: '',
-    icon: '📋'
+          icon: 'I'
   };
 
   // If we have detailed calculation data, enhance the info
@@ -206,11 +206,11 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center space-x-3">
                 <div className={`
-                  w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-sm md:text-base
+                  w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-sm md:text-base font-bold
                   ${colors.lightBg} ${colors.border} border
                   group-hover:scale-110 transition-transform duration-200
                 `}>
-                  {info.icon}
+                  <span className={colors.text}>{info.icon}</span>
                 </div>
                 <div>
                   <h4 className={`font-semibold ${colors.text} text-sm md:text-base`}>{label}</h4>
@@ -498,12 +498,12 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
       <div className="space-y-6 md:space-y-8">
         {/* Market Size Analysis */}
         <div>
-          <div className="flex items-center space-x-3 mb-4">
-            <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-              📊
+                      <div className="flex items-center space-x-3 mb-4">
+              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-blue-600">M</span>
+              </div>
+              <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Size Analysis</h4>
             </div>
-            <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Size Analysis</h4>
-          </div>
           <div className="space-y-4">
             <MetricCard metric="TAM" value={tam} label="TAM (Total Addressable Market)" />
             <MetricCard metric="SAM" value={sam} label="SAM (Serviceable Addressable Market)" />
@@ -513,12 +513,12 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
         {/* Market Metrics & Growth */}
         <div>
-          <div className="flex items-center space-x-3 mb-4">
-            <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-              📈
+                      <div className="flex items-center space-x-3 mb-4">
+              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-green-600">G</span>
+              </div>
+              <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Metrics & Growth</h4>
             </div>
-            <h4 className={`text-lg md:text-xl font-semibold ${colors.text}`}>Market Metrics & Growth</h4>
-          </div>
           <div className="space-y-4">
             <MetricCard 
               metric="Market Size" 
@@ -537,8 +537,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
         {keyTrends && keyTrends.length > 0 && (
           <div>
             <div className="flex items-center space-x-3 mb-4">
-              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                🔍
+              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-purple-600">T</span>
               </div>
               <h4 className={`text-lg font-semibold ${colors.text}`}>Key Market Trends</h4>
             </div>
@@ -581,10 +581,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
               {/* Trends Summary */}
               <div className={`mt-6 p-4 rounded-lg ${colors.cardBg} border ${colors.border}`}>
                 <div className="flex items-center space-x-2 mb-3">
-                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                    📊
-                  </div>
-                  <h5 className={`font-semibold ${colors.text} text-sm`}>Trends Summary</h5>
+                                <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-blue-600">S</span>
+              </div>
+              <h5 className={`font-semibold ${colors.text} text-sm`}>Trends Summary</h5>
                 </div>
                 <p className={`${colors.text} text-xs leading-relaxed opacity-80`}>
                   These {keyTrends.length} key trends represent the most significant market drivers and opportunities 
@@ -599,8 +599,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
         {competitiveLandscape && competitiveLandscape.length > 0 && (
           <div>
             <div className="flex items-center space-x-3 mb-4">
-              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                🏢
+              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-orange-600">C</span>
               </div>
               <h4 className={`text-lg font-semibold ${colors.text}`}>Competitive Landscape</h4>
             </div>
@@ -617,15 +617,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                       hover:border-blue-200 cursor-pointer
                     `}
                   >
-                    {/* Competitor Icon */}
-                    <div className={`
-                      w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-3
-                      ${colors.lightBg} ${colors.border} border
-                      group-hover:scale-110 transition-transform duration-200
-                    `}>
-                      🏢
-                    </div>
-                    
+
                     {/* Competitor Name */}
                     <div className={`font-medium ${colors.text} text-sm leading-tight`}>
                       {competitor}
@@ -643,8 +635,8 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
               {/* Competitive Analysis Summary */}
               <div className={`p-4 rounded-lg ${colors.cardBg} border ${colors.border}`}>
                 <div className="flex items-center space-x-2 mb-3">
-                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                    📈
+                  <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                    <span className="text-green-600">A</span>
                   </div>
                   <h5 className={`font-semibold ${colors.text} text-sm`}>Competitive Analysis</h5>
                 </div>
@@ -683,12 +675,12 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
 
         {/* Market Opportunity Summary */}
         <div>
-          <div className="flex items-center space-x-3 mb-4">
-            <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-              🎯
+                      <div className="flex items-center space-x-3 mb-4">
+              <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                <span className="text-red-600">O</span>
+              </div>
+              <h4 className={`text-lg font-semibold ${colors.text}`}>Market Opportunity Summary</h4>
             </div>
-            <h4 className={`text-lg font-semibold ${colors.text}`}>Market Opportunity Summary</h4>
-          </div>
           <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-4`}>
             {marketOpportunitySummary ? (
               <div className="space-y-4">
@@ -758,10 +750,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                 {/* Strategic Advice Section */}
                 <div className={`border-t ${colors.border} pt-4`}>
                   <div className="flex items-center space-x-2 mb-3">
-                    <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs`}>
-                      💡
-                    </div>
-                    <strong className={`${colors.text} text-base`}>Strategic Advice for {selectedCategory?.toLowerCase() || 'Product'} Market:</strong>
+                                      <div className={`w-5 h-5 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+                    <span className="text-blue-600">S</span>
+                  </div>
+                  <strong className={`${colors.text} text-base`}>Strategic Advice for {selectedCategory?.toLowerCase() || 'Product'} Market:</strong>
                   </div>
                   <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-3`}>
                     <ul className="space-y-3 text-sm">

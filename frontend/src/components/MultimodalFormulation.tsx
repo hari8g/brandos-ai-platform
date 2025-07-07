@@ -400,6 +400,8 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       case 'cosmetics': return '💄';
       case 'pet food': return '🐾';
       case 'wellness': return '🌱';
+      case 'beverages': return '🥤';
+      case 'textiles': return '🧵';
       default: return '🔬';
     }
   };
@@ -409,6 +411,8 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       case 'cosmetics': return 'Beauty & Cosmetics';
       case 'pet food': return 'Pet Nutrition';
       case 'wellness': return 'Health & Wellness';
+      case 'beverages': return 'Beverages & Drinks';
+      case 'textiles': return 'Textiles & Materials';
       default: return 'Product Formulation';
     }
   };
@@ -444,6 +448,20 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         "Who is your target audience? (age, lifestyle, health focus...)",
         "Any specific ingredients or formulations you prefer?",
         "What's your desired format? (capsules, powder, liquid...)"
+      ],
+      beverages: [
+        "Describe your beverage: type, target benefits, flavor preferences...",
+        "What functional benefits are you targeting? (energy, immunity, hydration...)",
+        "Who is your target audience? (age, lifestyle, consumption habits...)",
+        "Any specific ingredients or flavors you want to include?",
+        "What's your desired format? (ready-to-drink, powder, concentrate...)"
+      ],
+      textiles: [
+        "Describe your textile: application, performance requirements, sustainability goals...",
+        "What performance benefits are you targeting? (moisture-wicking, durability, comfort...)",
+        "Who is your target audience? (age, lifestyle, fashion preferences...)",
+        "Any specific materials or properties you want to include?",
+        "What's your desired construction? (woven, knit, non-woven...)"
       ]
     };
 
@@ -718,8 +736,6 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             )}
           </motion.button>
         )}
-
-
 
         <motion.button
           onClick={handleReset}

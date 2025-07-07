@@ -68,6 +68,40 @@ export function getCategoryColors(category: string | null): CategoryColors {
         buttonGradient: 'from-green-500 to-emerald-600',
         buttonHoverGradient: 'from-green-600 to-emerald-700'
       };
+    case 'beverages':
+      return {
+        primary: 'blue',
+        secondary: 'cyan',
+        tertiary: 'teal',
+        gradient: 'from-blue-400 via-cyan-400 to-teal-400',
+        hoverGradient: 'from-blue-500 via-cyan-500 to-teal-500',
+        text: 'text-blue-600',
+        border: 'border-blue-200',
+        focus: 'focus:border-blue-500 focus:ring-blue-200',
+        bg: 'bg-blue-50',
+        icon: 'text-blue-700',
+        lightBg: 'bg-blue-50',
+        cardBg: 'bg-gradient-to-r from-blue-50 to-cyan-50',
+        buttonGradient: 'from-blue-500 to-cyan-600',
+        buttonHoverGradient: 'from-blue-600 to-cyan-700'
+      };
+    case 'textiles':
+      return {
+        primary: 'red',
+        secondary: 'pink',
+        tertiary: 'purple',
+        gradient: 'from-red-400 via-pink-400 to-purple-400',
+        hoverGradient: 'from-red-500 via-pink-500 to-purple-500',
+        text: 'text-red-600',
+        border: 'border-red-200',
+        focus: 'focus:border-red-500 focus:ring-red-200',
+        bg: 'bg-red-50',
+        icon: 'text-red-700',
+        lightBg: 'bg-red-50',
+        cardBg: 'bg-gradient-to-r from-red-50 to-pink-50',
+        buttonGradient: 'from-red-500 to-pink-600',
+        buttonHoverGradient: 'from-red-600 to-pink-700'
+      };
     default:
       return {
         primary: 'purple',

@@ -46,6 +46,26 @@ def get_extraction_prompt(user_prompt: str, category: Optional[str] = None) -> s
           - form (e.g. "capsule", "powder", "gummy")
           - concern (e.g. "stress resilience", "immune support")
         '''
+    elif category == "beverages":
+        return f'''
+        You are a beverage formulation expert.
+        From this user input:
+          "{user_prompt}"
+        Return strict JSON with keys:
+          - product_type (e.g. "functional wellness drink")
+          - form (e.g. "ready-to-drink", "powder mix", "concentrate")
+          - concern (e.g. "energy boost", "immune support", "hydration")
+        '''
+    elif category == "textiles":
+        return f'''
+        You are a textile and material science expert.
+        From this user input:
+          "{user_prompt}"
+        Return strict JSON with keys:
+          - product_type (e.g. "sustainable activewear fabric")
+          - form (e.g. "woven", "knit", "non-woven")
+          - concern (e.g. "moisture-wicking", "sustainability", "comfort")
+        '''
     else:
         return f'''
         You are a cosmetic formulation expert.
@@ -113,6 +133,36 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a wellness supplement formulation engine.
         Each must include key ingredients, target user, delivery form, performance metrics, and be ready to send to /formulation/generate without edits.
+        Return valid JSON array of objects:
+          – prompt: string
+          – why: explanation
+          – how: usage tip
+        '''
+    elif request.category == "beverages":
+        return f'''
+        You are a beverage formulation expert.
+        Given:
+          • product_type: {info['product_type']}
+          • form: {info['form']}
+          • concern: {info['concern']}
+          • original_query: "{request.prompt}"
+        Craft exactly 3 fully-detailed AI prompts for a beverage formulation engine.
+        Each must include key ingredients, target beverage type, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
+        Return valid JSON array of objects:
+          – prompt: string
+          – why: explanation
+          – how: usage tip
+        '''
+    elif request.category == "textiles":
+        return f'''
+        You are a textile and material science expert.
+        Given:
+          • product_type: {info['product_type']}
+          • form: {info['form']}
+          • concern: {info['concern']}
+          • original_query: "{request.prompt}"
+        Craft exactly 3 fully-detailed AI prompts for a textile formulation engine.
+        Each must include key ingredients, target textile type, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
@@ -225,6 +275,42 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
                 prompt=f"Formulate a {category} product optimized for {base_prompt}. Focus on safety, efficacy, and compliance.",
                 why="Safe, effective, and compliant products build trust and deliver results.",
                 how="Mention certifications, clinical evidence, and regulatory considerations."
+            )
+        ]
+    elif category == "beverages":
+        suggestions = [
+            Suggestion(
+                prompt=f"Create a {category} beverage for {base_prompt}. Include key ingredients, target beverage type, and desired performance characteristics.",
+                why="Adding specific ingredient and performance details helps create more targeted formulations",
+                how="Specify exact ingredients, concentrations, and performance expectations in your prompt"
+            ),
+            Suggestion(
+                prompt=f"Develop a premium {category} solution for {base_prompt}. Consider packaging, pricing, and target demographic preferences.",
+                why="Market positioning and packaging details help create commercially viable products",
+                how="Include target audience, price point, and packaging preferences in your formulation request"
+            ),
+            Suggestion(
+                prompt=f"Formulate a {category} product optimized for {base_prompt}. Focus on stability, safety, and regulatory compliance.",
+                why="Technical considerations ensure the formulation is safe, stable, and compliant",
+                how="Mention stability requirements, safety concerns, and regulatory considerations in your prompt"
+            )
+        ]
+    elif category == "textiles":
+        suggestions = [
+            Suggestion(
+                prompt=f"Create a {category} textile for {base_prompt}. Include key ingredients, target textile type, and desired performance characteristics.",
+                why="Adding specific ingredient and performance details helps create more targeted formulations",
+                how="Specify exact ingredients, concentrations, and performance expectations in your prompt"
+            ),
+            Suggestion(
+                prompt=f"Develop a premium {category} solution for {base_prompt}. Consider packaging, pricing, and target demographic preferences.",
+                why="Market positioning and packaging details help create commercially viable products",
+                how="Include target audience, price point, and packaging preferences in your formulation request"
+            ),
+            Suggestion(
+                prompt=f"Formulate a {category} product optimized for {base_prompt}. Focus on stability, safety, and regulatory compliance.",
+                why="Technical considerations ensure the formulation is safe, stable, and compliant",
+                how="Mention stability requirements, safety concerns, and regulatory considerations in your prompt"
             )
         ]
     else:

@@ -258,6 +258,10 @@ def calculate_manufacturing_scenarios(formulation: GenerateResponse) -> Manufact
         category = "pet food"
     elif "wellness" in formulation.product_name.lower() or "supplement" in formulation.reasoning.lower():
         category = "wellness"
+    elif "beverage" in formulation.product_name.lower() or "drink" in formulation.product_name.lower() or "juice" in formulation.product_name.lower():
+        category = "beverages"
+    elif "textile" in formulation.product_name.lower() or "fabric" in formulation.product_name.lower() or "material" in formulation.product_name.lower():
+        category = "textiles"
     
     # Fetch costing data from OpenAI
     costing_data = fetch_costing_from_openai(formulation, category)
@@ -350,6 +354,10 @@ def analyze_manufacturing(request: ManufacturingRequest) -> ManufacturingInsight
         category = "pet food"
     elif "wellness" in formulation.product_name.lower() or "health" in formulation.product_name.lower():
         category = "wellness"
+    elif "beverage" in formulation.product_name.lower() or "drink" in formulation.product_name.lower() or "juice" in formulation.product_name.lower():
+        category = "beverages"
+    elif "textile" in formulation.product_name.lower() or "fabric" in formulation.product_name.lower() or "material" in formulation.product_name.lower():
+        category = "textiles"
     
     print(f"🏷️ Category: {category}")
     

@@ -271,6 +271,32 @@ export default function PromptInput({
           bg: 'bg-green-50',
           icon: 'text-green-700'
         };
+      case 'beverages':
+        return {
+          primary: 'blue',
+          secondary: 'cyan',
+          tertiary: 'teal',
+          gradient: 'from-blue-400 via-cyan-400 to-teal-400',
+          hoverGradient: 'from-blue-500 via-cyan-500 to-teal-500',
+          text: 'text-blue-600',
+          border: 'border-blue-200',
+          focus: 'focus:border-blue-500 focus:ring-blue-200',
+          bg: 'bg-blue-50',
+          icon: 'text-blue-700'
+        };
+      case 'textiles':
+        return {
+          primary: 'red',
+          secondary: 'pink',
+          tertiary: 'purple',
+          gradient: 'from-red-400 via-pink-400 to-purple-400',
+          hoverGradient: 'from-red-500 via-pink-500 to-purple-500',
+          text: 'text-red-600',
+          border: 'border-red-200',
+          focus: 'focus:border-red-500 focus:ring-red-200',
+          bg: 'bg-red-50',
+          icon: 'text-red-700'
+        };
       default:
         return {
           primary: 'purple',

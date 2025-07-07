@@ -329,6 +329,40 @@ Guidelines:
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+        elif category == "beverages":
+            system_prompt = """You are an expert beverage formulator. Generate a detailed beverage formulation.
+
+Guidelines:
+- Total ingredients should add up to 100%
+- Use realistic ingredient percentages
+- Include proper flavors, sweeteners, and functional ingredients
+- Consider the target audience and health benefits
+- Provide detailed scientific reasoning with per-ingredient explanations
+- Include safety considerations and food-grade requirements
+- Use ingredients appropriate for beverage applications
+- For each ingredient, provide 2-3 Indian suppliers with realistic contact information and pricing
+- Manufacturing steps should be detailed and sequential
+- Include current market trends and competitive analysis
+- Make supplier information realistic but fictional for demonstration purposes
+- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+        elif category == "textiles":
+            system_prompt = """You are an expert textile formulator and material scientist. Generate a detailed textile formulation.
+
+Guidelines:
+- Total fiber composition should add up to 100%
+- Use realistic fiber percentages and blend ratios
+- Include proper yarn specifications, fabric construction, and finishing treatments
+- Consider the target application and performance requirements
+- Provide detailed scientific reasoning with per-material explanations
+- Include safety considerations and sustainability factors
+- Use materials appropriate for the textile application
+- For each material, provide 2-3 Indian suppliers with realistic contact information and pricing
+- Manufacturing steps should be detailed and sequential
+- Include current market trends and competitive analysis
+- Make supplier information realistic but fictional for demonstration purposes
+- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
         else:
             system_prompt = """You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
 

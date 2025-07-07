@@ -707,6 +707,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Growing pet humanization trend with premium pet food demand increasing'
                           : selectedCategory?.toLowerCase() === 'wellness'
                           ? 'Rising health consciousness driving premium wellness supplement demand'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Rising health consciousness driving premium functional beverage demand'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Rising sustainability consciousness driving premium textile demand'
                           : 'Growing beauty consciousness driving premium cosmetic product demand'
                         }
                       </span>
@@ -718,6 +722,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Opportunity to capture market share through premium pet nutrition innovation'
                           : selectedCategory?.toLowerCase() === 'wellness'
                           ? 'Opportunity to capture market share through clinically proven supplement formulations'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Opportunity to capture market share through functional beverage innovation'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Opportunity to capture market share through sustainable textile innovation'
                           : 'Opportunity to capture market share through innovative beauty formulations'
                         }
                       </span>
@@ -729,6 +737,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Potential for premium positioning with high-quality pet food ingredients'
                           : selectedCategory?.toLowerCase() === 'wellness'
                           ? 'Potential for premium positioning with science-backed wellness ingredients'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Potential for premium positioning with functional beverage ingredients'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Potential for premium positioning with sustainable textile materials'
                           : 'Potential for premium positioning with high-quality beauty ingredients'
                         }
                       </span>
@@ -740,6 +752,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                           ? 'Room for differentiation in competitive pet food landscape'
                           : selectedCategory?.toLowerCase() === 'wellness'
                           ? 'Room for differentiation in competitive wellness supplement landscape'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Room for differentiation in competitive beverage landscape'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Room for differentiation in competitive textile landscape'
                           : 'Room for differentiation in competitive beauty product landscape'
                         }
                       </span>
@@ -789,7 +805,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                             ? 'Start with premium pet food targeting specific health concerns, then expand to broader pet nutrition'
                             : selectedCategory?.toLowerCase() === 'wellness'
                             ? 'Start with targeted wellness supplements for specific health goals, then expand to broader wellness'
-                            : 'Start with targeted beauty products for specific skin concerns, then expand to broader beauty'
+                            : 'Start with targeted functional beverages for specific health goals, then expand to broader beverage portfolio'
                           }
                         </span>
                       </li>

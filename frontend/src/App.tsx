@@ -756,6 +756,22 @@ function App() {
               gradient: "from-green-400 via-emerald-400 to-teal-400",
               hoverGradient: "from-green-500 via-emerald-500 to-teal-500",
               description: "Health & Supplements"
+            },
+            { 
+              label: "Beverages", 
+              value: "beverages", 
+              icon: "🥤",
+              gradient: "from-blue-400 via-cyan-400 to-teal-400",
+              hoverGradient: "from-blue-500 via-cyan-500 to-teal-500",
+              description: "Drinks & Beverages"
+            },
+            { 
+              label: "Textiles", 
+              value: "textiles", 
+              icon: "🧵",
+              gradient: "from-red-400 via-pink-400 to-purple-400",
+              hoverGradient: "from-red-500 via-pink-500 to-purple-500",
+              description: "Fabric & Materials"
             }
           ].map(cat => (
             <button

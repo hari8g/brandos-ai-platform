@@ -34,5 +34,29 @@ export const categoryPrompts: Record<string, string[]> = {
     "CBD-infused roll-on for muscle recovery",
     "Prebiotic fiber chews for digestive balance",
     "Saffron extract capsules for mood enhancement"
+  ],
+  beverages: [
+    "Cold-pressed turmeric ginger wellness shot",
+    "Adaptogenic mushroom coffee blend for focus",
+    "Probiotic kombucha with elderberry for immunity",
+    "Electrolyte sports drink with natural flavors",
+    "Herbal tea blend for stress relief and sleep",
+    "Plant-based protein smoothie with superfoods",
+    "CBD-infused sparkling water for relaxation",
+    "Collagen peptide beauty drink for skin health",
+    "Prebiotic fiber drink for digestive wellness",
+    "Antioxidant-rich berry smoothie for energy"
+  ],
+  textiles: [
+    "Bamboo viscose blend for sustainable activewear",
+    "Organic cotton with silver nanoparticles for antimicrobial properties",
+    "Recycled polyester fabric for eco-friendly fashion",
+    "Hemp-cotton blend for durable workwear",
+    "Modal fabric with moisture-wicking technology",
+    "Tencel lyocell for luxury bedding and sleepwear",
+    "Recycled nylon for sustainable swimwear",
+    "Organic merino wool for temperature-regulating base layers",
+    "Bamboo charcoal fabric for odor-resistant socks",
+    "Plant-based leather alternative for vegan accessories"
   ]
 };

@@ -20,6 +20,45 @@ export interface ImageAnalysisResponse {
   market_positioning?: string;
   formulation_hints?: string[];
   error?: string;
+  
+  // Enhanced fields for comprehensive analysis
+  product_category?: string;
+  intended_use?: string;
+  key_ingredients: string[];
+  claims: string[];
+  packaging_type?: string;
+  packaging_size?: string;
+  packaging_material?: string;
+  target_audience?: string;
+  brand_style?: string;
+  competitor_positioning?: string;
+  
+  // New rich fields for comprehensive analysis
+  formulation_insights: string[];
+  consumer_insights: string[];
+  price_positioning?: string;
+  distribution_channels: string[];
+  sustainability_aspects: string[];
+  innovation_claims: string[];
+  brand_story?: string;
+  usage_instructions?: string;
+  storage_requirements?: string;
+  
+  // Intent classification fields
+  intent_classification?: {
+    product_type_intent?: string;
+    target_audience_intent?: string;
+    benefit_intent?: string;
+    ingredient_intent: string[];
+    formulation_intent?: string;
+    market_positioning_intent?: string;
+    packaging_intent?: string;
+    budget_intent?: string;
+    competitor_intent?: string;
+    sustainability_intent?: string;
+    confidence_score?: number;
+    primary_intent?: string;
+  };
 }
 
 export interface MultiModalRequest {

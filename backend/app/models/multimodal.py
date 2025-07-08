@@ -22,6 +22,33 @@ class ImageAnalysisResponse(BaseModel):
     target_audience_hints: List[str]
     brand_name: Optional[str] = None
     error: Optional[str] = None
+    
+    # Enhanced fields for comprehensive analysis
+    product_category: Optional[str] = None
+    intended_use: Optional[str] = None
+    key_ingredients: List[str] = []
+    claims: List[str] = []
+    packaging_type: Optional[str] = None
+    packaging_size: Optional[str] = None
+    packaging_material: Optional[str] = None
+    target_audience: Optional[str] = None
+    brand_style: Optional[str] = None
+    competitor_positioning: Optional[str] = None
+    
+    # New rich fields for comprehensive analysis
+    formulation_insights: List[str] = []
+    market_positioning: Optional[str] = None
+    consumer_insights: List[str] = []
+    price_positioning: Optional[str] = None
+    distribution_channels: List[str] = []
+    sustainability_aspects: List[str] = []
+    innovation_claims: List[str] = []
+    brand_story: Optional[str] = None
+    usage_instructions: Optional[str] = None
+    storage_requirements: Optional[str] = None
+    
+    # Intent classification fields
+    intent_classification: Optional[Dict[str, Any]] = None
 
 class MultiModalRequest(BaseModel):
     """Combined text and image analysis request"""

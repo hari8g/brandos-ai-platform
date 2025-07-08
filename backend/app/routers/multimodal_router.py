@@ -24,7 +24,7 @@ async def analyze_image_endpoint(
     category: Optional[str] = Form(None),
     target_cost: Optional[str] = Form(None)
 ):
-    """Analyze an uploaded image and extract product insights"""
+    """Analyze an uploaded image and extract product insights with intent classification"""
     try:
         # Validate file type
         if not file.content_type.startswith('image/'):
@@ -33,8 +33,8 @@ async def analyze_image_endpoint(
         # Read image data
         image_data = await file.read()
         
-        # Analyze the image
-        analysis = image_analysis_service.analyze_image(image_data, prompt, category)
+        # Use integrated analysis (intent classification + image analysis)
+        analysis = image_analysis_service.analyze_image_with_intent(image_data, prompt, category)
         
         return analysis
         

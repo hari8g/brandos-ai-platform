@@ -28,6 +28,64 @@ interface ScientificReasoningProps {
   };
 }
 
+interface AccordionSectionProps {
+  title: string;
+  icon: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  colors: any;
+  badge?: string;
+  badgeColor?: string;
+}
+
+const AccordionSection: React.FC<AccordionSectionProps> = ({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children,
+  colors,
+  badge,
+  badgeColor = 'bg-blue-100 text-blue-800'
+}) => {
+  return (
+    <div className={`${colors.cardBg} border ${colors.border} rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300`}>
+      <button
+        onClick={onToggle}
+        className={`w-full px-6 py-4 flex items-center justify-between ${colors.lightBg} hover:${colors.lightBg} transition-colors duration-200`}
+      >
+        <div className="flex items-center space-x-3">
+          <div className={`w-10 h-10 rounded-lg ${colors.primary} flex items-center justify-center`}>
+            <span className="text-white text-lg">{icon}</span>
+          </div>
+          <div className="text-left">
+            <h3 className={`text-lg font-semibold ${colors.text}`}>{title}</h3>
+            {badge && (
+              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${badgeColor} mt-1`}>
+                {badge}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+        isOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-6 pb-6 pt-2 space-y-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
   selectedCategory,
   productDescription,
@@ -44,10 +102,7 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
   psychographicProfile: propPsychographicProfile,
 }) => {
   const colors = getCategoryColors(selectedCategory || null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['components']));
-  const [activeTab, setActiveTab] = useState('overview');
-  const [hoveredComponent, setHoveredComponent] = useState<number | null>(null);
-  const [showDetails, setShowDetails] = useState<Set<string>>(new Set());
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['formulation', 'psychology']));
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
 
@@ -108,49 +163,6 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
       newExpanded.add(section);
     }
     setExpandedSections(newExpanded);
-  };
-
-  const toggleDetails = (id: string) => {
-    const newDetails = new Set(showDetails);
-    if (newDetails.has(id)) {
-      newDetails.delete(id);
-    } else {
-      newDetails.add(id);
-    }
-    setShowDetails(newDetails);
-  };
-
-  const getConfidenceScore = (component: { name: string; why: string }) => {
-    // Calculate confidence based on explanation length and keywords
-    const keywords = ['clinical', 'proven', 'effective', 'scientific', 'research', 'study'];
-    const keywordCount = keywords.filter(keyword => 
-      component.why.toLowerCase().includes(keyword)
-    ).length;
-    const lengthScore = Math.min(component.why.length / 100, 1);
-    return Math.min((keywordCount * 0.2 + lengthScore * 0.8) * 100, 100);
-  };
-
-  const getTrendImpact = (trend: string) => {
-    const impactKeywords = ['growing', 'increasing', 'rising', 'surge', 'boom'];
-    const hasImpact = impactKeywords.some(keyword => trend.toLowerCase().includes(keyword));
-    return hasImpact ? 'high' : 'medium';
-  };
-
-  const getComponentCategory = (component: { name: string; why: string }) => {
-    const categories = {
-      'Active': ['peptide', 'retinol', 'vitamin', 'acid'],
-      'Emollient': ['oil', 'butter', 'wax', 'fatty'],
-      'Preservative': ['preservative', 'antimicrobial', 'stabilizer'],
-      'Emulsifier': ['emulsifier', 'surfactant', 'thickener'],
-      'Fragrance': ['fragrance', 'essential', 'aroma']
-    };
-
-    for (const [category, keywords] of Object.entries(categories)) {
-      if (keywords.some(keyword => component.name.toLowerCase().includes(keyword))) {
-        return category;
-      }
-    }
-    return 'Other';
   };
 
   // Show loading state only if we're making an API call and don't have direct data
@@ -255,179 +267,209 @@ const ScientificReasoning: React.FC<ScientificReasoningProps> = ({
   } = data;
 
   return (
-    <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
-      <div className="space-y-6">
-        {/* What It Delivers - Enhanced Functional Attributes */}
-        <div>
-          <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2"></span>
-            What did we formulate with ?
-          </h4>
-          <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
-            <div className="space-y-3">
-              {keyComponents.map((component, index) => (
-                <div key={index} className="border-b border-gray-200 pb-3 last:border-b-0">
-                  <div className="flex items-start space-x-3">
-                    <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
-                    <div className="flex-1">
-                      <div className={`font-semibold ${colors.text} text-base mb-1`}>
-                        {component.name}
-                      </div>
-                      <div className={`${colors.text} text-sm leading-relaxed`}>
-                        {component.why}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className={`w-12 h-12 rounded-xl ${colors.primary} flex items-center justify-center`}>
+            <span className="text-white text-xl">🧪</span>
+          </div>
+          <div>
+            <h2 className={`text-2xl font-bold ${colors.text}`}>Scientific Analysis</h2>
+            <p className={`text-sm ${colors.text} opacity-60`}>Comprehensive formulation insights</p>
           </div>
         </div>
+      </div>
 
-        {/* What It Implies - Enhanced Desire Analysis */}
-        <div>
-          <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2"></span>
-            Why we think the customer will buy this Product ?
-          </h4>
-          <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
-            <div className="space-y-3">
-              <div className={`${colors.text} leading-relaxed`}>
-                <strong className="text-base">Primary Desire:</strong>
-                <p className="mt-1 text-sm">{impliedDesire}</p>
+      {/* Formulation Components */}
+      <AccordionSection
+        title="Formulation Components"
+        icon="⚗️"
+        isOpen={expandedSections.has('formulation')}
+        onToggle={() => toggleSection('formulation')}
+        colors={colors}
+        badge={`${keyComponents.length} components`}
+        badgeColor="bg-green-100 text-green-800"
+      >
+        <div className="space-y-4">
+          {keyComponents.map((component, index) => (
+            <div key={index} className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+              <div className="flex items-start space-x-3">
+                <div className={`w-8 h-8 rounded-full ${colors.primary} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-white text-sm font-bold">{index + 1}</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className={`font-semibold ${colors.text} text-base mb-2`}>
+                    {component.name}
+                  </h4>
+                  <p className={`${colors.text} text-sm leading-relaxed`}>
+                    {component.why}
+                  </p>
+                </div>
               </div>
-              
-              {psychologicalDrivers && psychologicalDrivers.length > 0 && (
-                <div className={`border-t ${colors.border} pt-3`}>
-                  <strong className={`${colors.text} text-base`}>Psychological Drivers:</strong>
-                  <ul className="mt-1 space-y-1 text-sm">
-                    {psychologicalDrivers.map((driver, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className={`${colors.icon} mt-1`}>•</span>
-                        <span className={`${colors.text}`}>{driver}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {valueProposition && valueProposition.length > 0 && (
-                <div className={`border-t ${colors.border} pt-3`}>
-                  <strong className={`${colors.text} text-base`}>Value Proposition:</strong>
-                  <ul className="mt-1 space-y-1 text-sm">
-                    {valueProposition.map((proposition, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className={`${colors.icon} mt-1`}>•</span>
-                        <span className={`${colors.text}`}>{proposition}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
-          </div>
+          ))}
         </div>
+      </AccordionSection>
 
-        {/* Who It's For - Detailed Target Analysis */}
-        <div>
-          <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-            <span className="mr-2"></span>
-            Who could be our Ideal customer Persona?
-          </h4>
-          <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
-            <div className="space-y-3">
-              <div className={`${colors.text} leading-relaxed`}>
-                <strong className="text-base">Primary Audience:</strong>
-                <p className="mt-1 text-sm">{targetAudience}</p>
-              </div>
-              
-              {demographicBreakdown && (
-                <div className={`border-t ${colors.border} pt-3`}>
-                  <strong className={`${colors.text} text-base`}>Demographic Breakdown:</strong>
-                  <ul className="mt-1 space-y-1 text-sm">
-                    <li className="flex items-start space-x-2">
-                      <span className={`${colors.icon} mt-1`}>•</span>
-                      <span className={`${colors.text}`}><strong>Age Range:</strong> {demographicBreakdown.age_range}</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className={`${colors.icon} mt-1`}>•</span>
-                      <span className={`${colors.text}`}><strong>Income Level:</strong> {demographicBreakdown.income_level}</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className={`${colors.icon} mt-1`}>•</span>
-                      <span className={`${colors.text}`}><strong>Lifestyle:</strong> {demographicBreakdown.lifestyle}</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className={`${colors.icon} mt-1`}>•</span>
-                      <span className={`${colors.text}`}><strong>Purchase Behavior:</strong> {demographicBreakdown.purchase_behavior}</span>
-                    </li>
-                  </ul>
+      {/* Psychology & Motivation */}
+      <AccordionSection
+        title="Psychology & Motivation"
+        icon="🧠"
+        isOpen={expandedSections.has('psychology')}
+        onToggle={() => toggleSection('psychology')}
+        colors={colors}
+        badge="Consumer insights"
+        badgeColor="bg-purple-100 text-purple-800"
+      >
+        <div className="space-y-4">
+          <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+            <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Primary Desire</h4>
+            <p className={`${colors.text} text-sm leading-relaxed`}>{impliedDesire}</p>
+          </div>
+          
+          {psychologicalDrivers && psychologicalDrivers.length > 0 && (
+            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+              <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Psychological Drivers</h4>
+              <ul className="space-y-2">
+                {psychologicalDrivers.map((driver, index) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <span className={`${colors.icon} mt-1 text-sm`}>•</span>
+                    <span className={`${colors.text} text-sm`}>{driver}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {valueProposition && valueProposition.length > 0 && (
+            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+              <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Value Proposition</h4>
+              <ul className="space-y-2">
+                {valueProposition.map((proposition, index) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <span className={`${colors.icon} mt-1 text-sm`}>•</span>
+                    <span className={`${colors.text} text-sm`}>{proposition}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </AccordionSection>
+
+      {/* Target Audience */}
+      <AccordionSection
+        title="Target Audience"
+        icon="👥"
+        isOpen={expandedSections.has('audience')}
+        onToggle={() => toggleSection('audience')}
+        colors={colors}
+        badge="Persona analysis"
+        badgeColor="bg-blue-100 text-blue-800"
+      >
+        <div className="space-y-4">
+          <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+            <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Primary Audience</h4>
+            <p className={`${colors.text} text-sm leading-relaxed`}>{targetAudience}</p>
+          </div>
+          
+          {demographicBreakdown && (
+            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+              <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Demographic Breakdown</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <span className={`text-xs font-medium ${colors.text} opacity-70`}>Age Range</span>
+                  <p className={`${colors.text} text-sm`}>{demographicBreakdown.age_range}</p>
                 </div>
-              )}
-              
-              {psychographicProfile && (
-                <div className={`border-t ${colors.border} pt-3`}>
-                  <strong className={`${colors.text} text-base`}>Psychographic Profile:</strong>
-                  <ul className="mt-1 space-y-1 text-sm">
+                <div className="space-y-1">
+                  <span className={`text-xs font-medium ${colors.text} opacity-70`}>Income Level</span>
+                  <p className={`${colors.text} text-sm`}>{demographicBreakdown.income_level}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className={`text-xs font-medium ${colors.text} opacity-70`}>Lifestyle</span>
+                  <p className={`${colors.text} text-sm`}>{demographicBreakdown.lifestyle}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className={`text-xs font-medium ${colors.text} opacity-70`}>Purchase Behavior</span>
+                  <p className={`${colors.text} text-sm`}>{demographicBreakdown.purchase_behavior}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {psychographicProfile && (
+            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+              <h4 className={`font-semibold ${colors.text} text-base mb-2`}>Psychographic Profile</h4>
+              <div className="space-y-3">
+                <div>
+                  <span className={`text-xs font-medium ${colors.text} opacity-70`}>Values</span>
+                  <ul className="mt-1 space-y-1">
                     {psychographicProfile.values.map((value, index) => (
                       <li key={index} className="flex items-start space-x-2">
-                        <span className={`${colors.icon} mt-1`}>•</span>
-                        <span className={`${colors.text}`}>{value}</span>
+                        <span className={`${colors.icon} mt-1 text-xs`}>•</span>
+                        <span className={`${colors.text} text-sm`}>{value}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
+      </AccordionSection>
 
-        {/* Indian Market Trends - Using Real Backend Data */}
-        {indiaTrends && indiaTrends.length > 0 && (
-          <div>
-            <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-              <span className="mr-2"></span>
-              What do we see as a trend nowadays ?
-            </h4>
-            <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
-              <div className="space-y-4">
-                {indiaTrends.map((trend, index) => (
-                  <div key={index} className={`border-b ${colors.border} pb-3 last:border-b-0`}>
-                    <div className="flex items-start space-x-3">
-                      <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
-                      <div className="flex-1">
-                        <div className={`${colors.text} text-sm leading-relaxed`}>{trend}</div>
-                      </div>
-                    </div>
+      {/* Market Trends */}
+      {indiaTrends && indiaTrends.length > 0 && (
+        <AccordionSection
+          title="Market Trends"
+          icon="📈"
+          isOpen={expandedSections.has('trends')}
+          onToggle={() => toggleSection('trends')}
+          colors={colors}
+          badge={`${indiaTrends.length} trends`}
+          badgeColor="bg-orange-100 text-orange-800"
+        >
+          <div className="space-y-3">
+            {indiaTrends.map((trend, index) => (
+              <div key={index} className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+                <div className="flex items-start space-x-3">
+                  <div className={`w-6 h-6 rounded-full ${colors.primary} flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-white text-xs font-bold">{index + 1}</span>
                   </div>
-                ))}
+                  <p className={`${colors.text} text-sm leading-relaxed`}>{trend}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        )}
+        </AccordionSection>
+      )}
 
-        {/* Regulatory & Compliance - Using Real Backend Data */}
-        {regulatoryStandards && regulatoryStandards.length > 0 && (
-          <div>
-            <h4 className={`text-lg font-semibold ${colors.text} mb-3 flex items-center`}>
-              <span className="mr-2"></span>
-              What should we comply with ?
-            </h4>
-            <div className={`bg-white/70 border ${colors.border} rounded-lg p-3`}>
-              <div className="space-y-3">
-                {regulatoryStandards.map((standard, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <span className={`${colors.icon} mt-1 flex-shrink-0`}>•</span>
-                    <div className="flex-1">
-                      <div className={`${colors.text} text-sm leading-relaxed`}>{standard}</div>
-                    </div>
+      {/* Regulatory Standards */}
+      {regulatoryStandards && regulatoryStandards.length > 0 && (
+        <AccordionSection
+          title="Regulatory Compliance"
+          icon="📋"
+          isOpen={expandedSections.has('compliance')}
+          onToggle={() => toggleSection('compliance')}
+          colors={colors}
+          badge={`${regulatoryStandards.length} standards`}
+          badgeColor="bg-red-100 text-red-800"
+        >
+          <div className="space-y-3">
+            {regulatoryStandards.map((standard, index) => (
+              <div key={index} className={`${colors.lightBg} border ${colors.border} rounded-lg p-4`}>
+                <div className="flex items-start space-x-3">
+                  <div className={`w-6 h-6 rounded-full ${colors.primary} flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-white text-xs font-bold">{index + 1}</span>
                   </div>
-                ))}
+                  <p className={`${colors.text} text-sm leading-relaxed`}>{standard}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        )}
-      </div>
+        </AccordionSection>
+      )}
     </div>
   );
 };

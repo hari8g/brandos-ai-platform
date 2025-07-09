@@ -496,36 +496,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
       {/* Main content remains unchanged, starting with the white card */}
       <div className="bg-white rounded-b-3xl shadow-sm border border-gray-200">
         <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <label className="text-sm font-medium text-gray-700">Target City:</label>
-              <select
-                value={selectedCity}
-                onChange={(e) => onCityChange?.(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              >
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Bangalore">Bangalore</option>
-                <option value="Hyderabad">Hyderabad</option>
-                <option value="Chennai">Chennai</option>
-                <option value="Kolkata">Kolkata</option>
-                <option value="Pune">Pune</option>
-                <option value="Ahmedabad">Ahmedabad</option>
-                <option value="Surat">Surat</option>
-                <option value="Jaipur">Jaipur</option>
-              </select>
-            </div>
-          </div>
-          {localMarketData && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <span className="font-semibold">Location:</span> {selectedCity} | 
-                <span className="font-semibold"> Market Size:</span> {`₹${(parseInt(localMarketData.market_size?.replace(/[₹,]/g, '') || '0') / 1000000).toFixed(1)}M`} | 
-                <span className="font-semibold"> Total Purchasers:</span> {`${(parseInt(localMarketData.actual_purchasers?.replace(/[,]/g, '') || '0') / 1000000).toFixed(1)}M`}
-              </p>
-            </div>
-          )}
+          {/* Local market data functionality moved to LocalMarketAnalysis component */}
         </div>
 
         {/* High-Value Customers */}

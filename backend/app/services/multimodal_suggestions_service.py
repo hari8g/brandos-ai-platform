@@ -259,6 +259,111 @@ def generate_mock_multimodal_suggestions(request: MultimodalSuggestionRequest) -
         message=f"Mock multimodal suggestions generated for {category} (AI service unavailable)"
     )
 
+def generate_text_only_suggestions(text_prompt: str, category: Optional[str] = None) -> MultimodalSuggestionResponse:
+    """Generate suggestions based on text prompt only (no image analysis)"""
+    # If OpenAI client is not available, use mock suggestions
+    if not client:
+        return generate_mock_text_only_suggestions(text_prompt, category)
+    
+    category = category or "cosmetics"
+    
+    suggestion_prompt = f'''
+    You are a {category} formulation expert. Based on the user's text requirements, generate exactly 3 ready-to-use, context-rich prompts for {category} formulation.
+    
+    USER REQUIREMENTS:
+    {text_prompt}
+    
+    Generate 3 natural, flowing prompts that address the user's requirements. Each prompt should be:
+    - Ready to use immediately for formulation generation
+    - Rich in context and natural language
+    - Specific to {category} benefits and efficacy
+    - Free-flowing and conversational, not structured
+    
+    Examples of the style you should use:
+    - "Create a premium {category} formula for [specific need] that targets [audience] who value [benefits]..."
+    - "Develop a {category} formulation featuring [ingredients] for [benefits], designed for [target audience]..."
+    - "Formulate a {category} product that addresses [specific needs] while appealing to [audience]..."
+    
+    Return valid JSON array of objects:
+    - prompt: A complete, ready-to-use formulation prompt with rich context
+    - why: Business benefits including market positioning, competitive advantages, target audience appeal, unique selling propositions, ease of marketing, and potential for premium pricing that make this formulation attractive to consumers and profitable for the brand
+    - how: Strategic implementation guidance covering sales potential, brand differentiation, market penetration strategies, and how to leverage the formulation's unique attributes for maximum market impact and customer acquisition
+    '''
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": suggestion_prompt}],
+            temperature=0.7,
+            max_tokens=1000,
+            tools=get_multimodal_suggestions_function_definitions(),
+            tool_choice={"type": "function", "function": {"name": "generate_multimodal_suggestions"}}
+        )
+        
+        message = response.choices[0].message
+        if message.tool_calls and len(message.tool_calls) > 0:
+            tool_call = message.tool_calls[0]
+            if tool_call.function.name == "generate_multimodal_suggestions":
+                try:
+                    data = json.loads(tool_call.function.arguments)
+                    suggestions_data = data.get('suggestions', [])
+                    
+                    # Validate and clean the data before creating Suggestion objects
+                    suggestions = []
+                    for s in suggestions_data:
+                        try:
+                            # Ensure all required fields are present and are strings
+                            prompt = str(s.get("prompt", ""))
+                            why = str(s.get("why", ""))
+                            how = str(s.get("how", ""))
+                            if prompt and why and how:  # Only add if all fields have content
+                                suggestions.append(MultimodalSuggestion(prompt=prompt, why=why, how=how))
+                        except Exception as e:
+                            print(f"Error processing text-only suggestion: {e}")
+                            continue
+                    
+                    # If no valid suggestions were created, use fallback
+                    if not suggestions:
+                        return generate_mock_text_only_suggestions(text_prompt, category)
+                    
+                    return MultimodalSuggestionResponse(suggestions=suggestions, success=True, message="Text-only suggestions generated")
+                except json.JSONDecodeError:
+                    return generate_mock_text_only_suggestions(text_prompt, category)
+        
+        return generate_mock_text_only_suggestions(text_prompt, category)
+    except Exception as e:
+        print("generate_text_only_suggestions error:", e)
+        return generate_mock_text_only_suggestions(text_prompt, category)
+
+def generate_mock_text_only_suggestions(text_prompt: str, category: Optional[str] = None) -> MultimodalSuggestionResponse:
+    """Generate mock text-only suggestions as fallback"""
+    category = category or 'cosmetics'
+    
+    # Create mock suggestions based on the text prompt and category
+    mock_suggestions = [
+        MultimodalSuggestion(
+            prompt=f"Create a premium {category} formulation based on your requirements: {text_prompt}. This should target health-conscious consumers who value natural ingredients and sustainable packaging.",
+            why="This formulation offers strong market positioning with premium pricing potential, targeting a growing segment of health-conscious consumers who are willing to pay more for quality and sustainability.",
+            how="Focus on digital marketing channels, emphasize the natural ingredients and sustainability aspects, and position as a premium alternative to mass-market products."
+        ),
+        MultimodalSuggestion(
+            prompt=f"Develop a {category} product that addresses the specific needs mentioned: {text_prompt}. Include innovative ingredients that provide measurable benefits and appeal to modern consumers.",
+            why="Innovation-driven formulations can command premium pricing and create strong brand differentiation in a crowded market, especially when backed by clear benefits.",
+            how="Leverage social media marketing to showcase the innovative ingredients, partner with influencers in the {category} space, and emphasize the measurable benefits in all communications."
+        ),
+        MultimodalSuggestion(
+            prompt=f"Formulate a {category} solution that combines your requirements: {text_prompt} with current market trends and consumer preferences for effective, safe, and appealing products.",
+            why="Trend-aligned formulations have higher market acceptance and can benefit from existing consumer interest and demand, leading to faster market penetration.",
+            how="Align with current market trends, use influencer marketing to create buzz, and focus on educational content that explains the benefits and science behind the formulation."
+        )
+    ]
+    
+    return MultimodalSuggestionResponse(
+        suggestions=mock_suggestions,
+        success=True,
+        message="Mock text-only suggestions generated"
+    )
+
 def get_multimodal_suggestions_function_definitions():
     """Define the function schema for multimodal suggestions generation"""
     return [

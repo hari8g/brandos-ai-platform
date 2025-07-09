@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ImageUpload } from './ImageUpload';
 import { useMultimodal } from '../hooks/useMultimodal';
 import { useLocalMarket } from '../hooks/useLocalMarket';
+import { useMultimodalSuggestions } from '../hooks/useMultimodalSuggestions';
 import { getCategoryColors } from '../lib/colorUtils';
 import {
   FormulationSummary,
@@ -18,7 +19,7 @@ interface MultimodalFormulationProps {
   selectedCategory: string | null;
 }
 
-type Stage = 'input' | 'analysis' | 'ready';
+type Stage = 'input' | 'analysis' | 'suggestions' | 'ready';
 
 export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
   onResult,
@@ -28,11 +29,12 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentStage, setCurrentStage] = useState<Stage>('input');
   const [finalPrompt, setFinalPrompt] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState('');
-  const [loadingType, setLoadingType] = useState<'analysis' | 'formulation'>('analysis');
+  const [loadingType, setLoadingType] = useState<'analysis' | 'formulation' | 'suggestions'>('analysis');
   const [editableEnhancedPrompt, setEditableEnhancedPrompt] = useState('');
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [selectedCity, setSelectedCity] = useState('Mumbai');
@@ -45,6 +47,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
   // Refs for scrolling to results
   const imageAnalysisResultsRef = useRef<HTMLDivElement>(null);
   const comprehensiveAnalysisResultsRef = useRef<HTMLDivElement>(null);
+  const suggestionsResultsRef = useRef<HTMLDivElement>(null);
   const analyzeButtonRef = useRef<HTMLButtonElement>(null);
 
   const {
@@ -64,6 +67,15 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     marketData: localMarketData,
     analyzeLocalMarket
   } = useLocalMarket();
+
+  // Multimodal suggestions hook
+  const {
+    loading: suggestionsLoading,
+    error: suggestionsError,
+    suggestions,
+    generateTextOnlySuggestions,
+    clearSuggestions
+  } = useMultimodalSuggestions();
 
   const colors = getCategoryColors(selectedCategory);
 
@@ -161,6 +173,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setShowAnalysis(false);
+    setShowSuggestions(false);
     setCurrentStage('input');
     setFinalPrompt('');
     setEditableEnhancedPrompt('');
@@ -182,6 +195,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     setSelectedFile(null);
     setPreviewUrl(null);
     setShowAnalysis(false);
+    setShowSuggestions(false);
     setCurrentStage('input');
     setFinalPrompt('');
     setEditableEnhancedPrompt('');
@@ -276,11 +290,95 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     }
   };
 
+  const handleAssessTextOnly = async () => {
+    console.log('🔍 handleAssessTextOnly called', { textPrompt, selectedCategory });
+    
+    if (!textPrompt.trim()) {
+      console.log('❌ No text prompt provided');
+      return;
+    }
+
+    // Clean up any existing timers
+    cleanupTimers();
+    resetLoadingState();
+
+    setLoadingType('suggestions');
+    setLoadingProgress(0);
+    setLoadingStep('Generating suggestions...');
+
+    // Simulate progress for suggestions
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+          }
+          return 90;
+        }
+        return prev + 15;
+      });
+    }, 300);
+
+    const stepTimeout1 = setTimeout(() => setLoadingStep('Analyzing requirements...'), 1000);
+    const stepTimeout2 = setTimeout(() => setLoadingStep('Generating formulation options...'), 3000);
+    const stepTimeout3 = setTimeout(() => setLoadingStep('Creating strategic recommendations...'), 5000);
+    
+    stepTimeoutsRef.current = [stepTimeout1, stepTimeout2, stepTimeout3];
+
+    try {
+      console.log('📤 Calling generateTextOnlySuggestions...');
+      const result = await generateTextOnlySuggestions(
+        textPrompt.trim(),
+        selectedCategory || undefined
+      );
+
+      console.log('generateTextOnlySuggestions result:', result);
+
+      if (result && result.length > 0) {
+        setShowSuggestions(true);
+        setCurrentStage('suggestions');
+        setLoadingProgress(100);
+        setLoadingStep('Suggestions complete!');
+        console.log('✅ Text-only suggestions completed, showing results');
+        
+        setTimeout(() => {
+          setLoadingProgress(0);
+          setLoadingStep('');
+          // Scroll to suggestions results
+          setTimeout(() => {
+            suggestionsResultsRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 500);
+        }, 1000);
+      } else {
+        console.log('❌ Suggestions failed');
+        setLoadingProgress(0);
+        setLoadingStep('Suggestions failed. Please try again.');
+        setTimeout(() => {
+          setLoadingStep('');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('❌ Suggestions error:', error);
+      setLoadingProgress(0);
+      setLoadingStep('Suggestions failed. Please try again.');
+      setTimeout(() => {
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      cleanupTimers();
+    }
+  };
+
   const handleGenerateFormulation = async () => {
     console.log('🔍 handleGenerateFormulation called', { selectedFile: selectedFile?.name, finalPrompt, selectedCategory });
     
-    if (!selectedFile) {
-      console.log('❌ No file selected');
+    // Allow text-only workflow when no file is selected but we have an enhanced prompt
+    if (!selectedFile && !editableEnhancedPrompt.trim()) {
+      console.log('❌ No file selected and no enhanced prompt available');
       return;
     }
 
@@ -368,11 +466,13 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     setTextPrompt('');
     handleImageRemove();
     setShowAnalysis(false);
+    setShowSuggestions(false);
     setCurrentStage('input');
     setFinalPrompt('');
     setEditableEnhancedPrompt('');
     setCurrentPromptIndex(0);
     reset();
+    clearSuggestions();
   };
 
   const getDynamicPrompts = () => {
@@ -445,6 +545,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               <h3 className="text-xl font-bold font-sans text-gray-900 mb-2">
                 {loadingType === 'analysis' && 'Analyzing Image...'}
                 {loadingType === 'formulation' && 'Creating Comprehensive Analysis...'}
+                {loadingType === 'suggestions' && 'Generating Suggestions...'}
               </h3>
               <p className="text-gray-600 text-sm font-sans">{loadingStep}</p>
             </div>
@@ -609,12 +710,13 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         </div>
       </motion.div>
 
-      {/* Single Analyze Button */}
+      {/* Action Buttons */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row gap-4"
       >
+        {/* Image Analysis Button - Only show when image is uploaded */}
         {selectedFile && currentStage === 'input' && (
           <motion.button
             ref={analyzeButtonRef}
@@ -642,6 +744,39 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
                 <span>Analyze</span>
+              </div>
+            )}
+          </motion.button>
+        )}
+
+        {/* Text-Only Assess Button - Show when text is provided but no image */}
+        {!selectedFile && textPrompt.trim() && currentStage === 'input' && (
+          <motion.button
+            ref={analyzeButtonRef}
+            onClick={(e) => {
+              console.log('🔘 Assess Text button clicked', { loading, textPrompt });
+              handleAssessTextOnly();
+            }}
+            disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform
+                       ${loading
+                         ? 'bg-gray-300 cursor-not-allowed' 
+                         : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl`
+                       }`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Generating Suggestions...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>Assess</span>
               </div>
             )}
           </motion.button>
@@ -680,7 +815,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         </motion.div>
       )}
 
-      {/* Formulation Output Section */}
+      {/* Formulation Output Section - Image Analysis */}
           {imageAnalysis && !loading && (
             <motion.div
           ref={imageAnalysisResultsRef}
@@ -754,11 +889,11 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               console.log('🔘 Generate Formulation button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
               handleGenerateFormulation();
               }}
-              disabled={loading || !selectedFile}
+              disabled={loading || (!selectedFile && !editableEnhancedPrompt.trim())}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             className={`w-full mt-4 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
-                         ${loading || !selectedFile
+                         ${loading || (!selectedFile && !editableEnhancedPrompt.trim())
                            ? 'bg-gray-300 cursor-not-allowed'
                            : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
                          }`}
@@ -772,13 +907,246 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
                 <div className="flex items-center justify-center space-x-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                </svg>
                 <span>Generate Comprehensive Analysis</span>
                 </div>
               )}
             </motion.button>
           </motion.div>
         )}
+
+      {/* Formulation Output Section - Text Only */}
+      {showAnalysis && !imageAnalysis && !loading && editableEnhancedPrompt.trim() && (
+        <motion.div
+          ref={imageAnalysisResultsRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-blue-50 to-indigo-50 p-6`}
+        >
+          <div className="mb-6">
+            <h3 className={`text-xl font-bold font-sans ${colors.text} mb-2`}>
+              Based on your requirements, here's your enhanced formulation prompt
+            </h3>
+            <p className="text-gray-600 text-sm font-sans">
+              You can edit this prompt before proceeding to comprehensive analysis
+            </p>
+          </div>
+          
+          <div className="bg-white/90 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium font-sans text-blue-600">Enhanced Formulation Prompt</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setEditableEnhancedPrompt("");
+                  }}
+                  className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
+                >
+                  Clear Prompt
+                </button>
+              </div>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              <textarea
+                value={editableEnhancedPrompt}
+                onChange={(e) => setEditableEnhancedPrompt(e.target.value)}
+                className="w-full text-sm text-blue-700 leading-relaxed bg-transparent border-none outline-none resize-none min-h-[200px] font-sans whitespace-pre-wrap"
+                placeholder="The enhanced formulation prompt will appear here..."
+              />
+            </div>
+          </div>
+          
+          {/* Copy Button */}
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = editableEnhancedPrompt;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+              }}
+              className="text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded transition-colors"
+            >
+              Copy Prompt
+            </button>
+          </div>
+          
+          {/* Generate Formulation Button */}
+          <motion.button
+            onClick={() => {
+              console.log('🔘 Generate Formulation button clicked (text-only)', { loading, editableEnhancedPrompt });
+              handleGenerateFormulation();
+            }}
+            disabled={loading || !editableEnhancedPrompt.trim()}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className={`w-full mt-4 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
+                       ${loading || !editableEnhancedPrompt.trim()
+                         ? 'bg-gray-300 cursor-not-allowed'
+                         : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
+                       }`}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Generating Formulation...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Generate Comprehensive Analysis</span>
+              </div>
+            )}
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Text-Only Suggestions Section */}
+      {showSuggestions && suggestions.length > 0 && !loading && (
+        <motion.div
+          ref={suggestionsResultsRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-blue-50 to-indigo-50 p-6`}
+        >
+          <div className="mb-6">
+            <h3 className={`text-xl font-bold font-sans ${colors.text} mb-2`}>
+              Based on your requirements, here are 3 strategic formulation suggestions
+            </h3>
+            <p className="text-gray-600 text-sm font-sans">
+              Each suggestion includes the formulation approach, business benefits, and implementation strategy
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {suggestions.map((suggestion, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white/90 border border-blue-200 rounded-lg p-6 shadow-sm"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <h4 className={`text-lg font-semibold font-sans ${colors.text}`}>
+                    Suggestion {index + 1}
+                  </h4>
+                                     <div className="flex gap-2">
+                                         <button
+                      onClick={() => {
+                        setEditableEnhancedPrompt(suggestion.prompt);
+                        setFinalPrompt(suggestion.prompt);
+                        // Hide suggestions and show the enhanced prompt section (like image analysis results)
+                        setShowSuggestions(false);
+                        setShowAnalysis(true);
+                        setCurrentStage('analysis');
+                        // Scroll to the enhanced prompt section
+                        setTimeout(() => {
+                          imageAnalysisResultsRef.current?.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                          });
+                        }, 500);
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded transition-colors cursor-pointer"
+                    >
+                      Use This
+                    </button>
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Formulation Prompt */}
+                  <div>
+                    <h5 className="text-sm font-semibold text-gray-700 mb-2">Formulation Approach</h5>
+                    <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded">
+                      {suggestion.prompt}
+                    </p>
+                  </div>
+
+                  {/* Business Benefits */}
+                  <div>
+                    <h5 className="text-sm font-semibold text-gray-700 mb-2">Business Benefits</h5>
+                    <p className="text-sm text-gray-600 leading-relaxed bg-green-50 p-3 rounded">
+                      {suggestion.why}
+                    </p>
+                  </div>
+
+                  {/* Implementation Strategy */}
+                  <div>
+                    <h5 className="text-sm font-semibold text-gray-700 mb-2">Implementation Strategy</h5>
+                    <p className="text-sm text-gray-600 leading-relaxed bg-purple-50 p-3 rounded">
+                      {suggestion.how}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-4">
+            <motion.button
+              onClick={() => {
+                if (suggestions.length > 0) {
+                  setEditableEnhancedPrompt(suggestions[0].prompt);
+                  setFinalPrompt(suggestions[0].prompt);
+                  // Hide suggestions and show the enhanced prompt section
+                  setShowSuggestions(false);
+                  setShowAnalysis(true);
+                  setCurrentStage('analysis');
+                  // Scroll to the enhanced prompt section
+                  setTimeout(() => {
+                    imageAnalysisResultsRef.current?.scrollIntoView({ 
+                      behavior: 'smooth', 
+                      block: 'start' 
+                    });
+                  }, 500);
+                }
+              }}
+              disabled={loading}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
+                         ${loading
+                           ? 'bg-gray-300 cursor-not-allowed'
+                           : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
+                         }`}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Generate Comprehensive Analysis</span>
+              </div>
+            </motion.button>
+
+            <motion.button
+              onClick={() => {
+                setShowSuggestions(false);
+                clearSuggestions();
+                setCurrentStage('input');
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-4 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:text-gray-800 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Try Different Approach</span>
+              </div>
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
 
       {/* 6-Step Analysis Results */}
       {comprehensiveAnalysis && !loading && comprehensiveAnalysis.sections && (
@@ -814,14 +1182,16 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             <UnitEconomics 
               content={comprehensiveAnalysis.sections.unit_economics} 
               colors={colors} 
+              selectedCategory={selectedCategory || undefined} // fix type for prop
             />
           )}
           {comprehensiveAnalysis.sections.packaging_branding && (
             <PackagingBranding 
               content={comprehensiveAnalysis.sections.packaging_branding} 
               colors={colors} 
+              selectedCategory={selectedCategory} // <-- pass selectedCategory
             />
-                          )}
+          )}
                         </div>
       )}
     </div>

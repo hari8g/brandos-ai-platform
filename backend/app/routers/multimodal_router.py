@@ -14,7 +14,7 @@ from app.models.multimodal import (
 )
 from app.services.image_analysis_service import image_analysis_service
 from app.services.multimodal_fusion_service import multimodal_fusion_service
-from app.services.multimodal_suggestions_service import generate_multimodal_suggestions
+from app.services.multimodal_suggestions_service import generate_multimodal_suggestions, generate_text_only_suggestions
 from app.services.comprehensive_analysis_service import ComprehensiveAnalysisService
 
 router = APIRouter(prefix="/multimodal", tags=["multimodal"])
@@ -114,6 +114,22 @@ async def multimodal_suggestions_endpoint(request: MultimodalSuggestionRequest):
             suggestions=[],
             success=False,
             message="Error generating multimodal suggestions",
+            error=str(e)
+        )
+
+@router.post("/text-suggestions", response_model=MultimodalSuggestionResponse)
+async def text_only_suggestions_endpoint(
+    text_prompt: str = Form(...),
+    category: Optional[str] = Form(None)
+):
+    """Generate AI-powered suggestions based on text prompt only (no image)"""
+    try:
+        return generate_text_only_suggestions(text_prompt, category)
+    except Exception as e:
+        return MultimodalSuggestionResponse(
+            suggestions=[],
+            success=False,
+            message="Error generating text-only suggestions",
             error=str(e)
         )
 

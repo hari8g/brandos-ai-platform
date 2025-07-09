@@ -32,7 +32,7 @@ class ComprehensiveAnalysisService:
         
         # Create the comprehensive analysis prompt
         analysis_prompt = f"""
-You are a product formulation expert. Based on the following enhanced prompt, create a comprehensive, actionable, and tailored 6-step product analysis.
+You are a product formulation expert and financial analyst specialized in FMCG unit economics and cost modeling. Based on the following enhanced prompt, create a comprehensive, actionable, and tailored 6-step product analysis.
 
 Enhanced Prompt: {enhanced_prompt}
 
@@ -42,8 +42,22 @@ Please provide a detailed analysis in exactly 6 sections with the following stru
 2. **What Went Into the Formulation, Why It's Valuable, Moat, Audience & Competitors** - Detailed breakdown of ingredients, value proposition, competitive advantages, and target market
 3. **Market Research** - Market size analysis from local to global TAM with dollar values
 4. **What It Means to Manufacture This** - Manufacturing complexity, sourcing, production requirements, and regulatory considerations
-5. **Unit Economics** - Cost breakdown, pricing strategy, gross margins, and major cost drivers
+5. **Unit Economics** - Detailed unit cost breakdown with the following structure:
+   - **Cost Assumptions**: Clearly state all assumptions made for cost calculations
+   - **Raw Materials**: Detailed breakdown of ingredient costs per unit
+   - **Manufacturing & Processing**: Production costs, labor, equipment, and processing expenses
+   - **Packaging**: Primary, secondary, and tertiary packaging costs
+   - **Logistics & Distribution**: Shipping, warehousing, and distribution costs
+   - **Quality Control & Regulatory**: Testing, compliance, and quality assurance costs
+   - **Sales & Marketing Overheads**: Marketing, sales, and promotional costs
+   - **Administrative & Miscellaneous**: Office, management, and other overhead costs
+   - **Total Unit Cost**: Sum of all cost components
+   - **Suggested Retail Price**: Recommended retail price with justification
+   - **Gross Margin**: Calculated gross margin percentage
+   - **Cost Optimization Suggestions**: Ways to reduce costs and improve margins
 6. **Packaging & Branding Ideas** - Creative packaging concepts, branding strategies, and visual identity recommendations
+
+For the Unit Economics section, provide realistic cost estimates in INR (Indian Rupees), clearly explain what is included in each cost category, identify major cost drivers, and suggest optimization strategies. Make reasonable assumptions if exact data is not available and state them clearly. All monetary values should be in INR.
 
 Each section should be comprehensive, actionable, and provide specific insights relevant to the product category and requirements. Use markdown formatting with **bold** for headers and *italic* for emphasis.
 """
@@ -888,13 +902,221 @@ Break this section into the following clear subheadings:
                 return line.strip()
         return "Compliant with FDA cosmetic regulations, EU Cosmetics Regulation 1223/2009, and ISO 22716 GMP standards."
 
-    def _extract_cost_breakdown(self, content: str) -> str:
-        """Extract cost breakdown from content"""
-        lines = content.split('\n')
+    def _extract_cost_breakdown(self, content: str) -> dict:
+        """Extract detailed cost breakdown information from the analysis content."""
+        try:
+            # Enhanced cost breakdown extraction with structured data
+            cost_data = {
+                "assumptions": "",
+                "rawMaterials": "",
+                "manufacturing": "",
+                "packaging": "",
+                "logistics": "",
+                "qualityControl": "",
+                "salesMarketing": "",
+                "administrative": "",
+                "totalCost": "",
+                "retailPrice": "",
+                "grossMargin": "",
+                "optimization": ""
+            }
+            
+            # Look for cost breakdown patterns in the content
+            if "cost" in content.lower() and ("breakdown" in content.lower() or "unit" in content.lower() or "economics" in content.lower()):
+                lines = content.split('\n')
+                cost_section = []
+                in_cost_section = False
+                
+                for line in lines:
+                    if any(keyword in line.lower() for keyword in ["cost", "breakdown", "unit", "materials", "packaging", "manufacturing", "economics"]):
+                        in_cost_section = True
+                    elif in_cost_section and line.strip() == "" and len(cost_section) > 5:
+                        break
+                    
+                    if in_cost_section:
+                        cost_section.append(line)
+                
+                cost_text = '\n'.join(cost_section) if cost_section else ""
+                
+                # Extract specific cost components
+                if "raw material" in cost_text.lower() or "ingredients" in cost_text.lower():
+                    cost_data["rawMaterials"] = self._extract_specific_component(cost_text, ["raw material", "ingredients"])
+                
+                if "manufacturing" in cost_text.lower() or "processing" in cost_text.lower():
+                    cost_data["manufacturing"] = self._extract_specific_component(cost_text, ["manufacturing", "processing", "production"])
+                
+                if "packaging" in cost_text.lower():
+                    cost_data["packaging"] = self._extract_specific_component(cost_text, ["packaging", "container", "bottle", "jar"])
+                
+                if "logistics" in cost_text.lower() or "distribution" in cost_text.lower():
+                    cost_data["logistics"] = self._extract_specific_component(cost_text, ["logistics", "distribution", "shipping"])
+                
+                if "quality" in cost_text.lower() or "regulatory" in cost_text.lower():
+                    cost_data["qualityControl"] = self._extract_specific_component(cost_text, ["quality", "regulatory", "testing"])
+                
+                if "marketing" in cost_text.lower() or "sales" in cost_text.lower():
+                    cost_data["salesMarketing"] = self._extract_specific_component(cost_text, ["marketing", "sales", "overhead"])
+                
+                if "administrative" in cost_text.lower() or "admin" in cost_text.lower():
+                    cost_data["administrative"] = self._extract_specific_component(cost_text, ["administrative", "admin", "miscellaneous"])
+                
+                # Extract total cost
+                if "total" in cost_text.lower() and "cost" in cost_text.lower():
+                    cost_data["totalCost"] = self._extract_total_cost(cost_text)
+                
+                # Extract retail price and margin
+                if "retail" in cost_text.lower() or "price" in cost_text.lower():
+                    cost_data["retailPrice"] = self._extract_retail_price(cost_text)
+                
+                if "margin" in cost_text.lower() or "gross" in cost_text.lower():
+                    cost_data["grossMargin"] = self._extract_gross_margin(cost_text)
+                
+                # Extract assumptions
+                if "assumption" in cost_text.lower():
+                    cost_data["assumptions"] = self._extract_assumptions(cost_text)
+                
+                # Extract optimization suggestions
+                if "optimize" in cost_text.lower() or "reduce" in cost_text.lower():
+                    cost_data["optimization"] = self._extract_optimization(cost_text)
+                
+                return cost_data
+            else:
+                return {
+                    "assumptions": "Cost assumptions will be clearly stated in INR.",
+                    "rawMaterials": "Raw materials cost analysis will be provided in INR.",
+                    "manufacturing": "Manufacturing cost analysis will be provided in INR.",
+                    "packaging": "Packaging cost analysis will be provided in INR.",
+                    "logistics": "Logistics and distribution cost analysis will be provided in INR.",
+                    "qualityControl": "Quality control and regulatory cost analysis will be provided in INR.",
+                    "salesMarketing": "Sales and marketing overhead analysis will be provided in INR.",
+                    "administrative": "Administrative and miscellaneous cost analysis will be provided in INR.",
+                    "totalCost": "Total unit cost will be calculated in INR.",
+                    "retailPrice": "Suggested retail price will be provided in INR.",
+                    "grossMargin": "Gross margin percentage will be calculated.",
+                    "optimization": "Cost optimization suggestions will be provided."
+                }
+        except Exception as e:
+            print(f"Error extracting cost breakdown: {e}")
+            return {
+                "assumptions": "Cost assumptions will be clearly stated in INR.",
+                "rawMaterials": "Raw materials cost analysis will be provided in INR.",
+                "manufacturing": "Manufacturing cost analysis will be provided in INR.",
+                "packaging": "Packaging cost analysis will be provided in INR.",
+                "logistics": "Logistics and distribution cost analysis will be provided in INR.",
+                "qualityControl": "Quality control and regulatory cost analysis will be provided in INR.",
+                "salesMarketing": "Sales and marketing overhead analysis will be provided in INR.",
+                "administrative": "Administrative and miscellaneous cost analysis will be provided in INR.",
+                "totalCost": "Total unit cost will be calculated in INR.",
+                "retailPrice": "Suggested retail price will be provided in INR.",
+                "grossMargin": "Gross margin percentage will be calculated.",
+                "optimization": "Cost optimization suggestions will be provided."
+            }
+
+    def _extract_specific_component(self, text: str, keywords: list) -> str:
+        """Extract specific cost component information."""
+        lines = text.split('\n')
+        component_lines = []
+        in_component = False
+        
         for line in lines:
-            if 'cost' in line.lower() and ('breakdown' in line.lower() or 'per unit' in line.lower()):
+            if any(keyword in line.lower() for keyword in keywords):
+                in_component = True
+                component_lines.append(line)
+            elif in_component and line.strip() == "":
+                break
+            elif in_component:
+                component_lines.append(line)
+        
+        # Clean up the extracted lines to only include relevant content
+        cleaned_lines = []
+        for line in component_lines:
+            # Skip lines that are just headers or empty
+            if line.strip() and not line.strip().startswith('**') and not line.strip().startswith('#'):
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines) if cleaned_lines else "Cost component analysis will be provided."
+
+    def _extract_cost_component(self, text: str, keywords: list) -> str:
+        """Extract specific cost component information."""
+        lines = text.split('\n')
+        component_lines = []
+        in_component = False
+        
+        for line in lines:
+            if any(keyword in line.lower() for keyword in keywords):
+                in_component = True
+                component_lines.append(line)
+            elif in_component and line.strip() == "":
+                break
+            elif in_component:
+                component_lines.append(line)
+        
+        # Clean up the extracted lines to only include relevant content
+        cleaned_lines = []
+        for line in component_lines:
+            # Skip lines that are just headers or empty
+            if line.strip() and not line.strip().startswith('**') and not line.strip().startswith('#'):
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines) if cleaned_lines else "Cost component analysis will be provided."
+
+    def _extract_total_cost(self, text: str) -> str:
+        """Extract total cost information."""
+        lines = text.split('\n')
+        for line in lines:
+            if "total" in line.lower() and ("cost" in line.lower() or "₹" in line or "inr" in line.lower()):
                 return line.strip()
-        return "Raw materials: $8.50 (35%), packaging: $3.20 (13%), manufacturing: $4.80 (20%), quality control: $2.40 (10%), overhead: $3.60 (15%), logistics: $1.80 (7%)."
+        return "Total cost will be calculated in INR."
+
+    def _extract_retail_price(self, text: str) -> str:
+        """Extract retail price information."""
+        lines = text.split('\n')
+        for line in lines:
+            if "retail" in line.lower() and ("price" in line.lower() or "₹" in line or "inr" in line.lower()):
+                return line.strip()
+        return "Suggested retail price will be provided in INR."
+
+    def _extract_gross_margin(self, text: str) -> str:
+        """Extract gross margin information."""
+        lines = text.split('\n')
+        for line in lines:
+            if "margin" in line.lower() and ("%" in line or "percent" in line.lower()):
+                return line.strip()
+        return "Gross margin percentage will be calculated."
+
+    def _extract_assumptions(self, text: str) -> str:
+        """Extract cost assumptions."""
+        lines = text.split('\n')
+        assumption_lines = []
+        in_assumptions = False
+        
+        for line in lines:
+            if "assumption" in line.lower():
+                in_assumptions = True
+                assumption_lines.append(line)
+            elif in_assumptions and line.strip() == "":
+                break
+            elif in_assumptions:
+                assumption_lines.append(line)
+        
+        return '\n'.join(assumption_lines) if assumption_lines else "Cost assumptions will be clearly stated."
+
+    def _extract_optimization(self, text: str) -> str:
+        """Extract cost optimization suggestions."""
+        lines = text.split('\n')
+        optimization_lines = []
+        in_optimization = False
+        
+        for line in lines:
+            if any(keyword in line.lower() for keyword in ["optimize", "reduce", "lower", "minimize"]):
+                in_optimization = True
+                optimization_lines.append(line)
+            elif in_optimization and line.strip() == "":
+                break
+            elif in_optimization:
+                optimization_lines.append(line)
+        
+        return '\n'.join(optimization_lines) if optimization_lines else "Cost optimization suggestions will be provided."
 
     def _extract_pricing_strategy(self, content: str) -> str:
         """Extract pricing strategy from content"""

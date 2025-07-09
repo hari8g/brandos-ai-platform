@@ -9,11 +9,13 @@ from app.models.multimodal import (
     MultiModalResponse,
     ImageUploadResponse,
     MultimodalSuggestionRequest,
-    MultimodalSuggestionResponse
+    MultimodalSuggestionResponse,
+    ComprehensiveAnalysisResponse
 )
 from app.services.image_analysis_service import image_analysis_service
 from app.services.multimodal_fusion_service import multimodal_fusion_service
 from app.services.multimodal_suggestions_service import generate_multimodal_suggestions
+from app.services.comprehensive_analysis_service import ComprehensiveAnalysisService
 
 router = APIRouter(prefix="/multimodal", tags=["multimodal"])
 
@@ -115,6 +117,27 @@ async def multimodal_suggestions_endpoint(request: MultimodalSuggestionRequest):
             error=str(e)
         )
 
+@router.post("/comprehensive-analysis", response_model=ComprehensiveAnalysisResponse)
+async def comprehensive_analysis_endpoint(
+    enhanced_prompt: str = Form(...),
+    category: Optional[str] = Form(None)
+):
+    """Generate comprehensive 6-step formulation analysis using enhanced prompt"""
+    try:
+        # Initialize the comprehensive analysis service
+        analysis_service = ComprehensiveAnalysisService()
+        
+        # Generate comprehensive analysis using the enhanced prompt
+        result = await analysis_service.generate_comprehensive_analysis(
+            enhanced_prompt=enhanced_prompt,
+            category=category
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Comprehensive analysis failed: {str(e)}")
+
 @router.get("/health")
 async def health_check():
     """Health check endpoint for multi-modal services"""
@@ -122,6 +145,7 @@ async def health_check():
         "status": "healthy",
         "services": {
             "image_analysis": "available",
-            "multimodal_fusion": "available"
+            "multimodal_fusion": "available",
+            "comprehensive_analysis": "available"
         }
     } 

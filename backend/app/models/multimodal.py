@@ -88,4 +88,11 @@ class MultimodalSuggestionResponse(BaseModel):
     suggestions: List[MultimodalSuggestion]
     success: bool = True
     message: str = "Multimodal suggestions generated successfully"
+    error: Optional[str] = None
+
+class ComprehensiveAnalysisResponse(BaseModel):
+    """Response model for comprehensive 6-step analysis"""
+    analysis: str
+    sections: Dict[str, Any]  # Changed from Dict[str, str] to Dict[str, Any] to accept structured data
+    success: bool = True
     error: Optional[str] = None 

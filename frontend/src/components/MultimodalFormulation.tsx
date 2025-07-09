@@ -2,7 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageUpload } from './ImageUpload';
 import { useMultimodal } from '../hooks/useMultimodal';
+import { useLocalMarket } from '../hooks/useLocalMarket';
 import { getCategoryColors } from '../lib/colorUtils';
+import {
+  FormulationSummary,
+  FormulationDetails,
+  MarketResearch,
+  ManufacturingConsiderations,
+  UnitEconomics,
+  PackagingBranding
+} from './analysis';
 
 interface MultimodalFormulationProps {
   onResult: (data: any) => void;
@@ -26,21 +35,35 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
   const [loadingType, setLoadingType] = useState<'analysis' | 'formulation'>('analysis');
   const [editableEnhancedPrompt, setEditableEnhancedPrompt] = useState('');
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
+  const [selectedCity, setSelectedCity] = useState('Mumbai');
 
   // Refs to store interval and timeout IDs for cleanup
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const promptIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Refs for scrolling to results
+  const imageAnalysisResultsRef = useRef<HTMLDivElement>(null);
+  const comprehensiveAnalysisResultsRef = useRef<HTMLDivElement>(null);
+  const analyzeButtonRef = useRef<HTMLButtonElement>(null);
+
   const {
     loading,
     error,
     imageAnalysis,
-    multimodalResult,
+    comprehensiveAnalysis,
     analyzeImage,
-    analyzeAndFuse,
+    generateComprehensiveAnalysis,
     reset
   } = useMultimodal();
+
+  // Local market analysis hook
+  const {
+    loading: localMarketLoading,
+    error: localMarketError,
+    marketData: localMarketData,
+    analyzeLocalMarket
+  } = useLocalMarket();
 
   const colors = getCategoryColors(selectedCategory);
 
@@ -67,6 +90,26 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     setLoadingType('analysis');
     cleanupTimers();
   };
+
+  // Fetch local market data when category or city changes
+  useEffect(() => {
+    if (selectedCategory) {
+      const fetchLocalMarketData = async () => {
+        try {
+          await analyzeLocalMarket({
+            location: selectedCity,
+            category: selectedCategory,
+            product_name: '',
+            ingredients: []
+          });
+        } catch (error) {
+          console.error('Failed to fetch local market data:', error);
+        }
+      };
+      
+      fetchLocalMarketData();
+    }
+  }, [selectedCategory, selectedCity, analyzeLocalMarket]);
 
   useEffect(() => {
     handleReset();
@@ -121,6 +164,14 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     setCurrentStage('input');
     setFinalPrompt('');
     setEditableEnhancedPrompt('');
+    
+    // Scroll to analyze button after upload
+    setTimeout(() => {
+      analyzeButtonRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }, 500);
   };
 
   const handleImageRemove = () => {
@@ -197,6 +248,13 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         setTimeout(() => {
           setLoadingProgress(0);
           setLoadingStep('');
+          // Scroll to image analysis results
+          setTimeout(() => {
+            imageAnalysisResultsRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 500);
         }, 1000);
       } else {
         console.log('❌ Analysis failed');
@@ -232,9 +290,9 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
 
     setLoadingType('formulation');
     setLoadingProgress(0);
-    setLoadingStep('Starting formulation generation...');
+    setLoadingStep('Starting comprehensive analysis...');
 
-    // Simulate progress for formulation
+    // Simulate progress for comprehensive analysis
     progressIntervalRef.current = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 90) {
@@ -248,46 +306,52 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       });
     }, 400);
 
-    const stepTimeout1 = setTimeout(() => setLoadingStep('Analyzing ingredients...'), 2000);
-    const stepTimeout2 = setTimeout(() => setLoadingStep('Calculating proportions...'), 5000);
-    const stepTimeout3 = setTimeout(() => setLoadingStep('Generating formulation...'), 8000);
+    const stepTimeout1 = setTimeout(() => setLoadingStep('Analyzing market landscape...'), 2000);
+    const stepTimeout2 = setTimeout(() => setLoadingStep('Calculating unit economics...'), 5000);
+    const stepTimeout3 = setTimeout(() => setLoadingStep('Generating comprehensive analysis...'), 8000);
     
     stepTimeoutsRef.current = [stepTimeout1, stepTimeout2, stepTimeout3];
 
     try {
-      const promptToUse = finalPrompt || textPrompt.trim() || "Generate a formulation based on this product image";
-      console.log('📤 Using prompt for formulation:', promptToUse);
+      // Use the enhanced prompt from image analysis or the final prompt
+      const enhancedPromptToUse = imageAnalysis?.enhanced_prompt || finalPrompt || textPrompt.trim() || "Generate a comprehensive analysis based on this product image";
+      console.log('📤 Using enhanced prompt for comprehensive analysis:', enhancedPromptToUse);
       
-      const result = await analyzeAndFuse(
-        selectedFile,
-        promptToUse,
+      const result = await generateComprehensiveAnalysis(
+        enhancedPromptToUse,
         selectedCategory || undefined
       );
 
-      console.log('📤 analyzeAndFuse result:', result);
+      console.log('📤 comprehensive analysis result:', result);
 
-      if (result && result.formulation) {
+      if (result && result.analysis) {
         setLoadingProgress(100);
-        setLoadingStep('Formulation complete!');
-        console.log('✅ Formulation generated successfully');
+        setLoadingStep('Analysis complete!');
+        console.log('✅ Comprehensive analysis generated successfully');
         
         setTimeout(() => {
-          onResult(result.formulation);
           setLoadingProgress(0);
           setLoadingStep('');
+          // Scroll to comprehensive analysis results
+          setTimeout(() => {
+            comprehensiveAnalysisResultsRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 500);
         }, 1000);
       } else {
-        console.log('❌ Formulation generation failed');
+        console.log('❌ Comprehensive analysis generation failed');
         setLoadingProgress(0);
-        setLoadingStep('Formulation generation failed. Please try again.');
+        setLoadingStep('Analysis generation failed. Please try again.');
         setTimeout(() => {
           setLoadingStep('');
         }, 2000);
       }
     } catch (error) {
-      console.error('❌ Formulation error:', error);
+      console.error('❌ Comprehensive analysis error:', error);
       setLoadingProgress(0);
-      setLoadingStep('Formulation generation failed. Please try again.');
+      setLoadingStep('Analysis generation failed. Please try again.');
       setTimeout(() => {
         setLoadingStep('');
       }, 2000);
@@ -309,30 +373,6 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     setEditableEnhancedPrompt('');
     setCurrentPromptIndex(0);
     reset();
-  };
-
-  const getCategoryIcon = () => {
-    switch (selectedCategory) {
-      case 'cosmetics': return '💄';
-      case 'pet food': return '🐾';
-      case 'wellness': return '🌱';
-      case 'beverages': return '🥤';
-      case 'textiles': return '🧵';
-      case 'desi masala': return '🌶️';
-      default: return '🔬';
-    }
-  };
-
-  const getCategoryTitle = () => {
-    switch (selectedCategory) {
-      case 'cosmetics': return 'Beauty & Cosmetics';
-      case 'pet food': return 'Pet Nutrition';
-      case 'wellness': return 'Health & Wellness';
-      case 'beverages': return 'Beverages & Drinks';
-      case 'textiles': return 'Textiles & Materials';
-      case 'desi masala': return 'Desi Masala & Spices';
-      default: return 'Product Formulation';
-    }
   };
 
   const getDynamicPrompts = () => {
@@ -404,7 +444,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               </div>
               <h3 className="text-xl font-bold font-sans text-gray-900 mb-2">
                 {loadingType === 'analysis' && 'Analyzing Image...'}
-                {loadingType === 'formulation' && 'Creating Formulation...'}
+                {loadingType === 'formulation' && 'Creating Comprehensive Analysis...'}
               </h3>
               <p className="text-gray-600 text-sm font-sans">{loadingStep}</p>
             </div>
@@ -534,6 +574,8 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
           rows={4}
           disabled={loading}
         />
+
+
       </motion.div>
 
       {/* Image Preview (if available) */}
@@ -575,6 +617,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       >
         {selectedFile && currentStage === 'input' && (
           <motion.button
+            ref={analyzeButtonRef}
             onClick={(e) => {
               console.log('🔘 Analyze Image button clicked', { loading, selectedFile: selectedFile?.name });
               handleAnalyzeImage();
@@ -637,199 +680,14 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
         </motion.div>
       )}
 
-      {/* Image Analysis Results with Accordion Style */}
-      <AnimatePresence>
-        {showAnalysis && imageAnalysis && !loading && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, scale: 0.95 }}
-            animate={{ opacity: 1, height: 'auto', scale: 1 }}
-            exit={{ opacity: 0, height: 0, scale: 0.95 }}
-            className={`rounded-2xl border-2 ${colors.border} ${colors.bg} p-6 shadow-lg`}
-          >
-            <div className="mb-6">
-              <h3 className={`text-xl font-bold font-sans ${colors.text} mb-2`}>
-                This is what we observed from the image upload
-              </h3>
-              <p className="text-gray-600 text-sm font-sans">
-                Our model analyzed your product image and extracted these key insights
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {/* 1. Product Category & Intended Use */}
-              {(imageAnalysis.product_category || imageAnalysis.intended_use) && (
-                <div className={`bg-white/90 border ${colors.border} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${colors.icon} rounded-full mr-3`}></div>
-                      <h5 className={`text-sm font-semibold font-sans ${colors.text}`}>Product Category & Intended Use</h5>
-                    </div>
-                    <svg className={`w-4 h-4 ${colors.text} opacity-60`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div className="space-y-2 text-sm font-sans">
-                    {imageAnalysis.product_category && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Product:</span> <span className="text-gray-700">{imageAnalysis.product_category}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.intended_use && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Intended Use:</span> <span className="text-gray-700">{imageAnalysis.intended_use}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.usage_instructions && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Usage:</span> <span className="text-gray-700">{imageAnalysis.usage_instructions}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Key Ingredients & Claims */}
-              {(imageAnalysis.key_ingredients?.length > 0 || imageAnalysis.claims?.length > 0) && (
-                <div className={`bg-white/90 border ${colors.border} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${colors.icon} rounded-full mr-3`}></div>
-                      <h5 className={`text-sm font-semibold font-sans ${colors.text}`}>Key Ingredients & Claims</h5>
-                    </div>
-                    <svg className={`w-4 h-4 ${colors.text} opacity-60`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div className="space-y-2 font-sans">
-                    {imageAnalysis.key_ingredients?.length > 0 && (
-                      <div>
-                        <span className={`text-sm font-medium ${colors.text}`}>Ingredients:</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {imageAnalysis.key_ingredients.map((ingredient: string, index: number) => (
-                            <span key={index} className={`text-xs ${colors.bg} ${colors.text} px-2 py-1 rounded-full`}>
-                              {ingredient}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {imageAnalysis.claims?.length > 0 && (
-                      <div>
-                        <span className={`text-sm font-medium ${colors.text}`}>Claims:</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {imageAnalysis.claims.map((claim: string, index: number) => (
-                            <span key={index} className={`text-xs ${colors.bg} ${colors.text} px-2 py-1 rounded-full`}>
-                              {claim}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Packaging Details */}
-              {(imageAnalysis.packaging_type || imageAnalysis.packaging_size || imageAnalysis.packaging_material) && (
-                <div className={`bg-white/90 border ${colors.border} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${colors.icon} rounded-full mr-3`}></div>
-                      <h5 className={`text-sm font-semibold font-sans ${colors.text}`}>Packaging Details</h5>
-                    </div>
-                    <svg className={`w-4 h-4 ${colors.text} opacity-60`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div className="space-y-2 text-sm font-sans">
-                    {imageAnalysis.packaging_type && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Type:</span> <span className="text-gray-700">{imageAnalysis.packaging_type}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.packaging_size && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Size:</span> <span className="text-gray-700">{imageAnalysis.packaging_size}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.packaging_material && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Material:</span> <span className="text-gray-700">{imageAnalysis.packaging_material}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.storage_requirements && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Storage:</span> <span className="text-gray-700">{imageAnalysis.storage_requirements}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 4. Target Market & Audience */}
-              {imageAnalysis.target_audience && (
-                <div className={`bg-white/90 border ${colors.border} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${colors.icon} rounded-full mr-3`}></div>
-                      <h5 className={`text-sm font-semibold font-sans ${colors.text}`}>Target Market & Audience</h5>
-                    </div>
-                    <svg className={`w-4 h-4 ${colors.text} opacity-60`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed font-sans">{imageAnalysis.target_audience}</p>
-                </div>
-              )}
-
-              {/* 5. Brand & Positioning */}
-              {(imageAnalysis.brand_style || imageAnalysis.competitor_positioning || imageAnalysis.price_positioning) && (
-                <div className={`bg-white/90 border ${colors.border} rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 ${colors.icon} rounded-full mr-3`}></div>
-                      <h5 className={`text-sm font-semibold font-sans ${colors.text}`}>Brand & Positioning</h5>
-                    </div>
-                    <svg className={`w-4 h-4 ${colors.text} opacity-60`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                  <div className="space-y-2 text-sm font-sans">
-                    {imageAnalysis.brand_style && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Brand Style:</span> <span className="text-gray-700">{imageAnalysis.brand_style}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.competitor_positioning && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Positioning:</span> <span className="text-gray-700">{imageAnalysis.competitor_positioning}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.price_positioning && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Price:</span> <span className="text-gray-700">{imageAnalysis.price_positioning}</span>
-                      </div>
-                    )}
-                    {imageAnalysis.brand_story && (
-                      <div>
-                        <span className={`font-medium ${colors.text}`}>Brand Story:</span> <span className="text-gray-700">{imageAnalysis.brand_story}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Formulation Output Section */}
-      {imageAnalysis && !loading && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-green-50 to-emerald-50 p-6`}
-        >
+          {imageAnalysis && !loading && (
+            <motion.div
+          ref={imageAnalysisResultsRef}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-green-50 to-emerald-50 p-6`}
+            >
           <div className="mb-6">
             <h3 className={`text-xl font-bold font-sans ${colors.text} mb-2`}>
               We read your intent and analyzed your upload, and this is what we think you want..
@@ -837,18 +695,18 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             <p className="text-gray-600 text-sm font-sans">
               Our model combined your requirements with the image analysis to create this comprehensive prompt
             </p>
-          </div>
-          
-          <div className="bg-white/90 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
+              </div>
+              
+              <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium font-sans text-green-600">Comprehensive Formulation Prompt</span>
               <div className="flex gap-2">
-                <button
+                  <button
                   onClick={() => {
                     setEditableEnhancedPrompt(imageAnalysis.enhanced_prompt || '');
                   }}
-                  className="text-xs text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition-colors"
-                >
+                    className="text-xs text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded transition-colors"
+                  >
                   Regenerate Prompt
                 </button>
                 <button
@@ -858,19 +716,19 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
                   className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
                 >
                   Clear Prompt
-                </button>
-              </div>
+                  </button>
+                </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              <textarea
+                <textarea
                 value={editableEnhancedPrompt || imageAnalysis.enhanced_prompt || "The comprehensive formulation prompt will appear here..."}
-                onChange={(e) => setEditableEnhancedPrompt(e.target.value)}
+                  onChange={(e) => setEditableEnhancedPrompt(e.target.value)}
                 className="w-full text-sm text-green-700 leading-relaxed bg-transparent border-none outline-none resize-none min-h-[200px] font-sans whitespace-pre-wrap"
                 placeholder="The comprehensive formulation prompt will appear here..."
               />
-            </div>
-          </div>
-          
+                </div>
+              </div>
+              
           {/* Copy Button */}
           <div className="mt-3 flex justify-end">
             <button
@@ -888,38 +746,83 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             >
               Copy Prompt
             </button>
-          </div>
-          
-          {/* Generate Formulation Button */}
-          <motion.button
+            </div>
+            
+            {/* Generate Formulation Button */}
+            <motion.button
             onClick={() => {
               console.log('🔘 Generate Formulation button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
               handleGenerateFormulation();
-            }}
-            disabled={loading || !selectedFile}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+              }}
+              disabled={loading || !selectedFile}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             className={`w-full mt-4 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
-                       ${loading || !selectedFile
-                         ? 'bg-gray-300 cursor-not-allowed'
-                         : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
-                       }`}
-          >
-            {loading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                         ${loading || !selectedFile
+                           ? 'bg-gray-300 cursor-not-allowed'
+                           : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
+                         }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Generating Formulation...</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>Generate Formulation</span>
-              </div>
-            )}
-          </motion.button>
-        </motion.div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                <span>Generate Comprehensive Analysis</span>
+                </div>
+              )}
+            </motion.button>
+          </motion.div>
+        )}
+
+      {/* 6-Step Analysis Results */}
+      {comprehensiveAnalysis && !loading && comprehensiveAnalysis.sections && (
+        <div ref={comprehensiveAnalysisResultsRef} className="space-y-6">
+          {comprehensiveAnalysis.sections.formulation_summary && (
+            <FormulationSummary 
+              content={comprehensiveAnalysis.sections.formulation_summary} 
+              colors={colors} 
+            />
+          )}
+          {comprehensiveAnalysis.sections.formulation_details && (
+            <FormulationDetails 
+              content={comprehensiveAnalysis.sections.formulation_details} 
+              colors={colors} 
+            />
+          )}
+          {comprehensiveAnalysis.sections.market_research && (
+            <MarketResearch 
+              selectedCategory={selectedCategory || ''}
+              selectedCity={selectedCity}
+              localMarketData={localMarketData}
+              onCityChange={setSelectedCity}
+              productQuery={textPrompt || imageAnalysis?.enhanced_prompt || ''}
+            />
+          )}
+          {comprehensiveAnalysis.sections.manufacturing_considerations && (
+            <ManufacturingConsiderations 
+              content={comprehensiveAnalysis.sections.manufacturing_considerations} 
+              colors={colors} 
+            />
+          )}
+          {comprehensiveAnalysis.sections.unit_economics && (
+            <UnitEconomics 
+              content={comprehensiveAnalysis.sections.unit_economics} 
+              colors={colors} 
+            />
+          )}
+          {comprehensiveAnalysis.sections.packaging_branding && (
+            <PackagingBranding 
+              content={comprehensiveAnalysis.sections.packaging_branding} 
+              colors={colors} 
+            />
+                          )}
+                        </div>
       )}
     </div>
   );

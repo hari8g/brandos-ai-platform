@@ -13,6 +13,17 @@ export const useMultimodal = () => {
   const [error, setError] = useState<string | null>(null);
   const [imageAnalysis, setImageAnalysis] = useState<ImageAnalysisResponse | null>(null);
   const [multimodalResult, setMultimodalResult] = useState<MultiModalResponse | null>(null);
+  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState<{
+    analysis: string;
+    sections: {
+      formulation_summary: string;
+      formulation_details: string;
+      market_research: string;
+      manufacturing_considerations: string;
+      unit_economics: string;
+      packaging_branding: string;
+    };
+  } | null>(null);
 
   const analyzeImage = async (
     file: File, 
@@ -171,11 +182,57 @@ export const useMultimodal = () => {
     }
   };
 
+  const generateComprehensiveAnalysis = async (
+    enhancedPrompt: string,
+    category?: string
+  ): Promise<any> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('🔍 Starting comprehensive analysis:', { enhancedPrompt, category });
+      
+      const formData = new FormData();
+      formData.append('enhanced_prompt', enhancedPrompt);
+      if (category) formData.append('category', category);
+
+      console.log('📤 Sending request to /multimodal/comprehensive-analysis');
+      
+      const response = await apiClient.post(
+        '/multimodal/comprehensive-analysis',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      console.log('📥 Received comprehensive analysis response:', response.data);
+
+      if (response.data.success) {
+        setComprehensiveAnalysis(response.data);
+        console.log('✅ Comprehensive analysis successful');
+        return response.data;
+      } else {
+        throw new Error(response.data.error || 'Comprehensive analysis failed');
+      }
+    } catch (err) {
+      console.error('❌ Comprehensive analysis error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during comprehensive analysis';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const reset = () => {
     setLoading(false);
     setError(null);
     setImageAnalysis(null);
     setMultimodalResult(null);
+    setComprehensiveAnalysis(null);
   };
 
   return {
@@ -183,10 +240,12 @@ export const useMultimodal = () => {
     error,
     imageAnalysis,
     multimodalResult,
+    comprehensiveAnalysis,
     analyzeImage,
     fuseTextAndImage,
     analyzeAndFuse,
     uploadImage,
+    generateComprehensiveAnalysis,
     reset
   };
 }; 

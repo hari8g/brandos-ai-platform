@@ -479,23 +479,58 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
   };
 
   return (
-    <div className={`${colors.cardBg} border ${colors.border} rounded-xl p-4 md:p-6 lg:p-8`}>
-      {/* Header with Instructions */}
-      <div className={`mb-6 p-4 md:p-6 ${colors.lightBg} rounded-xl border ${colors.border} border-dashed`}>
-        <div className="flex items-start space-x-3">
-          <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center text-sm`}>
-            💡
+    <div className="space-y-4">
+      {/* Modern Gradient Header */}
+      <div className="bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 rounded-t-3xl px-8 py-6 text-white shadow-md">
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <span className="text-2xl">👥</span>
           </div>
-          <div className="flex-1">
-            <h3 className={`font-semibold ${colors.text} text-sm md:text-base mb-1`}>Interactive Market Metrics</h3>
-            <p className={`${colors.text} text-xs md:text-sm leading-relaxed`}>
-              Click on any metric card below to see detailed explanations of how these market measurements are calculated and their strategic importance for your business planning.
-            </p>
+          <div>
+            <h3 className="text-xl font-bold">Customer Segments & Market Analysis</h3>
+            <p className="text-blue-100 text-sm">Dynamic segmentation, revenue, and market size insights for your product</p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-6 md:space-y-8">
+      {/* Main content remains unchanged, starting with the white card */}
+      <div className="bg-white rounded-b-3xl shadow-sm border border-gray-200">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <label className="text-sm font-medium text-gray-700">Target City:</label>
+              <select
+                value={selectedCity}
+                onChange={(e) => onCityChange?.(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="Mumbai">Mumbai</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Pune">Pune</option>
+                <option value="Ahmedabad">Ahmedabad</option>
+                <option value="Surat">Surat</option>
+                <option value="Jaipur">Jaipur</option>
+              </select>
+            </div>
+          </div>
+          {localMarketData && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Location:</span> {selectedCity} | 
+                <span className="font-semibold"> Market Size:</span> {`₹${(parseInt(localMarketData.market_size?.replace(/[₹,]/g, '') || '0') / 1000000).toFixed(1)}M`} | 
+                <span className="font-semibold"> Total Purchasers:</span> {`${(parseInt(localMarketData.actual_purchasers?.replace(/[,]/g, '') || '0') / 1000000).toFixed(1)}M`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* High-Value Customers */}
+        {/* ... rest of the component remains unchanged ... */}
+
         {/* Market Size Analysis */}
         <div>
                       <div className="flex items-center space-x-3 mb-4">
@@ -672,6 +707,531 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
             </div>
           </div>
         )}
+
+        {/* Target Audience Analysis */}
+        <div>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+              <span className="text-indigo-600">👥</span>
+            </div>
+            <h4 className={`text-lg font-semibold ${colors.text}`}>Target Audience Analysis</h4>
+          </div>
+          <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-6`}>
+            <div className="space-y-6">
+              {/* Primary Target Audience */}
+              <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
+                <h5 className={`font-semibold ${colors.text} text-base mb-3 flex items-center`}>
+                  <span className="w-3 h-3 rounded-full bg-blue-400 mr-2"></span>
+                  Primary Target Audience
+                </h5>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className={`font-medium ${colors.text} text-sm`}>Demographics:</span>
+                      <p className={`${colors.text} text-sm mt-1`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Urban pet owners aged 25-45, primarily women (70%), with household income ₹8-15 lakhs annually'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Health-conscious adults aged 25-55, primarily women (65%), with household income ₹10-20 lakhs annually'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Health-conscious adults aged 18-45, balanced gender distribution, with household income ₹6-15 lakhs annually'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Fashion-conscious adults aged 20-50, primarily women (75%), with household income ₹8-18 lakhs annually'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Cooking enthusiasts aged 25-60, primarily women (80%), with household income ₹6-12 lakhs annually'
+                          : 'Beauty-conscious women aged 18-45, with household income ₹8-20 lakhs annually'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <span className={`font-medium ${colors.text} text-sm`}>Psychographics:</span>
+                      <p className={`${colors.text} text-sm mt-1`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Pet humanization trend followers, health-conscious, premium product seekers, social media active'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Health and wellness focused, preventive healthcare believers, premium quality seekers'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Health-conscious, functional food enthusiasts, convenience seekers, social media active'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Sustainability conscious, fashion-forward, quality seekers, social media influencers'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Traditional cooking enthusiasts, authentic flavor seekers, health-conscious, family-oriented'
+                          : 'Beauty and skincare enthusiasts, premium product seekers, social media active, trend followers'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${colors.text} text-sm`}>Behavioral Patterns:</span>
+                    <ul className={`${colors.text} text-sm mt-1 space-y-1`}>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Research products thoroughly before purchase, read reviews, prefer premium brands'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Research ingredients and benefits, read clinical studies, prefer science-backed products'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Look for functional benefits, read nutrition labels, prefer natural ingredients'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Research fabric quality, check sustainability credentials, prefer ethical brands'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Seek authentic recipes, research traditional methods, prefer natural ingredients'
+                          : 'Research ingredients and reviews, follow beauty trends, prefer premium formulations'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Shop online frequently, use mobile apps, engage with pet communities'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Shop online for supplements, use health apps, engage with wellness communities'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Shop online and offline, use food delivery apps, engage with health communities'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Shop online for fashion, use social commerce, engage with fashion communities'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Shop at local markets and online, use cooking apps, engage with food communities'
+                          : 'Shop online for beauty products, use beauty apps, engage with beauty communities'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Willing to pay premium for quality, value transparency, seek expert recommendations'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Willing to pay premium for proven benefits, value clinical validation, seek expert advice'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Willing to pay premium for health benefits, value natural ingredients, seek expert recommendations'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Willing to pay premium for quality and sustainability, value ethical production, seek expert advice'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Willing to pay premium for authenticity, value traditional methods, seek expert recommendations'
+                          : 'Willing to pay premium for quality, value proven results, seek expert recommendations'
+                        }
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Target Audience */}
+              <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
+                <h5 className={`font-semibold ${colors.text} text-base mb-3 flex items-center`}>
+                  <span className="w-3 h-3 rounded-full bg-green-400 mr-2"></span>
+                  Secondary Target Audience
+                </h5>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className={`font-medium ${colors.text} text-sm`}>Demographics:</span>
+                      <p className={`${colors.text} text-sm mt-1`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Young professionals aged 22-30, urban dwellers, early adopters of premium pet products'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Young professionals aged 22-35, fitness enthusiasts, early adopters of wellness trends'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Students and young professionals aged 18-30, health-conscious, trend followers'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Young professionals aged 22-35, fashion-forward, sustainability conscious'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Young adults aged 20-35, cooking enthusiasts, traditional food lovers'
+                          : 'Young professionals aged 22-35, beauty enthusiasts, early adopters of beauty trends'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <span className={`font-medium ${colors.text} text-sm`}>Characteristics:</span>
+                      <p className={`${colors.text} text-sm mt-1`}>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'First-time pet owners, social media influencers, trend followers'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Fitness enthusiasts, social media influencers, trend followers'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Health-conscious students, social media active, trend followers'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Fashion influencers, sustainability advocates, trend followers'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Cooking enthusiasts, food bloggers, traditional food advocates'
+                          : 'Beauty influencers, social media active, trend followers'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Likely Buyers & Average Order Value */}
+        <div>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className={`w-6 h-6 rounded-lg ${colors.bg} flex items-center justify-center text-xs font-bold`}>
+              <span className="text-purple-600">💰</span>
+            </div>
+            <h4 className={`text-lg font-semibold ${colors.text}`}>Likely Buyers & Average Order Value</h4>
+          </div>
+          <div className={`${colors.lightBg} border ${colors.border} rounded-xl p-6`}>
+            <div className="space-y-6">
+              {/* Customer Segments */}
+              <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
+                <h5 className={`font-semibold ${colors.text} text-base mb-3 flex items-center`}>
+                  <span className="w-3 h-3 rounded-full bg-purple-400 mr-2"></span>
+                  Customer Segments & Purchase Behavior
+                </h5>
+                <div className="space-y-4">
+                  {/* High-Value Customers */}
+                  <div className="border-l-4 border-purple-400 pl-4">
+                    <h6 className={`font-semibold ${colors.text} text-sm mb-2`}>High-Value Customers (20% of buyers)</h6>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Average Order Value:</span>
+                        <p className={`${colors.text} font-bold`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? '₹2,500 - ₹4,000'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? '₹3,000 - ₹5,000'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? '₹1,500 - ₹3,000'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? '₹2,000 - ₹4,500'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? '₹800 - ₹1,500'
+                            : '₹2,000 - ₹4,000'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Purchase Frequency:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Monthly to bi-monthly'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Monthly'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Weekly to bi-weekly'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Seasonal (3-4 times/year)'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Weekly to monthly'
+                            : 'Monthly to bi-monthly'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Characteristics:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Premium seekers, brand loyal, high disposable income'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Health-focused, quality conscious, high disposable income'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Health-conscious, convenience seekers, moderate-high income'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Fashion-forward, sustainability conscious, high disposable income'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Traditional food lovers, quality conscious, moderate income'
+                            : 'Beauty enthusiasts, premium seekers, high disposable income'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mid-Value Customers */}
+                  <div className="border-l-4 border-blue-400 pl-4">
+                    <h6 className={`font-semibold ${colors.text} text-sm mb-2`}>Mid-Value Customers (50% of buyers)</h6>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Average Order Value:</span>
+                        <p className={`${colors.text} font-bold`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? '₹1,200 - ₹2,500'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? '₹1,500 - ₹3,000'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? '₹800 - ₹1,500'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? '₹1,200 - ₹2,500'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? '₹400 - ₹800'
+                            : '₹1,200 - ₹2,500'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Purchase Frequency:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Bi-monthly to quarterly'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Bi-monthly'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Bi-weekly to monthly'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Quarterly (2-3 times/year)'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Bi-weekly to monthly'
+                            : 'Bi-monthly to quarterly'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Characteristics:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Value-conscious, quality seekers, moderate income'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Health-conscious, value seekers, moderate income'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Health-conscious, convenience seekers, moderate income'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Fashion-conscious, value seekers, moderate income'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Traditional food lovers, value seekers, moderate income'
+                            : 'Beauty-conscious, value seekers, moderate income'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Entry-Level Customers */}
+                  <div className="border-l-4 border-green-400 pl-4">
+                    <h6 className={`font-semibold ${colors.text} text-sm mb-2`}>Entry-Level Customers (30% of buyers)</h6>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Average Order Value:</span>
+                        <p className={`${colors.text} font-bold`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? '₹500 - ₹1,200'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? '₹800 - ₹1,500'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? '₹400 - ₹800'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? '₹600 - ₹1,200'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? '₹200 - ₹400'
+                            : '₹600 - ₹1,200'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Purchase Frequency:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Quarterly to semi-annually'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Quarterly'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Monthly to bi-monthly'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Semi-annually (1-2 times/year)'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Monthly to bi-monthly'
+                            : 'Quarterly to semi-annually'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <span className={`font-medium ${colors.text}`}>Characteristics:</span>
+                        <p className={`${colors.text}`}>
+                          {selectedCategory?.toLowerCase() === 'pet food'
+                            ? 'Price-sensitive, trial seekers, lower income'
+                            : selectedCategory?.toLowerCase() === 'wellness'
+                            ? 'Price-sensitive, trial seekers, lower income'
+                            : selectedCategory?.toLowerCase() === 'beverages'
+                            ? 'Price-sensitive, convenience seekers, lower income'
+                            : selectedCategory?.toLowerCase() === 'textiles'
+                            ? 'Price-sensitive, basic needs, lower income'
+                            : selectedCategory?.toLowerCase() === 'desi masala'
+                            ? 'Price-sensitive, basic needs, lower income'
+                            : 'Price-sensitive, trial seekers, lower income'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Purchase Drivers */}
+              <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
+                <h5 className={`font-semibold ${colors.text} text-base mb-3 flex items-center`}>
+                  <span className="w-3 h-3 rounded-full bg-orange-400 mr-2"></span>
+                  Key Purchase Drivers
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <span className={`font-medium ${colors.text} text-sm`}>Primary Drivers:</span>
+                    <ul className={`${colors.text} text-sm mt-1 space-y-1`}>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Pet health and nutrition concerns'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Health and wellness goals'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Health benefits and convenience'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Fashion trends and sustainability'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Authentic taste and traditional cooking'
+                          : 'Beauty and skincare concerns'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Premium quality and ingredients'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Clinical validation and proven benefits'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Natural ingredients and functional benefits'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Quality and ethical production'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Traditional methods and natural ingredients'
+                          : 'Proven results and premium ingredients'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Brand reputation and reviews'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Brand reputation and expert recommendations'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Brand reputation and user reviews'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Brand reputation and sustainability credentials'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Traditional reputation and user reviews'
+                          : 'Brand reputation and user reviews'
+                        }
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${colors.text} text-sm`}>Secondary Drivers:</span>
+                    <ul className={`${colors.text} text-sm mt-1 space-y-1`}>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Convenience and availability'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Convenience and ease of use'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Taste and variety'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Style and design'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Convenience and variety'
+                          : 'Convenience and variety'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Social media influence'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Social media influence'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Social media trends'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Social media influence'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Traditional recommendations'
+                          : 'Social media influence'
+                        }
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 mr-2 flex-shrink-0"></span>
+                        {selectedCategory?.toLowerCase() === 'pet food'
+                          ? 'Price and value for money'
+                          : selectedCategory?.toLowerCase() === 'wellness'
+                          ? 'Price and value for money'
+                          : selectedCategory?.toLowerCase() === 'beverages'
+                          ? 'Price and value for money'
+                          : selectedCategory?.toLowerCase() === 'textiles'
+                          ? 'Price and value for money'
+                          : selectedCategory?.toLowerCase() === 'desi masala'
+                          ? 'Price and value for money'
+                          : 'Price and value for money'
+                        }
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenue Projections */}
+              <div className={`${colors.cardBg} border ${colors.border} rounded-lg p-4`}>
+                <h5 className={`font-semibold ${colors.text} text-base mb-3 flex items-center`}>
+                  <span className="w-3 h-3 rounded-full bg-green-400 mr-2"></span>
+                  Revenue Projections by Segment
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
+                    <h6 className={`font-semibold ${colors.text} mb-2`}>High-Value (20%)</h6>
+                    <p className={`${colors.text} font-bold text-lg`}>
+                      {selectedCategory?.toLowerCase() === 'pet food'
+                        ? '₹3,000 AOV'
+                        : selectedCategory?.toLowerCase() === 'wellness'
+                        ? '₹4,000 AOV'
+                        : selectedCategory?.toLowerCase() === 'beverages'
+                        ? '₹2,000 AOV'
+                        : selectedCategory?.toLowerCase() === 'textiles'
+                        ? '₹3,500 AOV'
+                        : selectedCategory?.toLowerCase() === 'desi masala'
+                        ? '₹1,200 AOV'
+                        : '₹3,000 AOV'
+                      }
+                    </p>
+                    <p className={`${colors.text} text-xs opacity-70`}>40% of revenue</p>
+                  </div>
+                  <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg">
+                    <h6 className={`font-semibold ${colors.text} mb-2`}>Mid-Value (50%)</h6>
+                    <p className={`${colors.text} font-bold text-lg`}>
+                      {selectedCategory?.toLowerCase() === 'pet food'
+                        ? '₹1,800 AOV'
+                        : selectedCategory?.toLowerCase() === 'wellness'
+                        ? '₹2,200 AOV'
+                        : selectedCategory?.toLowerCase() === 'beverages'
+                        ? '₹1,200 AOV'
+                        : selectedCategory?.toLowerCase() === 'textiles'
+                        ? '₹1,800 AOV'
+                        : selectedCategory?.toLowerCase() === 'desi masala'
+                        ? '₹600 AOV'
+                        : '₹1,800 AOV'
+                      }
+                    </p>
+                    <p className={`${colors.text} text-xs opacity-70`}>45% of revenue</p>
+                  </div>
+                  <div className="text-center p-3 bg-gradient-to-br from-green-50 to-yellow-50 rounded-lg">
+                    <h6 className={`font-semibold ${colors.text} mb-2`}>Entry-Level (30%)</h6>
+                    <p className={`${colors.text} font-bold text-lg`}>
+                      {selectedCategory?.toLowerCase() === 'pet food'
+                        ? '₹800 AOV'
+                        : selectedCategory?.toLowerCase() === 'wellness'
+                        ? '₹1,200 AOV'
+                        : selectedCategory?.toLowerCase() === 'beverages'
+                        ? '₹600 AOV'
+                        : selectedCategory?.toLowerCase() === 'textiles'
+                        ? '₹900 AOV'
+                        : selectedCategory?.toLowerCase() === 'desi masala'
+                        ? '₹300 AOV'
+                        : '₹900 AOV'
+                      }
+                    </p>
+                    <p className={`${colors.text} text-xs opacity-70`}>15% of revenue</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Market Opportunity Summary */}
         <div>

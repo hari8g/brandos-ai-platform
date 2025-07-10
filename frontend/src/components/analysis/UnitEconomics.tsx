@@ -34,13 +34,34 @@ export const UnitEconomics: React.FC<UnitEconomicsProps> = ({ content, colors, s
   // Parse the content to extract cost items
   const parseCostItems = (content: any): CostItem[] => {
     let items: CostItem[] = [];
-    if (content && typeof content === 'object' && content.costBreakdown) {
-      const breakdown = content.costBreakdown;
+    
+    // Handle different content structures
+    let breakdown = null;
+    if (content && typeof content === 'object') {
+      // If content has costBreakdown property
+      if (content.costBreakdown) {
+        breakdown = content.costBreakdown;
+      }
+      // If content itself is the breakdown object (has the expected keys)
+      else if (content.rawMaterials || content.manufacturing || content.packaging) {
+        breakdown = content;
+      }
+    }
+    
+    if (breakdown) {
       COST_CATEGORIES.forEach(cat => {
         const val = breakdown[cat.key];
         if (val) {
-          const match = val.match(/INR\s*(\d+)/i);
-          const value = match ? parseInt(match[1]) : 0;
+          // Handle both string and object values
+          let value = 0;
+          if (typeof val === 'string') {
+            const match = val.match(/INR\s*(\d+)/i);
+            value = match ? parseInt(match[1]) : 0;
+          } else if (typeof val === 'number') {
+            value = val;
+          } else if (typeof val === 'object' && val.value) {
+            value = val.value;
+          }
           items.push({ category: cat.name, value: value });
         }
       });
@@ -69,9 +90,15 @@ export const UnitEconomics: React.FC<UnitEconomicsProps> = ({ content, colors, s
     let retailPrice: number | null = null;
     let grossMarginPercentFromText: number | null = null;
     const allINR: number[] = [];
+    
+    if (!fields || typeof fields !== 'object') {
+      return { totalUnitCost: 0, retailPrice: 0, grossMarginPercentFromText: null };
+    }
+    
     for (const key in fields) {
-      if (typeof fields[key] === 'string') {
-        const lines = fields[key].split(/\n|\\n/);
+      const fieldValue = fields[key];
+      if (typeof fieldValue === 'string') {
+        const lines = fieldValue.split(/\n|\\n/);
         for (const line of lines) {
           // Extract INR values
           const inrMatch = line.match(/INR\s*(\d+)/i);
@@ -92,8 +119,17 @@ export const UnitEconomics: React.FC<UnitEconomicsProps> = ({ content, colors, s
             grossMarginPercentFromText = parseInt(marginMatch[1]);
           }
         }
+      } else if (typeof fieldValue === 'number') {
+        // Handle numeric values directly
+        allINR.push(fieldValue);
+        if (key.toLowerCase().includes('total') && key.toLowerCase().includes('cost')) {
+          totalUnitCost = fieldValue;
+        } else if (key.toLowerCase().includes('retail') || key.toLowerCase().includes('price')) {
+          retailPrice = fieldValue;
+        }
       }
     }
+    
     // Fallback: use largest and next largest INR values, but never allow them to be the same
     const sorted = Array.from(new Set(allINR)).sort((a, b) => b - a);
     if (retailPrice == null && sorted.length > 0) retailPrice = sorted[0];
@@ -110,12 +146,24 @@ export const UnitEconomics: React.FC<UnitEconomicsProps> = ({ content, colors, s
   let totalUnitCost = 0;
   let retailPrice = 0;
   let grossMarginPercentFromText: number | null = null;
-  if (content && typeof content === 'object' && content.costBreakdown) {
-    const kpis = extractKPIs(content.costBreakdown);
+  
+  // Handle different content structures
+  let costBreakdown = null;
+  if (content && typeof content === 'object') {
+    if (content.costBreakdown) {
+      costBreakdown = content.costBreakdown;
+    } else if (content.rawMaterials || content.manufacturing || content.packaging) {
+      costBreakdown = content;
+    }
+  }
+  
+  if (costBreakdown) {
+    const kpis = extractKPIs(costBreakdown);
     totalUnitCost = kpis.totalUnitCost;
     retailPrice = kpis.retailPrice;
     grossMarginPercentFromText = kpis.grossMarginPercentFromText;
   }
+  
   // Calculate gross margin (INR and %)
   const grossMargin = retailPrice > 0 ? retailPrice - totalUnitCost : 0;
   const grossMarginPercent = (retailPrice > 0 && grossMargin > 0)

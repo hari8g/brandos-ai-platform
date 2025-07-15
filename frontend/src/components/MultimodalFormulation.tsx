@@ -4,6 +4,8 @@ import { ImageUpload } from './ImageUpload';
 import { useMultimodal } from '../hooks/useMultimodal';
 import { useLocalMarket } from '../hooks/useLocalMarket';
 import { useMultimodalSuggestions } from '../hooks/useMultimodalSuggestions';
+import { useSSEFormulation } from '../hooks/useSSEFormulation';
+import { StatusBar } from './StatusBar';
 import { getCategoryColors } from '../lib/colorUtils';
 import {
   FormulationSummary,
@@ -77,6 +79,16 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     clearSuggestions
   } = useMultimodalSuggestions();
 
+  // SSE Formulation hook
+  const {
+    isStreaming,
+    currentStatus,
+    formulation: sseFormulation,
+    error: sseError,
+    startFormulationStream,
+    stopFormulationStream
+  } = useSSEFormulation();
+
   const colors = getCategoryColors(selectedCategory);
 
   // Cleanup function for intervals and timeouts
@@ -93,6 +105,8 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       clearTimeout(timeout);
     });
     stepTimeoutsRef.current = [];
+    // Also stop any active SSE streams
+    stopFormulationStream();
   };
 
   // Reset loading state
@@ -163,6 +177,20 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       }
     };
   }, [selectedCategory]);
+
+  // Effect to handle SSE formulation completion
+  useEffect(() => {
+    if (sseFormulation && !isStreaming) {
+      // Scroll to the formulation results after a short delay
+      setTimeout(() => {
+        const sseResultsElement = document.querySelector('[data-sse-results]');
+        sseResultsElement?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 1000);
+    }
+  }, [sseFormulation, isStreaming]);
 
   const handleImageSelect = (file: File) => {
     // Clean up any ongoing operations
@@ -386,68 +414,19 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     cleanupTimers();
     resetLoadingState();
 
-    setLoadingType('formulation');
-    setLoadingProgress(0);
-    setLoadingStep('Starting comprehensive analysis...');
-
-    // Simulate progress for comprehensive analysis
-    progressIntervalRef.current = setInterval(() => {
-      setLoadingProgress(prev => {
-        if (prev >= 90) {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-            progressIntervalRef.current = null;
-          }
-          return 90;
-        }
-        return prev + 8;
-      });
-    }, 400);
-
-    const stepTimeout1 = setTimeout(() => setLoadingStep('Analyzing market landscape...'), 2000);
-    const stepTimeout2 = setTimeout(() => setLoadingStep('Calculating unit economics...'), 5000);
-    const stepTimeout3 = setTimeout(() => setLoadingStep('Generating comprehensive analysis...'), 8000);
-    
-    stepTimeoutsRef.current = [stepTimeout1, stepTimeout2, stepTimeout3];
-
     try {
       // Use the enhanced prompt from image analysis or the final prompt
-      const enhancedPromptToUse = imageAnalysis?.enhanced_prompt || finalPrompt || textPrompt.trim() || "Generate a comprehensive analysis based on this product image";
-      console.log('📤 Using enhanced prompt for comprehensive analysis:', enhancedPromptToUse);
+      const enhancedPromptToUse = imageAnalysis?.enhanced_prompt || editableEnhancedPrompt || finalPrompt || textPrompt.trim() || "Generate a comprehensive analysis based on this product image";
+      console.log('📤 Using enhanced prompt for formulation stream:', enhancedPromptToUse);
       
-      const result = await generateComprehensiveAnalysis(
-        enhancedPromptToUse,
-        selectedCategory || undefined
-      );
+      // Start the SSE stream for formulation generation
+      startFormulationStream({
+        prompt: enhancedPromptToUse,
+        category: selectedCategory || undefined
+      });
 
-      console.log('📤 comprehensive analysis result:', result);
-
-      if (result && result.analysis) {
-        setLoadingProgress(100);
-        setLoadingStep('Analysis complete!');
-        console.log('✅ Comprehensive analysis generated successfully');
-        
-        setTimeout(() => {
-          setLoadingProgress(0);
-          setLoadingStep('');
-          // Scroll to comprehensive analysis results
-          setTimeout(() => {
-            comprehensiveAnalysisResultsRef.current?.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'start' 
-            });
-          }, 500);
-        }, 1000);
-      } else {
-        console.log('❌ Comprehensive analysis generation failed');
-        setLoadingProgress(0);
-        setLoadingStep('Analysis generation failed. Please try again.');
-        setTimeout(() => {
-          setLoadingStep('');
-        }, 2000);
-      }
     } catch (error) {
-      console.error('❌ Comprehensive analysis error:', error);
+      console.error('❌ Formulation stream error:', error);
       setLoadingProgress(0);
       setLoadingStep('Analysis generation failed. Please try again.');
       setTimeout(() => {
@@ -618,6 +597,14 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Status Bar for SSE Streaming */}
+      <StatusBar
+        isVisible={currentStatus !== null}
+        message={currentStatus?.message || ''}
+        progress={currentStatus?.progress || 0}
+        status={currentStatus?.status || 'loading'}
+      />
+      
       {/* Text Input with Category Styling */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -889,19 +876,19 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               console.log('🔘 Generate Formulation button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
               handleGenerateFormulation();
               }}
-              disabled={loading || (!selectedFile && !editableEnhancedPrompt.trim())}
+              disabled={loading || isStreaming || (!selectedFile && !editableEnhancedPrompt.trim())}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             className={`w-full mt-4 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
-                         ${loading || (!selectedFile && !editableEnhancedPrompt.trim())
+                         ${loading || isStreaming || (!selectedFile && !editableEnhancedPrompt.trim())
                            ? 'bg-gray-300 cursor-not-allowed'
                            : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
                          }`}
             >
-              {loading ? (
+              {loading || isStreaming ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating Formulation...</span>
+                <span>{isStreaming ? 'Streaming Analysis...' : 'Generating Formulation...'}</span>
                 </div>
               ) : (
                 <div className="flex items-center justify-center space-x-2">
@@ -981,11 +968,11 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               console.log('🔘 Generate Formulation button clicked (text-only)', { loading, editableEnhancedPrompt });
               handleGenerateFormulation();
             }}
-            disabled={loading || !editableEnhancedPrompt.trim()}
+            disabled={loading || isStreaming || !editableEnhancedPrompt.trim()}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={`w-full mt-4 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
-                       ${loading || !editableEnhancedPrompt.trim()
+                       ${loading || isStreaming || !editableEnhancedPrompt.trim()
                          ? 'bg-gray-300 cursor-not-allowed'
                          : `bg-gradient-to-r ${colors.gradient} hover:${colors.hoverGradient} hover:scale-[1.02] active:scale-[0.98]`
                        }`}
@@ -1193,6 +1180,125 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             />
           )}
                         </div>
+      )}
+
+      {/* SSE Formulation Results */}
+      {sseFormulation && !isStreaming && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+          data-sse-results
+        >
+          <div className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-green-50 to-emerald-50 p-6`}>
+            <div className="mb-6">
+              <h3 className={`text-2xl font-bold font-sans ${colors.text} mb-2`}>
+                🎉 Your Formulation is Ready!
+              </h3>
+              <p className="text-gray-600 text-sm font-sans">
+                Your comprehensive formulation analysis has been generated successfully.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {/* Product Name */}
+              <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-green-800 mb-2">Product Name</h4>
+                <p className="text-gray-700">{sseFormulation.product_name}</p>
+              </div>
+
+              {/* Reasoning */}
+              <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-green-800 mb-2">Scientific Reasoning</h4>
+                <p className="text-gray-700 leading-relaxed">{sseFormulation.reasoning}</p>
+              </div>
+
+              {/* Ingredients */}
+              {sseFormulation.ingredients && sseFormulation.ingredients.length > 0 && (
+                <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-green-800 mb-4">Ingredients</h4>
+                  <div className="space-y-3">
+                    {sseFormulation.ingredients.map((ingredient, index) => (
+                      <div key={index} className="border-l-4 border-green-400 pl-4 py-2">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-gray-800">{ingredient.name}</span>
+                          <span className="text-green-600 font-semibold">{ingredient.percent}%</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-1">{ingredient.why_chosen}</p>
+                        <p className="text-sm text-green-600">Cost: ${ingredient.cost_per_100ml}/100ml</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Manufacturing Steps */}
+              {sseFormulation.manufacturing_steps && sseFormulation.manufacturing_steps.length > 0 && (
+                <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-green-800 mb-4">Manufacturing Steps</h4>
+                  <ol className="space-y-2">
+                    {sseFormulation.manufacturing_steps.map((step, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-sm font-medium mr-3 mt-0.5">
+                          {index + 1}
+                        </span>
+                        <span className="text-gray-700">{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Cost Information */}
+              <div className="bg-white/90 border border-green-200 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-green-800 mb-2">Cost Analysis</h4>
+                <p className="text-xl font-bold text-green-600">
+                  Estimated Cost: ${sseFormulation.estimated_cost}/100ml
+                </p>
+              </div>
+
+              {/* Safety Notes */}
+              {sseFormulation.safety_notes && sseFormulation.safety_notes.length > 0 && (
+                <div className="bg-white/90 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-yellow-800 mb-4">Safety Notes</h4>
+                  <ul className="space-y-2">
+                    {sseFormulation.safety_notes.map((note, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-yellow-600 mr-2">⚠️</span>
+                        <span className="text-gray-700">{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Marketing Inspiration */}
+              {sseFormulation.packaging_marketing_inspiration && (
+                <div className="bg-white/90 border border-purple-200 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-purple-800 mb-2">Marketing & Packaging Ideas</h4>
+                  <p className="text-gray-700 leading-relaxed">{sseFormulation.packaging_marketing_inspiration}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* SSE Error Display */}
+      {sseError && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 rounded-lg p-4"
+        >
+          <div className="flex items-center space-x-2">
+            <span className="text-red-600 text-xl">❌</span>
+            <div>
+              <h4 className="text-red-800 font-semibold">Error</h4>
+              <p className="text-red-700">{sseError}</p>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );

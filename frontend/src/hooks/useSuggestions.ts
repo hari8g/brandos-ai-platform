@@ -2,9 +2,14 @@ import { useState } from 'react';
 import apiClient from '../services/apiClient';
 
 interface Suggestion {
-  text: string;
+  prompt: string;
   why: string;
   how: string;
+  score?: number;
+  manufacturing_ease?: string;
+  indian_market_trends?: string;
+  efficacy_performance?: string;
+  shelf_life?: string;
 }
 
 interface SuggestionRequest {

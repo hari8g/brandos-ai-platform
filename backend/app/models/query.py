@@ -5,6 +5,11 @@ class Suggestion(BaseModel):
     prompt: str
     why: str
     how: str
+    score: Optional[float] = None
+    manufacturing_ease: Optional[str] = None
+    indian_market_trends: Optional[str] = None
+    efficacy_performance: Optional[str] = None
+    shelf_life: Optional[str] = None
 
 class SuggestionRequest(BaseModel):
     prompt: str

@@ -10,11 +10,17 @@ from app.models.multimodal import (
     ImageUploadResponse,
     MultimodalSuggestionRequest,
     MultimodalSuggestionResponse,
+    MultimodalRecommendationRequest,
+    MultimodalRecommendationResponse,
     ComprehensiveAnalysisResponse
 )
 from app.services.image_analysis_service import image_analysis_service
 from app.services.multimodal_fusion_service import multimodal_fusion_service
-from app.services.multimodal_suggestions_service import generate_multimodal_suggestions, generate_text_only_suggestions
+from app.services.multimodal_suggestions_service import (
+    generate_multimodal_suggestions, 
+    generate_text_only_suggestions,
+    generate_multimodal_recommendation
+)
 from app.services.comprehensive_analysis_service import ComprehensiveAnalysisService
 
 router = APIRouter(prefix="/multimodal", tags=["multimodal"])
@@ -117,6 +123,18 @@ async def multimodal_suggestions_endpoint(request: MultimodalSuggestionRequest):
             error=str(e)
         )
 
+@router.post("/recommendation", response_model=MultimodalRecommendationResponse)
+async def multimodal_recommendation_endpoint(request: MultimodalRecommendationRequest):
+    """Generate AI-powered recommendation based on image analysis with scoring for efficacy, Indian trends, manufacturing ease, and shelf life"""
+    try:
+        return generate_multimodal_recommendation(request)
+    except Exception as e:
+        return MultimodalRecommendationResponse(
+            success=False,
+            message="Error generating multimodal recommendation",
+            error=str(e)
+        )
+
 @router.post("/text-suggestions", response_model=MultimodalSuggestionResponse)
 async def text_only_suggestions_endpoint(
     text_prompt: str = Form(...),
@@ -162,6 +180,8 @@ async def health_check():
         "services": {
             "image_analysis": "available",
             "multimodal_fusion": "available",
+            "multimodal_suggestions": "available",
+            "multimodal_recommendation": "available",
             "comprehensive_analysis": "available"
         }
     } 

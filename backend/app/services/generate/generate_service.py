@@ -9,7 +9,7 @@ from app.models.scientific_reasoning import ScientificReasoningRequest
 
 # Phase 2 Optimization imports
 from app.utils.advanced_compression import compress_api_response, CompressionLevel
-from app.services.cache_service import get_cached_formulation, cache_formulation
+from app.services.cache_service import get_cached_formulation_sync, cache_formulation_sync
 from app.services.adaptive_prompt_service import prompt_optimizer
 from app.services.streaming_service import streaming_middleware
 
@@ -247,7 +247,7 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     
     # Phase 2: Check cache first
     try:
-        cached_response = get_cached_formulation(req.prompt, {"category": category})
+        cached_response = get_cached_formulation_sync(req.prompt, {"category": category})
         if cached_response:
             print("✅ Using cached formulation response")
             return GenerateResponse(**cached_response)
@@ -545,9 +545,9 @@ Guidelines:
             market_research=market_research
         )
         
-        # Phase 2: Cache the response (non-async for now)
+        # Phase 2: Cache the response (synchronous)
         try:
-            cache_formulation(req.prompt, response_data.dict(), {"category": category})
+            cache_formulation_sync(req.prompt, response_data.dict(), {"category": category})
             print("✅ Response cached successfully")
         except Exception as e:
             print(f"⚠️ Caching failed: {e}")

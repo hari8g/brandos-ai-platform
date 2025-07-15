@@ -78,6 +78,11 @@ class MultimodalSuggestion(BaseModel):
     prompt: str
     why: str
     how: str
+    score: Optional[float] = None
+    manufacturing_ease: Optional[str] = None
+    indian_market_trends: Optional[str] = None
+    efficacy_performance: Optional[str] = None
+    shelf_life: Optional[str] = None
 
 class MultimodalSuggestionRequest(BaseModel):
     enhanced_prompt: str
@@ -88,6 +93,20 @@ class MultimodalSuggestionResponse(BaseModel):
     suggestions: List[MultimodalSuggestion]
     success: bool = True
     message: str = "Multimodal suggestions generated successfully"
+    error: Optional[str] = None
+
+class MultimodalRecommendationRequest(BaseModel):
+    """Request model for getting recommended suggestion from image analysis"""
+    enhanced_prompt: str
+    image_analysis: Dict[str, Any]
+    category: Optional[str] = None
+
+class MultimodalRecommendationResponse(BaseModel):
+    """Response model for multimodal recommendation"""
+    recommended_suggestion: Optional[MultimodalSuggestion] = None
+    all_suggestions: List[MultimodalSuggestion] = []
+    success: bool = True
+    message: str = "Multimodal recommendation generated successfully"
     error: Optional[str] = None
 
 class ComprehensiveAnalysisResponse(BaseModel):

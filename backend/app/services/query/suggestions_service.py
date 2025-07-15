@@ -128,6 +128,13 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a pet food formulation engine.
         Each must include key ingredients, target animal, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of ingredients must be clean (no artificial preservatives, colors, or harmful additives)
+        - At least 80% of total ingredients must be natural/organic
+        - Prioritize whole food ingredients and natural preservatives
+        - Avoid synthetic chemicals, artificial flavors, and processed ingredients
+        
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
@@ -143,6 +150,13 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a wellness supplement formulation engine.
         Each must include key ingredients, target user, delivery form, performance metrics, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of ingredients must be clean (no artificial preservatives, colors, or harmful additives)
+        - At least 80% of total ingredients must be natural/organic
+        - Prioritize whole food ingredients and natural preservatives
+        - Avoid synthetic chemicals, artificial flavors, and processed ingredients
+        
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
@@ -158,6 +172,13 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a beverage formulation engine.
         Each must include key ingredients, target beverage type, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of ingredients must be clean (no artificial preservatives, colors, or harmful additives)
+        - At least 80% of total ingredients must be natural/organic
+        - Prioritize whole food ingredients and natural preservatives
+        - Avoid synthetic chemicals, artificial flavors, and processed ingredients
+        
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
@@ -173,6 +194,35 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a textile formulation engine.
         Each must include key ingredients, target textile type, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of materials must be clean (no harmful chemicals, dyes, or toxic substances)
+        - At least 80% of total materials must be natural/organic
+        - Prioritize natural fibers and eco-friendly materials
+        - Avoid synthetic chemicals, harmful dyes, and non-biodegradable materials
+        
+        Return valid JSON array of objects:
+          – prompt: string
+          – why: explanation
+          – how: usage tip
+        '''
+    elif request.category == "desi masala":
+        return f'''
+        You are an Indian spice and masala formulation expert.
+        Given:
+          • product_type: {info['product_type']}
+          • form: {info['form']}
+          • concern: {info['concern']}
+          • original_query: "{request.prompt}"
+        Craft exactly 3 fully-detailed AI prompts for a masala formulation engine.
+        Each must include key spices, target cuisine, flavor profile, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of ingredients must be clean (no artificial preservatives, colors, or harmful additives)
+        - At least 80% of total ingredients must be natural/organic
+        - Prioritize whole spices and natural preservatives
+        - Avoid synthetic chemicals, artificial flavors, and processed ingredients
+        
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
@@ -188,11 +238,93 @@ def get_suggestion_prompt(info, request):
           • original_query: "{request.prompt}"
         Craft exactly 3 fully-detailed AI prompts for a formulation engine.
         Each must include key ingredients, target skin type, texture, delivery mechanism, performance metrics, and be ready to send to /formulation/generate without edits.
+        
+        CRITICAL REQUIREMENTS:
+        - 100% of ingredients must be clean (no artificial preservatives, colors, or harmful additives)
+        - At least 80% of total ingredients must be natural/organic
+        - Prioritize whole food ingredients and natural preservatives
+        - Avoid synthetic chemicals, artificial fragrances, and processed ingredients
+        
         Return valid JSON array of objects:
           – prompt: string
           – why: explanation
           – how: usage tip
         '''
+
+def get_scoring_prompt(suggestions: List[Suggestion], category: str, original_query: str) -> str:
+    """Generate prompt for AI to score all suggestions"""
+    suggestions_text = ""
+    for i, s in enumerate(suggestions, 1):
+        suggestions_text += f"\nSuggestion {i}:\n{s.prompt}\n"
+    
+    return f'''
+    You are an expert product formulation consultant with deep knowledge of Indian market trends, manufacturing processes, and product efficacy.
+    
+    Given these 3 formulation suggestions for category "{category}" based on query "{original_query}":
+    {suggestions_text}
+    
+    Analyze and score EACH suggestion (1-10) based on:
+    1. Manufacturing Ease (equipment availability, process complexity, scalability in India)
+    2. Indian Market Trends (current consumer preferences, trending ingredients, market demand)
+    3. Efficacy Performance (ingredient effectiveness, synergy, proven results)
+    4. Shelf Life (stability, preservation, storage requirements)
+    
+    Return scores and assessments for all 3 suggestions.
+    '''
+
+def score_all_suggestions(suggestions: List[Suggestion], category: str, original_query: str) -> List[Suggestion]:
+    """Score all suggestions with AI assessment"""
+    if not client:
+        return generate_mock_scored_suggestions(suggestions, category)
+    
+    scoring_prompt = get_scoring_prompt(suggestions, category, original_query)
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": scoring_prompt}],
+            temperature=0,
+            max_tokens=800,
+            tools=get_scoring_function_definitions(),
+            tool_choice={"type": "function", "function": {"name": "score_suggestions"}}
+        )
+        
+        message = response.choices[0].message
+        if message.tool_calls and len(message.tool_calls) > 0:
+            tool_call = message.tool_calls[0]
+            if tool_call.function.name == "score_suggestions":
+                try:
+                    data = json.loads(tool_call.function.arguments)
+                    scores_data = data.get('suggestions', [])
+                    
+                    # Update suggestions with scores
+                    scored_suggestions = []
+                    for i, suggestion in enumerate(suggestions):
+                        if i < len(scores_data):
+                            score_info = scores_data[i]
+                            scored_suggestions.append(Suggestion(
+                                prompt=suggestion.prompt,
+                                why=suggestion.why,
+                                how=suggestion.how,
+                                score=score_info.get('score', 0.0),
+                                manufacturing_ease=score_info.get('manufacturing_ease', ''),
+                                indian_market_trends=score_info.get('indian_market_trends', ''),
+                                efficacy_performance=score_info.get('efficacy_performance', ''),
+                                shelf_life=score_info.get('shelf_life', '')
+                            ))
+                        else:
+                            scored_suggestions.append(suggestion)
+                    
+                    # Sort suggestions by score in descending order
+                    scored_suggestions.sort(key=lambda x: x.score or 0, reverse=True)
+                    return scored_suggestions
+                except json.JSONDecodeError:
+                    pass
+        
+        return generate_mock_scored_suggestions(suggestions, category)
+    except Exception as e:
+        print("score_all_suggestions error:", e)
+        return generate_mock_scored_suggestions(suggestions, category)
 
 def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     # If OpenAI client is not available, use mock suggestions
@@ -238,7 +370,19 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
                     if not suggestions:
                         return generate_mock_suggestions(request)
                     
-                    return SuggestionResponse(suggestions=suggestions, success=True, message="Enriched suggestions generated")
+                    # Score all suggestions
+                    scored_suggestions = suggestions
+                    if len(suggestions) >= 3:
+                        try:
+                            scored_suggestions = score_all_suggestions(suggestions, request.category or "general", request.prompt)
+                        except Exception as score_error:
+                            print(f"Scoring generation error: {score_error}")
+                    
+                    return SuggestionResponse(
+                        suggestions=scored_suggestions, 
+                        success=True, 
+                        message="Enriched suggestions generated with scores"
+                    )
                 except json.JSONDecodeError:
                     return generate_mock_suggestions(request)
         
@@ -246,6 +390,48 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     except Exception as e:
         print("generate_suggestions error:", e)
         return generate_mock_suggestions(request)
+
+def generate_mock_scored_suggestions(suggestions: List[Suggestion], category: str) -> List[Suggestion]:
+    """Generate mock scored suggestions as fallback"""
+    mock_scores = [8.5, 7.2, 6.8]  # Decreasing scores for variety
+    mock_assessments = [
+        {
+            "manufacturing_ease": "High - Uses readily available equipment and standard processes in India",
+            "indian_market_trends": "Excellent - Aligns with current consumer preference for natural and clean products",
+            "efficacy_performance": "Very Good - Proven ingredient combinations with synergistic effects",
+            "shelf_life": "Good - 18-24 months with proper natural preservation"
+        },
+        {
+            "manufacturing_ease": "Medium - Requires specialized equipment but manageable in India",
+            "indian_market_trends": "Good - Matches emerging market trends with some innovation",
+            "efficacy_performance": "Good - Effective ingredients with moderate synergy",
+            "shelf_life": "Fair - 12-18 months with careful preservation"
+        },
+        {
+            "manufacturing_ease": "Medium - Standard manufacturing with some complexity",
+            "indian_market_trends": "Fair - Traditional approach with limited market appeal",
+            "efficacy_performance": "Fair - Basic effectiveness with room for improvement",
+            "shelf_life": "Good - 15-20 months with standard preservation"
+        }
+    ]
+    
+    scored_suggestions = []
+    for i, suggestion in enumerate(suggestions):
+        assessment = mock_assessments[i] if i < len(mock_assessments) else mock_assessments[0]
+        scored_suggestions.append(Suggestion(
+            prompt=suggestion.prompt,
+            why=suggestion.why,
+            how=suggestion.how,
+            score=mock_scores[i] if i < len(mock_scores) else 6.0,
+            manufacturing_ease=assessment["manufacturing_ease"],
+            indian_market_trends=assessment["indian_market_trends"],
+            efficacy_performance=assessment["efficacy_performance"],
+            shelf_life=assessment["shelf_life"]
+        ))
+    
+    # Sort suggestions by score in descending order
+    scored_suggestions.sort(key=lambda x: x.score or 0, reverse=True)
+    return scored_suggestions
 
 def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     """Generate mock suggestions as fallback"""
@@ -359,8 +545,11 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
                 how="Mention stability requirements, safety concerns, and regulatory considerations in your prompt"
             )
         ]
+    # Generate mock scored suggestions
+    scored_suggestions = generate_mock_scored_suggestions(suggestions, category)
+    
     return SuggestionResponse(
-        suggestions=suggestions,
+        suggestions=scored_suggestions,
         success=True,
         message=f"Mock suggestions generated for {category} (AI service unavailable)"
     )
@@ -431,6 +620,54 @@ def get_extraction_function_definitions():
                         }
                     },
                     "required": ["product_type", "form", "concern"]
+                }
+            }
+        }
+    ]
+
+def get_scoring_function_definitions():
+    """Define the function schema for scoring all suggestions"""
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": "score_suggestions",
+                "description": "Score all suggestions based on manufacturing ease, Indian market trends, efficacy, and shelf life",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "suggestions": {
+                            "type": "array",
+                            "description": "Array of scored suggestions",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "score": {
+                                        "type": "number",
+                                        "description": "Overall score (0-10)"
+                                    },
+                                    "manufacturing_ease": {
+                                        "type": "string",
+                                        "description": "Assessment of manufacturing ease in India"
+                                    },
+                                    "indian_market_trends": {
+                                        "type": "string",
+                                        "description": "Alignment with current Indian market trends"
+                                    },
+                                    "efficacy_performance": {
+                                        "type": "string",
+                                        "description": "Expected efficacy and performance"
+                                    },
+                                    "shelf_life": {
+                                        "type": "string",
+                                        "description": "Shelf life assessment"
+                                    }
+                                },
+                                "required": ["score", "manufacturing_ease", "indian_market_trends", "efficacy_performance", "shelf_life"]
+                            }
+                        }
+                    },
+                    "required": ["suggestions"]
                 }
             }
         }

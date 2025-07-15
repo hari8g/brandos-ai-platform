@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import apiClient from "@/services/apiClient";
 import type { GenerateResponse } from "@/types/formulation";
 import SuggestionCard, { type Suggestion } from "./SuggestionCard";
+import { useSuggestions } from "@/hooks/useSuggestions";
 
 interface QueryQualityResponse {
   score: number;
@@ -128,7 +129,7 @@ export default function PromptInput({
   const [location, setLocation] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>('draft');
   const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const { suggestions, generateSuggestions: fetchSuggestions } = useSuggestions();
   const [feedback, setFeedback] = useState("");
   const [moreInfo, setMoreInfo] = useState("");
   
@@ -352,10 +353,7 @@ export default function PromptInput({
 
     try {
       // Always fetch suggestions, regardless of assessment
-      const sugResp = await apiClient.post("/query/suggestions", { prompt, category: selectedCategory });
-      setSuggestions(
-        sugResp.data.suggestions.map(normalizeSuggestion)
-      );
+      await fetchSuggestions({ prompt, category: selectedCategory || undefined });
       
       // Complete the progress
       setLoadingProgress(100);
@@ -532,7 +530,7 @@ export default function PromptInput({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
-                <span>Assess & Improve</span>
+                <span>Recommend</span>
               </div>
             )}
           </button>
@@ -579,10 +577,19 @@ export default function PromptInput({
               <p className="text-gray-400 text-sm mt-1">This usually takes 10-15 seconds</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {suggestions.map((s, i) => (
-                <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} selectedCategory={selectedCategory} />
-              ))}
+            <div className="space-y-6">
+              {/* Show All Suggestions with Scores */}
+              <div>
+                <h3 className={`text-lg font-semibold ${colors.text} mb-4 flex items-center gap-2`}>
+                  <span className="text-2xl">⭐</span>
+                  Recommended Suggestions
+                </h3>
+                <div className="space-y-4">
+                  {suggestions.map((s, i) => (
+                    <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} selectedCategory={selectedCategory} />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -639,7 +646,6 @@ export default function PromptInput({
               onChange={e => setMoreInfo(e.target.value)}
               className={`mb-2 w-full border ${colors.border} rounded p-2 ${colors.focus}`}
               rows={2}
-              placeholder="e.g. I want it to be fragrance-free and suitable for sensitive scalp."
             />
             {/* Dynamic More Info Rolling Prompt */}
             <div className={`h-6 mb-2 text-gray-400 text-xs font-medium transition-opacity duration-500 ${moreInfoFade ? 'opacity-100' : 'opacity-0'}`}

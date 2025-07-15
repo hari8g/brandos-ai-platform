@@ -246,6 +246,15 @@ async def cache_formulation(query: str, data: Any, context: Optional[Dict] = Non
     """Cache formulation data"""
     return await cache_middleware.cache_response("formulation", query, data, context)
 
+# Synchronous wrapper functions for backward compatibility
+def get_cached_formulation_sync(query: str, context: Optional[Dict] = None) -> Optional[Any]:
+    """Get cached formulation data (synchronous)"""
+    return cache_service.get("formulation", query, context)
+
+def cache_formulation_sync(query: str, data: Any, context: Optional[Dict] = None) -> bool:
+    """Cache formulation data (synchronous)"""
+    return cache_service.set("formulation", query, data, context)
+
 async def get_cached_market_research(query: str, context: Optional[Dict] = None) -> Optional[Any]:
     """Get cached market research data"""
     return await cache_middleware.get_cached_response("market_research", query, context)

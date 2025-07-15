@@ -1,18 +1,30 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImageUpload } from './ImageUpload';
 import { useMultimodal } from '../hooks/useMultimodal';
 import { useLocalMarket } from '../hooks/useLocalMarket';
 import { useMultimodalSuggestions } from '../hooks/useMultimodalSuggestions';
 import { getCategoryColors } from '../lib/colorUtils';
-import {
-  FormulationSummary,
-  FormulationDetails,
-  MarketResearch,
-  ManufacturingConsiderations,
-  UnitEconomics,
-  PackagingBranding
-} from './analysis';
+import MultimodalSuggestionCard from './MultimodalFormulation/MultimodalSuggestionCard';
+
+// Lazy load heavy analysis components
+const FormulationSummary = React.lazy(() => import('./analysis').then(module => ({ default: module.FormulationSummary })));
+const FormulationDetails = React.lazy(() => import('./analysis').then(module => ({ default: module.FormulationDetails })));
+const MarketResearch = React.lazy(() => import('./analysis').then(module => ({ default: module.MarketResearch })));
+const ManufacturingConsiderations = React.lazy(() => import('./analysis').then(module => ({ default: module.ManufacturingConsiderations })));
+const UnitEconomics = React.lazy(() => import('./analysis').then(module => ({ default: module.UnitEconomics })));
+const PackagingBranding = React.lazy(() => import('./analysis').then(module => ({ default: module.PackagingBranding })));
+
+// Loading component for analysis sections
+const AnalysisLoader = () => (
+  <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-gray-100">
+    <div className="animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+    </div>
+  </div>
+);
 
 interface MultimodalFormulationProps {
   onResult: (data: any) => void;
@@ -73,6 +85,8 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
     loading: suggestionsLoading,
     error: suggestionsError,
     suggestions,
+    recommendedSuggestion,
+    generateMultimodalRecommendation,
     generateTextOnlySuggestions,
     clearSuggestions
   } = useMultimodalSuggestions();
@@ -282,6 +296,91 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       console.error('❌ Analysis error:', error);
       setLoadingProgress(0);
       setLoadingStep('Analysis failed. Please try again.');
+      setTimeout(() => {
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      cleanupTimers();
+    }
+  };
+
+  const handleGenerateMultimodalSuggestions = async () => {
+    console.log('🔍 handleGenerateMultimodalSuggestions called', { imageAnalysis, editableEnhancedPrompt, selectedCategory });
+    
+    if (!imageAnalysis || !editableEnhancedPrompt.trim()) {
+      console.log('❌ No image analysis or enhanced prompt available');
+      return;
+    }
+
+    // Clean up any existing timers
+    cleanupTimers();
+    resetLoadingState();
+
+    setLoadingType('suggestions');
+    setLoadingProgress(0);
+    setLoadingStep('Generating AI-powered recommendations...');
+
+    // Simulate progress for suggestions
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) {
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+          }
+          return 90;
+        }
+        return prev + 12;
+      });
+    }, 300);
+
+    const stepTimeout1 = setTimeout(() => setLoadingStep('Analyzing image insights...'), 1000);
+    const stepTimeout2 = setTimeout(() => setLoadingStep('Scoring suggestions for efficacy and market trends...'), 3000);
+    const stepTimeout3 = setTimeout(() => setLoadingStep('Curating best recommendations...'), 5000);
+    
+    stepTimeoutsRef.current = [stepTimeout1, stepTimeout2, stepTimeout3];
+
+    try {
+      console.log('📤 Calling multimodal recommendation service...');
+      const result = await generateMultimodalRecommendation({
+        enhanced_prompt: editableEnhancedPrompt.trim(),
+        image_analysis: imageAnalysis.image_analysis,
+        category: selectedCategory || undefined
+      });
+
+      console.log('generateMultimodalRecommendation result:', result);
+
+      if (result && result.all && result.all.length > 0) {
+        setShowSuggestions(true);
+        setCurrentStage('suggestions');
+        setLoadingProgress(100);
+        setLoadingStep('Recommendations ready!');
+        
+        console.log('✅ Multimodal recommendations completed, showing results');
+        
+        setTimeout(() => {
+          setLoadingProgress(0);
+          setLoadingStep('');
+          // Scroll to suggestions results
+          setTimeout(() => {
+            suggestionsResultsRef.current?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }, 500);
+        }, 1000);
+      } else {
+        console.log('❌ Multimodal recommendations failed');
+        setLoadingProgress(0);
+        setLoadingStep('Recommendations failed. Please try again.');
+        setTimeout(() => {
+          setLoadingStep('');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('❌ Multimodal recommendations error:', error);
+      setLoadingProgress(0);
+      setLoadingStep('Recommendations failed. Please try again.');
       setTimeout(() => {
         setLoadingStep('');
       }, 2000);
@@ -883,11 +982,11 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
             </button>
             </div>
             
-            {/* Generate Formulation Button */}
+            {/* Generate Recommendations Button */}
             <motion.button
             onClick={() => {
-              console.log('🔘 Generate Formulation button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
-              handleGenerateFormulation();
+              console.log('🔘 Generate Recommendations button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
+              handleGenerateMultimodalSuggestions();
               }}
               disabled={loading || (!selectedFile && !editableEnhancedPrompt.trim())}
               whileHover={{ scale: 1.02 }}
@@ -901,6 +1000,36 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
               {loading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Generating Recommendations...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span>Get Recommendations</span>
+                </div>
+              )}
+            </motion.button>
+
+            {/* Generate Formulation Button */}
+            <motion.button
+            onClick={() => {
+              console.log('🔘 Generate Formulation button clicked', { loading, selectedFile: selectedFile?.name, editableEnhancedPrompt });
+              handleGenerateFormulation();
+              }}
+              disabled={loading || (!selectedFile && !editableEnhancedPrompt.trim())}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            className={`w-full mt-2 py-4 px-6 rounded-xl font-semibold text-white transition-all duration-200 transform shadow-lg hover:shadow-xl
+                         ${loading || (!selectedFile && !editableEnhancedPrompt.trim())
+                           ? 'bg-gray-300 cursor-not-allowed'
+                           : `bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 hover:scale-[1.02] active:scale-[0.98]`
+                         }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Generating Formulation...</span>
                 </div>
               ) : (
@@ -908,7 +1037,7 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span>Generate Comprehensive Analysis</span>
+                <span>Generate Formulation</span>
                 </div>
               )}
             </motion.button>
@@ -1152,47 +1281,121 @@ export const MultimodalFormulation: React.FC<MultimodalFormulationProps> = ({
       {comprehensiveAnalysis && !loading && comprehensiveAnalysis.sections && (
         <div ref={comprehensiveAnalysisResultsRef} className="space-y-6">
           {comprehensiveAnalysis.sections.formulation_summary && (
-            <FormulationSummary 
-              content={comprehensiveAnalysis.sections.formulation_summary} 
-              colors={colors} 
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <FormulationSummary 
+                content={comprehensiveAnalysis.sections.formulation_summary} 
+                colors={colors} 
+              />
+            </Suspense>
           )}
           {comprehensiveAnalysis.sections.formulation_details && (
-            <FormulationDetails 
-              content={comprehensiveAnalysis.sections.formulation_details} 
-              colors={colors} 
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <FormulationDetails 
+                content={comprehensiveAnalysis.sections.formulation_details} 
+                colors={colors} 
+              />
+            </Suspense>
           )}
           {comprehensiveAnalysis.sections.market_research && (
-            <MarketResearch 
-              selectedCategory={selectedCategory || ''}
-              selectedCity={selectedCity}
-              localMarketData={localMarketData}
-              onCityChange={setSelectedCity}
-              productQuery={textPrompt || imageAnalysis?.enhanced_prompt || ''}
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <MarketResearch 
+                selectedCategory={selectedCategory || ''}
+                selectedCity={selectedCity}
+                localMarketData={localMarketData}
+                onCityChange={setSelectedCity}
+                productQuery={textPrompt || imageAnalysis?.enhanced_prompt || ''}
+              />
+            </Suspense>
           )}
           {comprehensiveAnalysis.sections.manufacturing_considerations && (
-            <ManufacturingConsiderations 
-              content={comprehensiveAnalysis.sections.manufacturing_considerations} 
-              colors={colors} 
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <ManufacturingConsiderations 
+                content={comprehensiveAnalysis.sections.manufacturing_considerations} 
+                colors={colors} 
+              />
+            </Suspense>
           )}
           {comprehensiveAnalysis.sections.unit_economics && (
-            <UnitEconomics 
-              content={comprehensiveAnalysis.sections.unit_economics} 
-              colors={colors} 
-              selectedCategory={selectedCategory || undefined} // fix type for prop
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <UnitEconomics 
+                content={comprehensiveAnalysis.sections.unit_economics} 
+                colors={colors} 
+                selectedCategory={selectedCategory || undefined} // fix type for prop
+              />
+            </Suspense>
           )}
           {comprehensiveAnalysis.sections.packaging_branding && (
-            <PackagingBranding 
-              content={comprehensiveAnalysis.sections.packaging_branding} 
-              colors={colors} 
-              selectedCategory={selectedCategory} // <-- pass selectedCategory
-            />
+            <Suspense fallback={<AnalysisLoader />}>
+              <PackagingBranding 
+                content={comprehensiveAnalysis.sections.packaging_branding} 
+                colors={colors} 
+                selectedCategory={selectedCategory} // <-- pass selectedCategory
+              />
+            </Suspense>
           )}
                         </div>
+      )}
+
+      {/* Suggestions Section - Multimodal with Scores */}
+      {showSuggestions && suggestions.length > 0 && currentStage === 'suggestions' && (
+        <motion.div
+          ref={suggestionsResultsRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl border-2 ${colors.border} bg-gradient-to-r from-blue-50 to-indigo-50 p-6`}
+        >
+          <div className="mb-6">
+            <h3 className={`text-xl font-bold font-sans ${colors.text} mb-2 flex items-center gap-2`}>
+              <span className="text-2xl">🏆</span>
+              AI-Powered Recommendations with Scores
+            </h3>
+            <p className="text-gray-600 text-sm font-sans">
+              Scored based on efficacy, Indian market trends, manufacturing ease, and shelf life. All suggestions use 100% clean and 80%+ natural ingredients.
+            </p>
+          </div>
+
+          {/* Recommended Suggestion Highlight */}
+          {recommendedSuggestion && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🥇</span>
+                <h4 className={`font-bold ${colors.text}`}>Top Recommendation</h4>
+                <div className="px-2 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                  Score: {recommendedSuggestion.score?.toFixed(1)}
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 mb-2">{recommendedSuggestion.prompt.substring(0, 150)}...</p>
+              <button
+                onClick={() => {
+                  console.log('🔘 Top recommendation selected:', recommendedSuggestion);
+                  setFinalPrompt(recommendedSuggestion.prompt);
+                  setEditableEnhancedPrompt(recommendedSuggestion.prompt);
+                  setCurrentStage('ready');
+                }}
+                className="text-sm bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded-lg font-semibold transition-colors"
+              >
+                Use Top Recommendation
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {suggestions.map((suggestion, index) => (
+              <MultimodalSuggestionCard
+                key={index}
+                suggestion={suggestion}
+                onUse={(selectedSuggestion) => {
+                  console.log('🔘 Suggestion selected:', selectedSuggestion);
+                  setFinalPrompt(selectedSuggestion.prompt);
+                  setEditableEnhancedPrompt(selectedSuggestion.prompt);
+                  setCurrentStage('ready');
+                }}
+                index={index}
+                selectedCategory={selectedCategory}
+              />
+            ))}
+          </div>
+        </motion.div>
       )}
     </div>
   );

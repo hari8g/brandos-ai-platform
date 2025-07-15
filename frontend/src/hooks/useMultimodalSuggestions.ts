@@ -5,6 +5,11 @@ interface MultimodalSuggestion {
   prompt: string;
   why: string;
   how: string;
+  score?: number;
+  manufacturing_ease?: string;
+  indian_market_trends?: string;
+  efficacy_performance?: string;
+  shelf_life?: string;
 }
 
 interface MultimodalSuggestionRequest {
@@ -20,10 +25,25 @@ interface MultimodalSuggestionResponse {
   error?: string;
 }
 
+interface MultimodalRecommendationRequest {
+  enhanced_prompt: string;
+  image_analysis: any;
+  category?: string;
+}
+
+interface MultimodalRecommendationResponse {
+  recommended_suggestion: MultimodalSuggestion | null;
+  all_suggestions: MultimodalSuggestion[];
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
 export const useMultimodalSuggestions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<MultimodalSuggestion[]>([]);
+  const [recommendedSuggestion, setRecommendedSuggestion] = useState<MultimodalSuggestion | null>(null);
 
   const generateMultimodalSuggestions = async (request: MultimodalSuggestionRequest): Promise<MultimodalSuggestion[] | null> => {
     setLoading(true);
@@ -42,6 +62,33 @@ export const useMultimodalSuggestions = () => {
       const errorMessage = err.response?.data?.error || err.message || 'Failed to generate multimodal suggestions';
       setError(errorMessage);
       console.error('Multimodal suggestions error:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateMultimodalRecommendation = async (request: MultimodalRecommendationRequest): Promise<{ recommended: MultimodalSuggestion | null; all: MultimodalSuggestion[] } | null> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiClient.post<MultimodalRecommendationResponse>('/multimodal/recommendation', request);
+      
+      if (response.data.success) {
+        setRecommendedSuggestion(response.data.recommended_suggestion);
+        setSuggestions(response.data.all_suggestions);
+        return {
+          recommended: response.data.recommended_suggestion,
+          all: response.data.all_suggestions
+        };
+      } else {
+        throw new Error(response.data.error || 'Failed to generate multimodal recommendation');
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to generate multimodal recommendation';
+      setError(errorMessage);
+      console.error('Multimodal recommendation error:', err);
       return null;
     } finally {
       setLoading(false);
@@ -81,6 +128,7 @@ export const useMultimodalSuggestions = () => {
 
   const clearSuggestions = () => {
     setSuggestions([]);
+    setRecommendedSuggestion(null);
     setError(null);
   };
 
@@ -88,7 +136,9 @@ export const useMultimodalSuggestions = () => {
     loading,
     error,
     suggestions,
+    recommendedSuggestion,
     generateMultimodalSuggestions,
+    generateMultimodalRecommendation,
     generateTextOnlySuggestions,
     clearSuggestions
   };

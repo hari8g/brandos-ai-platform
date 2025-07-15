@@ -1,7 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, Suspense } from 'react';
 import { PromptInput } from './components/FormulationEngine';
-import { MultimodalFormulation } from './components/MultimodalFormulation';
-import LandingPage from './components/LandingPage';
+
+// Code splitting with React.lazy for large components
+const MultimodalFormulation = React.lazy(() => import('./components/MultimodalFormulation').then(module => ({ default: module.MultimodalFormulation })));
+const LandingPage = React.lazy(() => import('./components/LandingPage'));
+
+// Loading component for Suspense fallback
+const LoadingSpinner = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
 
 function App() {
   const [showLanding, setShowLanding] = useState(true);
@@ -9,8 +21,6 @@ function App() {
   const [subscribed, setSubscribed] = useState(false);
   const [inputMode, setInputMode] = useState<'text' | 'multimodal'>('multimodal');
   const promptInputRef = useRef<HTMLDivElement>(null);
-
-  console.log('🛠️ Parent component loaded');
 
   // Function to handle category selection with smooth scrolling
   const handleCategorySelection = (category: string) => {
@@ -34,7 +44,11 @@ function App() {
 
   // If showing landing page, render LandingPage component
   if (showLanding) {
-    return <LandingPage onComplete={handleLandingComplete} />;
+    return (
+      <Suspense fallback={<LoadingSpinner />}>
+        <LandingPage onComplete={handleLandingComplete} />
+      </Suspense>
+    );
   }
 
   // Main app UI (only shown after landing page completion)
@@ -99,94 +113,49 @@ function App() {
               description: "Indian Spices & Blends",
               isNew: true
             }
-          ].map(cat => (
+          ].map((category) => (
             <button
-              key={cat.value}
-              onClick={() => handleCategorySelection(cat.value)}
-              className={`group relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-2xl font-semibold border-2 transition-all duration-300 transform hover:scale-105 hover:shadow-xl h-48 w-full
-                ${selectedCategory === cat.value
-                  ? `bg-gradient-to-r ${cat.gradient} text-white border-transparent shadow-2xl shadow-purple-500/25`
-                  : `bg-white/80 backdrop-blur-sm text-gray-700 border-gray-200 hover:bg-gradient-to-r ${cat.hoverGradient} hover:text-white hover:border-transparent`
+              key={category.value}
+              onClick={() => handleCategorySelection(category.value)}
+              className={`relative group bg-gradient-to-br ${category.gradient} hover:${category.hoverGradient} 
+                text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 ${
+                  selectedCategory === category.value ? 'ring-4 ring-purple-300' : ''
                 }`}
-              aria-pressed={selectedCategory === cat.value}
-              aria-label={`Select ${cat.label} category`}
             >
-              {/* Glow effect for selected */}
-              {selectedCategory === cat.value && (
-                <div className={`absolute -inset-2 bg-gradient-to-r ${cat.gradient} rounded-2xl blur opacity-75 animate-pulse`}></div>
-              )}
-              
-              {/* Subtle glow effect on hover */}
-              <div className={`absolute -inset-2 bg-gradient-to-r ${cat.hoverGradient} rounded-2xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300`}></div>
-              
-              {/* NEW badge */}
-              {cat.isNew && (
-                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+              {category.isNew && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                   NEW
                 </div>
               )}
-              
-              <div className="relative z-10 flex flex-col items-center">
-                <span className={`text-5xl mb-3 transition-transform duration-300 group-hover:scale-110 ${selectedCategory === cat.value ? 'animate-bounce' : ''}`}>
-                  {cat.icon}
-                </span>
-                <span className="text-xl font-bold text-center">{cat.label}</span>
-                <span className={`text-sm mt-2 text-center transition-colors duration-300 ${selectedCategory === cat.value ? 'text-white/80' : 'text-gray-500 group-hover:text-white/80'}`}>
-                  {cat.description}
-                </span>
-              </div>
-              
-              {/* Selection indicator */}
-              {selectedCategory === cat.value && (
-                <div className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
+              <div className="text-3xl mb-2">{category.icon}</div>
+              <h3 className="font-semibold text-lg">{category.label}</h3>
+              <p className="text-sm opacity-90">{category.description}</p>
             </button>
           ))}
         </div>
 
         {/* Input Mode Toggle */}
-        <div className="flex flex-col items-center mb-8">
-          <div className={`rounded-lg p-1 shadow-lg transition-all ${
-            selectedCategory ? 'bg-white' : 'bg-gray-100'
-          }`}>
-            <div className="flex">
-              <button
-                onClick={() => setInputMode('text')}
-                disabled={!selectedCategory}
-                className={`px-6 py-3 rounded-md font-medium transition-all ${
-                  !selectedCategory
-                    ? 'text-gray-400 cursor-not-allowed bg-gray-50'
-                    : inputMode === 'text'
-                    ? 'bg-purple-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Text-Only
-              </button>
-              <button
-                onClick={() => setInputMode('multimodal')}
-                disabled={!selectedCategory}
-                className={`px-6 py-3 rounded-md font-medium transition-all ${
-                  !selectedCategory
-                    ? 'text-gray-400 cursor-not-allowed bg-gray-50'
-                    : inputMode === 'multimodal'
-                    ? 'bg-purple-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Multi-Modal
-              </button>
-            </div>
-          </div>
-          {!selectedCategory && (
-            <div className="mt-3 text-center">
-              <p className="text-sm text-gray-500">Please select a category first to choose input mode</p>
-            </div>
-          )}
+        <div className="flex justify-center space-x-4 mb-6">
+          <button
+            onClick={() => setInputMode('multimodal')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+              inputMode === 'multimodal'
+                ? 'bg-purple-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            📸 Visual + Text
+          </button>
+          <button
+            onClick={() => setInputMode('text')}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+              inputMode === 'text'
+                ? 'bg-purple-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            📝 Text Only
+          </button>
         </div>
 
         {/* Prompt Input */}
@@ -195,18 +164,19 @@ function App() {
           {inputMode === 'text' ? (
             <PromptInput
               onResult={(data) => {
-                console.log('🔄 App.tsx received data:', data);
                   // Handle text-only formulation if needed
               }}
               selectedCategory={selectedCategory}
             />
           ) : (
-            <MultimodalFormulation
+            <Suspense fallback={<LoadingSpinner />}>
+              <MultimodalFormulation
                 onResult={() => {
                   // No longer needed since results are displayed directly in the component
-              }}
-              selectedCategory={selectedCategory}
-            />
+                }}
+                selectedCategory={selectedCategory}
+              />
+            </Suspense>
           )}
         </div>
         ) : (

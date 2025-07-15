@@ -2,11 +2,18 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    visualizer({
+      filename: 'dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+    }),
   ],
 
   resolve: {
@@ -16,7 +23,34 @@ export default defineConfig({
   },
 
   build: {
-    outDir: 'dist', // Vercel expects dist directory
+    outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor dependencies
+          vendor: ['react', 'react-dom'],
+          animation: ['framer-motion', 'lottie-react'],
+          charts: ['recharts'],
+          ui: ['@heroicons/react', 'lucide-react'],
+          utils: ['axios', 'clsx', 'tailwind-merge'],
+        },
+      },
+    },
+    // Optimize build performance
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    // Reduce chunk size warnings threshold
+    chunkSizeWarningLimit: 1000,
+  },
+
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'framer-motion', 'axios'],
   },
 }) 

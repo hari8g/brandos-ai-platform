@@ -132,6 +132,7 @@ export default function PromptInput({
   const { suggestions, generateSuggestions: fetchSuggestions } = useSuggestions();
   const [feedback, setFeedback] = useState("");
   const [moreInfo, setMoreInfo] = useState("");
+  const [generateError, setGenerateError] = useState<string | null>(null);
   
   const [exampleIdx, setExampleIdx] = useState(0);
   const [fade, setFade] = useState(true);
@@ -391,6 +392,7 @@ export default function PromptInput({
     setLoadingType('generate');
     setLoadingProgress(0);
     setLoadingStep('🧪 Mixing up some magic...');
+    setGenerateError(null); // Clear previous errors
     
     // Formulation-themed puns and steps
     const formulationPuns = [
@@ -405,12 +407,17 @@ export default function PromptInput({
     ];
     
     let currentPunIndex = 0;
+    let progressInterval: NodeJS.Timeout | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
     
     // Simulate progress updates with puns
-    const progressInterval = setInterval(() => {
+    progressInterval = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 90) {
-          clearInterval(progressInterval);
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
           return prev;
         }
         // Slower progress: smaller increment, longer interval
@@ -424,12 +431,47 @@ export default function PromptInput({
     }, 900); // was 400
 
     try {
+      // Validate inputs
+      if (!prompt.trim()) {
+        throw new Error('Please provide a product description');
+      }
+
       // Combine prompt and moreInfo
       const finalPrompt = moreInfo.trim()
         ? `${prompt}\n\nAdditional context: ${moreInfo}`
         : prompt;
       
-      const resp = await apiClient.post("/formulation/generate", { prompt: finalPrompt, category: selectedCategory });
+      // Build request payload
+      const requestPayload = {
+        prompt: finalPrompt,
+        category: selectedCategory,
+        ...(location.trim() && { location: location.trim() })
+      };
+      
+      console.log('Sending generate request:', requestPayload);
+      
+      // Create a promise that rejects after timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Request timed out. The server is taking too long to respond.'));
+        }, 30000); // 30 second timeout
+      });
+      
+      // Race between the actual request and timeout
+      const resp = await Promise.race([
+        apiClient.post("/formulation/generate", requestPayload),
+        timeoutPromise
+      ]) as any;
+      
+      // Clear timeout if request succeeds
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Validate response
+      if (!resp.data || !resp.data.product_name || !resp.data.ingredients) {
+        throw new Error('Invalid response format from server');
+      }
       
       // Complete the progress
       setLoadingProgress(100);
@@ -439,17 +481,56 @@ export default function PromptInput({
         setLoading(false);
         setLoadingProgress(0);
         setLoadingStep('');
+        setGenerateError(null);
         onResult(resp.data);
       }, 800);
-    } catch (error) {
-      setLoadingStep('😅 Oops! Something went wrong...');
+    } catch (error: any) {
+      console.error('Generate error:', error);
+      
+      // Clear the progress interval immediately
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      
+      // Clear timeout if still active
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Set appropriate error message
+      let errorMessage = '😅 Oops! Something went wrong...';
+      
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Our team has been notified. Please try again later.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Access denied. Please check your permissions.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setLoadingStep(errorMessage);
+      setGenerateError(errorMessage);
+      
       setTimeout(() => {
         setLoading(false);
         setLoadingProgress(0);
         setLoadingStep('');
-      }, 2000);
+      }, 3000); // Show error for 3 seconds instead of 2
     } finally {
-      clearInterval(progressInterval);
+      // Ensure interval is cleared
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      // Ensure timeout is cleared
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   };
 
@@ -636,14 +717,20 @@ export default function PromptInput({
             <label className={`block font-semibold mb-1 ${colors.text}`}>Edit your prompt:</label>
             <textarea
               value={prompt}
-              onChange={e => setPrompt(e.target.value)}
+              onChange={e => {
+                setPrompt(e.target.value);
+                setGenerateError(null); // Clear error when user edits
+              }}
               className={`mb-2 w-full border ${colors.border} rounded p-2 ${colors.focus}`}
               rows={4}
             />
             <label className={`block font-semibold mb-1 ${colors.text}`}>Add more information (optional):</label>
             <textarea
               value={moreInfo}
-              onChange={e => setMoreInfo(e.target.value)}
+              onChange={e => {
+                setMoreInfo(e.target.value);
+                setGenerateError(null); // Clear error when user edits
+              }}
               className={`mb-2 w-full border ${colors.border} rounded p-2 ${colors.focus}`}
               rows={2}
             />
@@ -683,6 +770,29 @@ export default function PromptInput({
               </div>
             )}
           </button>
+
+          {generateError && (
+            <div className={`mt-4 p-4 rounded-lg border ${colors.border} ${colors.bg}`}>
+              <div className="flex items-start space-x-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-red-600 font-medium">Generation Failed</p>
+                  <p className="text-red-500 text-sm mt-1">{generateError}</p>
+                  <button
+                    onClick={() => {
+                      setGenerateError(null);
+                      handleGenerate();
+                    }}
+                    className={`mt-3 text-sm font-medium ${colors.text} hover:underline`}
+                  >
+                    Try again →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

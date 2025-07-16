@@ -290,7 +290,7 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
                 product_type=req.category,
                 category=category,
                 requirements=[req.target_cost] if req.target_cost else [],
-                region="India"
+                region=req.location or "India"
             )
             print(f"🔄 Optimized prompt: {optimized_prompt[:100]}...")
         
@@ -402,8 +402,9 @@ Guidelines:
         Create a formulation for: {optimized_prompt}
         Category: {req.category or 'General'}
         Target cost: {req.target_cost or 'Not specified'}
+        {f'Location: {req.location}' if req.location else ''}
         
-        Please provide a complete, safe, and effective formulation with detailed ingredient rationales, local supplier information, and step-by-step manufacturing instructions.
+        Please provide a complete, safe, and effective formulation with detailed ingredient rationales, {'location-specific' if req.location else 'local'} supplier information, and step-by-step manufacturing instructions.
         """
 
         print(f"📤 Sending optimized request to OpenAI...")

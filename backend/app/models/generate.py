@@ -69,6 +69,7 @@ class GenerateRequest(BaseModel):
     prompt: str
     category: Optional[str] = None
     target_cost: Optional[str] = None
+    location: Optional[str] = None
 
 class GenerateResponse(BaseModel):
     product_name: str

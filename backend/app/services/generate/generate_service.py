@@ -250,36 +250,24 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     print(f"🔍 Starting fast formulation generation for: {req.prompt}")
     category = (req.category or '').lower()
     
-    # Add overall function timeout protection
-    import signal
-    
-    def timeout_handler(signum, frame):
-        print("⏰ Function timeout reached - using fast fallback")
-        raise TimeoutError("Formulation generation timed out")
-    
-    # Set 40-second overall timeout for the entire function
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(40)
-    
+    # Rely on ThreadPoolExecutor timeout from streaming endpoint
     try:
-    
-    # Phase 2: Check cache first
-    try:
-        cached_response = get_cached_formulation_sync(req.prompt, {"category": category})
-        if cached_response:
-            print("✅ Using cached formulation response")
-            return GenerateResponse(**cached_response)
-    except Exception as e:
-        print(f"⚠️ Cache check failed: {e}")
-    
-    # Check if OpenAI client is available
-    if not client:
-        print("🔄 Using fallback mock formulation (OpenAI not available)")
-        return _generate_mock_formulation(req)
-    
-    print("✅ OpenAI client is available, proceeding with API call")
-    
-    try:
+        # Phase 2: Check cache first
+        try:
+            cached_response = get_cached_formulation_sync(req.prompt, {"category": category})
+            if cached_response:
+                print("✅ Using cached formulation response")
+                return GenerateResponse(**cached_response)
+        except Exception as e:
+            print(f"⚠️ Cache check failed: {e}")
+        
+        # Check if OpenAI client is available
+        if not client:
+            print("🔄 Using fallback mock formulation (OpenAI not available)")
+            return _generate_mock_formulation(req)
+        
+        print("✅ OpenAI client is available, proceeding with API call")
+        
         # Phase 2: Use adaptive prompt optimization only if the prompt is not already comprehensive
         # Check if the prompt is already a detailed formulation request
         is_comprehensive_prompt = (
@@ -449,9 +437,9 @@ Key Requirements:
         print(f"📤 Sending optimized request to OpenAI...")
         print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
-        # Call OpenAI with aggressive timeout handling
+        # Call OpenAI with very aggressive timeout handling
         try:
-            print("⏱️ Starting OpenAI API call with 25-second timeout...")
+            print("⏱️ Starting OpenAI API call with 20-second timeout...")
             response = client.chat.completions.create(
                 model="gpt-4o-mini",  # Faster model
                 messages=[
@@ -459,8 +447,8 @@ Key Requirements:
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.7,
-                max_tokens=2500,  # Further reduced for speed
-                timeout=25,  # Aggressive 25 seconds timeout
+                max_tokens=2000,  # Further reduced to 2000 for speed
+                timeout=20,  # Very aggressive 20 seconds timeout
                 tools=get_formulation_function_definitions(),
                 tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
             )
@@ -586,14 +574,10 @@ Key Requirements:
             print(f"⚠️ Compression failed: {e}")
             compressed_response = response_data.dict()
         
-        # Clear the timeout alarm before returning
-        signal.alarm(0)
         return response_data
         
-    except (TimeoutError, Exception) as e:
-        # Clear the timeout alarm
-        signal.alarm(0)
-        print(f"❌ Error or timeout in formulation generation: {e}")
+    except Exception as e:
+        print(f"❌ Error in formulation generation: {e}")
         print("🚀 Using fast mock formulation")
         return _generate_mock_formulation(req)
 

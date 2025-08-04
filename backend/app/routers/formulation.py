@@ -61,19 +61,23 @@ async def generate_formulation_stream(request: GenerateRequest):
             yield f"data: {json.dumps(status_update)}\n\n"
             await asyncio.sleep(0.8)  # Reduced from 1.5 to 0.8 seconds for faster UX
         
-        # Generate the actual formulation with timeout handling
+        # Generate the actual formulation with aggressive timeout handling
         try:
-            from concurrent.futures import ThreadPoolExecutor
+            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+            import asyncio
             
             def run_generation():
                 return generate_formulation(request)
             
-            # Use thread pool to run sync function with timeout  
+            # Use thread pool with very aggressive timeout
             with ThreadPoolExecutor() as executor:
                 future = executor.submit(run_generation)
                 try:
-                    # Wait for up to 75 seconds (less than frontend timeout)
-                    formulation = future.result(timeout=75)
+                    print("⏱️ Starting formulation generation with 30-second timeout...")
+                    # Reduced timeout to 30 seconds for faster failure
+                    formulation = future.result(timeout=30)
+                    print("✅ Formulation generation completed successfully")
+                    
                     final_response = {
                         "status": "complete",
                         "message": "🎉 Your formulation is ready!",
@@ -81,15 +85,33 @@ async def generate_formulation_stream(request: GenerateRequest):
                         "data": formulation.dict()
                     }
                     yield f"data: {json.dumps(final_response)}\n\n"
-                except Exception as timeout_error:
+                    
+                except (FutureTimeoutError, TimeoutError) as timeout_error:
+                    print(f"⏰ Formulation generation timed out after 30 seconds")
                     future.cancel()
-                    raise timeout_error
+                    # Generate quick fallback response
+                    from app.services.generate.generate_service import _generate_mock_formulation
+                    fallback_formulation = _generate_mock_formulation(request)
+                    
+                    fallback_response = {
+                        "status": "complete",
+                        "message": "🚀 Generated fast formulation (timeout fallback)",
+                        "progress": 100,
+                        "data": fallback_formulation.dict()
+                    }
+                    yield f"data: {json.dumps(fallback_response)}\n\n"
+                    
+                except Exception as other_error:
+                    print(f"❌ Formulation generation failed: {other_error}")
+                    future.cancel()
+                    raise other_error
                     
         except Exception as e:
-            # Handle both timeout and other errors
-            error_message = "Request took too long - try a simpler description" if "timeout" in str(e).lower() or isinstance(e, TimeoutError) else f"Generation failed: {str(e)}"
+            # Handle all other errors
+            print(f"❌ Critical error in streaming generation: {e}")
+            error_message = "Generation failed - please try again with a simpler request"
             error_response = {
-                "status": "error",
+                "status": "error", 
                 "message": f"❌ {error_message}",
                 "progress": 0,
                 "error": str(e)

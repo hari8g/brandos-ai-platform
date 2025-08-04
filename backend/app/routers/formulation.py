@@ -11,28 +11,31 @@ router = APIRouter(prefix="/formulation", tags=["formulation"])
 
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_endpoint(request: GenerateRequest):
-    """Generate a formulation based on the request"""
+    """Generate a formulation based on the request (with timeout handling)"""
     try:
-        # Call the generate service
-        formulation = generate_formulation(request)
-        return formulation
+        # Add timeout handling - run in background task with timeout
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+        
+        def run_generation():
+            return generate_formulation(request)
+        
+        # Use thread pool to run sync function with timeout
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(run_generation)
+            try:
+                # Wait for up to 90 seconds
+                formulation = future.result(timeout=90)
+                return formulation
+            except Exception as timeout_error:
+                future.cancel()
+                raise timeout_error
+                
     except Exception as e:
-        # Return a mock formulation for now
-        return GenerateResponse(
-            product_name="Sample Product",
-            reasoning="This is a sample formulation generated for testing purposes.",
-            ingredients=[],
-            manufacturing_steps=[
-                "Step 1: Prepare equipment",
-                "Step 2: Mix ingredients",
-                "Step 3: Package product"
-            ],
-            estimated_cost=15.0,
-            safety_notes=["Test formulation", "For development only"],
-            packaging_marketing_inspiration="Sample packaging ideas",
-            market_trends=["Sample trend"],
-            competitive_landscape={"sample": "data"}
-        )
+        print(f"❌ Generation failed: {e}")
+        # Return a proper mock formulation instead of basic one
+        from app.services.generate.generate_service import _generate_mock_formulation
+        return _generate_mock_formulation(request)
 
 @router.post("/generate/stream")
 async def generate_formulation_stream(request: GenerateRequest):
@@ -53,25 +56,42 @@ async def generate_formulation_stream(request: GenerateRequest):
             {"status": "finalizing", "message": "🎯 Finalizing your comprehensive formulation...", "progress": 95},
         ]
         
-        # Stream each status update
+        # Stream each status update (optimized for speed)
         for status_update in status_messages:
             yield f"data: {json.dumps(status_update)}\n\n"
-            await asyncio.sleep(1.5)  # Wait 1.5 seconds between updates
+            await asyncio.sleep(0.8)  # Reduced from 1.5 to 0.8 seconds for faster UX
         
-        # Generate the actual formulation
+        # Generate the actual formulation with timeout handling
         try:
-            formulation = generate_formulation(request)
-            final_response = {
-                "status": "complete",
-                "message": "🎉 Your formulation is ready!",
-                "progress": 100,
-                "data": formulation.dict()
-            }
-            yield f"data: {json.dumps(final_response)}\n\n"
+            import asyncio
+            from concurrent.futures import ThreadPoolExecutor
+            
+            def run_generation():
+                return generate_formulation(request)
+            
+            # Use thread pool to run sync function with timeout  
+            with ThreadPoolExecutor() as executor:
+                future = executor.submit(run_generation)
+                try:
+                    # Wait for up to 75 seconds (less than frontend timeout)
+                    formulation = future.result(timeout=75)
+                    final_response = {
+                        "status": "complete",
+                        "message": "🎉 Your formulation is ready!",
+                        "progress": 100,
+                        "data": formulation.dict()
+                    }
+                    yield f"data: {json.dumps(final_response)}\n\n"
+                except Exception as timeout_error:
+                    future.cancel()
+                    raise timeout_error
+                    
         except Exception as e:
+            # Handle both timeout and other errors
+            error_message = "Request took too long - try a simpler description" if "timeout" in str(e).lower() or isinstance(e, TimeoutError) else f"Generation failed: {str(e)}"
             error_response = {
                 "status": "error",
-                "message": f"❌ Oops! Something went wrong: {str(e)}",
+                "message": f"❌ {error_message}",
                 "progress": 0,
                 "error": str(e)
             }

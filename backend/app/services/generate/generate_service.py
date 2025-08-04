@@ -441,15 +441,16 @@ Guidelines:
         print(f"📤 Sending optimized request to OpenAI...")
         print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
-        # Call OpenAI with function calling
+        # Call OpenAI with function calling (optimized for speed)
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",  # Faster model
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7,
-            max_tokens=4000,
+            max_tokens=3000,  # Reduced for faster response
+            timeout=45,  # 45 seconds timeout for OpenAI API
             tools=get_formulation_function_definitions(),
             tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
         )
@@ -517,36 +518,14 @@ Guidelines:
                     converted_steps.append(str(step))
             manufacturing_steps = converted_steps
         
-        # Get scientific reasoning from OpenAI response or use scientific reasoning service
+        # Get scientific reasoning from OpenAI response or use fast fallback
         scientific_reasoning = data.get('scientific_reasoning')
         
         # Check if the scientific reasoning is comprehensive (has our expected format)
         if not scientific_reasoning or not _is_comprehensive_scientific_reasoning(scientific_reasoning):
-            # Use the scientific reasoning service to get real OpenAI data
-            try:
-                scientific_reasoning_service = ScientificReasoningService()
-                scientific_reasoning_request = ScientificReasoningRequest(
-                    category=req.category,
-                    product_description=req.prompt,
-                    target_concerns=None
-                )
-                scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
-                scientific_reasoning = {
-                    "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
-                    "impliedDesire": scientific_reasoning_response.impliedDesire,
-                    "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
-                    "valueProposition": scientific_reasoning_response.valueProposition,
-                    "targetAudience": scientific_reasoning_response.targetAudience,
-                    "indiaTrends": scientific_reasoning_response.indiaTrends,
-                    "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
-                    "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
-                    "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
-                    "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
-                }
-            except Exception as e:
-                print(f"❌ Scientific reasoning service error: {e}")
-                # Fallback to mock data if scientific reasoning service fails
-                scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
+            # For speed optimization, use fast fallback instead of slow service call
+            print("⚡ Using fast scientific reasoning fallback for better performance")
+            scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
         
         # Get market research from OpenAI response or use mock data
         market_research = data.get('market_research')

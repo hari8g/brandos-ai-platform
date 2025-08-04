@@ -372,63 +372,92 @@ export default function PromptInput({
     }
   };
 
-  // New function to directly generate formulation from suggestion
+  // Enhanced function to directly generate formulation using streaming for better UX
   const handleGenerateFormulation = async (suggestionPrompt: string, category: string | null) => {
     setLoading(true);
     setLoadingType('generate');
     setLoadingProgress(0);
-    setLoadingStep('🧪 Processing your suggestion...');
-    
-    const formulationSteps = [
-      { step: '🧪 Processing your suggestion...', progress: 0 },
-      { step: '🔬 Analyzing requirements...', progress: 15 },
-      { step: '⚗️ Formulating ingredients...', progress: 30 },
-      { step: '🧬 Optimizing composition...', progress: 50 },
-      { step: '⚡ Adding finishing touches...', progress: 70 },
-      { step: '🎯 Finalizing formulation...', progress: 90 },
-      { step: '✨ Your formulation is ready!', progress: 100 }
-    ];
-    
-    let currentStepIndex = 0;
-    
-    const progressInterval = setInterval(() => {
-      if (currentStepIndex < formulationSteps.length - 1) {
-        currentStepIndex++;
-        setLoadingStep(formulationSteps[currentStepIndex].step);
-        setLoadingProgress(formulationSteps[currentStepIndex].progress);
-      }
-    }, 1500); // Update every 1.5 seconds for detailed steps
+    setLoadingStep('🚀 Starting your formulation...');
     
     try {
-      const resp = await apiClient.post("/formulation/generate", { 
-        prompt: suggestionPrompt, 
-        category: category || selectedCategory,
-        detailed_steps: true // Flag for detailed step-by-step formulation
+      // Use Server-Sent Events for real-time progress updates
+      const response = await fetch('/api/v1/formulation/generate/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt: suggestionPrompt, 
+          category: category || selectedCategory,
+          detailed_steps: true 
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
       
-      // Complete the progress
-      setLoadingProgress(100);
-      setLoadingStep('✨ Your detailed formulation is ready!');
+      if (!reader) {
+        throw new Error('Failed to get response reader');
+      }
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.status === 'complete') {
+                  setLoadingProgress(100);
+                  setLoadingStep('🎉 Your formulation is ready!');
+                  
+                  setTimeout(() => {
+                    setLoading(false);
+                    setLoadingProgress(0);
+                    setLoadingStep('');
+                    setDetailedFormulation(data.data);
+                    setStage('detailed-formulation');
+                    onResult(data.data);
+                  }, 1000);
+                  return;
+                } else if (data.status === 'error') {
+                  throw new Error(data.message || 'Generation failed');
+                } else {
+                  // Update progress from streaming
+                  setLoadingProgress(data.progress || 0);
+                  setLoadingStep(data.message || 'Processing...');
+                }
+              } catch (jsonError) {
+                console.warn('Failed to parse SSE data:', jsonError);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
       
-      setTimeout(() => {
-        setLoading(false);
-        setLoadingProgress(0);
-        setLoadingStep('');
-        setDetailedFormulation(resp.data);
-        setStage('detailed-formulation');
-        // Also call onResult for parent component handling if needed
-        onResult(resp.data);
-      }, 1000);
     } catch (error) {
       console.error('Formulation generation error:', error);
-      setLoadingStep('😅 Oops! Something went wrong...');
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
+      setLoadingStep(`❌ ${errorMessage.includes('timeout') ? 'Request took too long - try a simpler description' : 'Generation failed - please try again'}`);
+      
       setTimeout(() => {
         setLoading(false);
         setLoadingProgress(0);
         setLoadingStep('');
-      }, 2000);
-    } finally {
-      clearInterval(progressInterval);
+      }, 3000);
     }
   };
 

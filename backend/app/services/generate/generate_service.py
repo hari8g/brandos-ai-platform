@@ -16,13 +16,18 @@ from app.services.streaming_service import streaming_middleware
 # Load environment variables from the root .env file
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
-# Initialize OpenAI client only if API key is available
+# Initialize OpenAI client with timeout configuration
 client = None
 try:
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key and api_key != "your_openai_api_key_here" and api_key.strip():
-        client = OpenAI(api_key=api_key)
-        print("✅ OpenAI client initialized successfully")
+        # Configure client with timeout settings
+        client = OpenAI(
+            api_key=api_key,
+            timeout=30.0,  # 30 second default timeout
+            max_retries=1   # Reduce retries for faster failures
+        )
+        print("✅ OpenAI client initialized successfully with 30s timeout")
         print(f"🔍 API Key found: {'Yes' if api_key else 'No'}")
         if api_key:
             print(f"🔍 API Key length: {len(api_key)}")
@@ -240,10 +245,23 @@ def get_formulation_function_definitions():
 
 def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     """
-    Use OpenAI to generate a real formulation based on the request with Phase 2 optimizations.
+    Use OpenAI to generate a real formulation with aggressive timeout handling.
     """
-    print(f"🔍 Starting formulation generation for: {req.prompt}")
+    print(f"🔍 Starting fast formulation generation for: {req.prompt}")
     category = (req.category or '').lower()
+    
+    # Add overall function timeout protection
+    import signal
+    
+    def timeout_handler(signum, frame):
+        print("⏰ Function timeout reached - using fast fallback")
+        raise TimeoutError("Formulation generation timed out")
+    
+    # Set 40-second overall timeout for the entire function
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(40)
+    
+    try:
     
     # Phase 2: Check cache first
     try:
@@ -294,7 +312,7 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
             )
             print(f"🔄 Optimized prompt: {optimized_prompt[:100]}...")
         
-        # Create the system prompt with Phase 2 optimizations
+        # Create simplified system prompt for faster processing
         detailed_steps_instruction = ""
         if req.detailed_steps:
             detailed_steps_instruction = """
@@ -308,22 +326,17 @@ SPECIAL FOCUS ON DETAILED MANUFACTURING STEPS:
 - Provide troubleshooting tips for common issues"""
 
         if category == "pet food":
-            system_prompt = f"""You are an expert pet food formulator. Generate a detailed pet food formulation.
+            system_prompt = f"""You are an expert pet food formulator. Create a practical pet food formulation quickly.
 
-Guidelines:
-- Total ingredients should add up to 100%
-- Use realistic ingredient percentages
-- Include proper vitamins, minerals, and supplements
-- Consider the target animal, age, and dietary needs
-- Provide detailed nutritional reasoning with per-ingredient explanations
-- Include safety considerations
-- Use ingredients appropriate for the animal and product type
-- For each ingredient, provide 2-3 Indian suppliers with realistic contact information and pricing
-- Manufacturing steps should be detailed and sequential
-- Include current market trends and competitive analysis
-- Make supplier information realistic but fictional for demonstration purposes
-- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+Key Requirements:
+- Total ingredients = 100%
+- Realistic percentages for safe, nutritious pet food
+- Include essential vitamins and minerals
+- Consider target animal needs
+- Provide basic rationale for each ingredient
+- Include 2 Indian suppliers per ingredient
+- List 4-5 manufacturing steps
+- Keep response concise but complete
 {detailed_steps_instruction}"""
         elif category == "wellness":
             system_prompt = f"""You are an expert wellness supplement formulator. Generate a detailed supplement formulation.
@@ -398,22 +411,17 @@ Guidelines:
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
 {detailed_steps_instruction}"""
         else:
-            system_prompt = f"""You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
+            system_prompt = f"""You are an expert cosmetic formulator. Create a practical cosmetic formulation quickly.
 
-Guidelines:
-- Total ingredients should add up to 100%
-- Use realistic ingredient percentages
-- Include proper emulsifiers, preservatives, and active ingredients
-- Consider the target skin type and concerns
-- Provide detailed scientific reasoning with per-ingredient explanations
-- Include safety considerations
-- Use ingredients appropriate for the cosmetic type
-- For each ingredient, provide 2-3 Indian suppliers with realistic contact information and pricing
-- Manufacturing steps should be detailed and sequential
-- Include current market trends and competitive analysis
-- Make supplier information realistic but fictional for demonstration purposes
-- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+Key Requirements:
+- Total ingredients = 100%
+- Realistic percentages with proper emulsifiers and preservatives
+- Include active ingredients for target skin concerns
+- Consider target skin type
+- Provide basic rationale for each ingredient
+- Include 2 Indian suppliers per ingredient
+- List 4-5 manufacturing steps
+- Keep response concise but complete
 {detailed_steps_instruction}"""
 
         detailed_steps_request = ""
@@ -441,19 +449,26 @@ Guidelines:
         print(f"📤 Sending optimized request to OpenAI...")
         print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
-        # Call OpenAI with function calling (optimized for speed)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Faster model
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.7,
-            max_tokens=3000,  # Reduced for faster response
-            timeout=45,  # 45 seconds timeout for OpenAI API
-            tools=get_formulation_function_definitions(),
-            tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
-        )
+        # Call OpenAI with aggressive timeout handling
+        try:
+            print("⏱️ Starting OpenAI API call with 25-second timeout...")
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",  # Faster model
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=2500,  # Further reduced for speed
+                timeout=25,  # Aggressive 25 seconds timeout
+                tools=get_formulation_function_definitions(),
+                tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
+            )
+            print("✅ OpenAI API call completed successfully")
+        except Exception as openai_error:
+            print(f"❌ OpenAI API call failed or timed out: {openai_error}")
+            print("🔄 Using enhanced mock formulation instead")
+            return _generate_mock_formulation(req)
 
         # Parse the function call response
         message = response.choices[0].message
@@ -571,10 +586,15 @@ Guidelines:
             print(f"⚠️ Compression failed: {e}")
             compressed_response = response_data.dict()
         
+        # Clear the timeout alarm before returning
+        signal.alarm(0)
         return response_data
         
-    except Exception as e:
-        print(f"❌ Error in formulation generation: {e}")
+    except (TimeoutError, Exception) as e:
+        # Clear the timeout alarm
+        signal.alarm(0)
+        print(f"❌ Error or timeout in formulation generation: {e}")
+        print("🚀 Using fast mock formulation")
         return _generate_mock_formulation(req)
 
 def _is_comprehensive_scientific_reasoning(scientific_reasoning: dict) -> bool:
@@ -1445,32 +1465,10 @@ def _generate_market_research(category: str, prompt: str) -> dict:
         }
 
 def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
-    """Generate a mock formulation when OpenAI is unavailable"""
+    """Generate a fast mock formulation when OpenAI is unavailable or times out"""
     
     category = req.category or "cosmetics"
+    print(f"🚀 Generating fast mock formulation for {category}")
     
-    # Use scientific reasoning service for real data
-    try:
-        scientific_reasoning_service = ScientificReasoningService()
-        scientific_reasoning_request = ScientificReasoningRequest(
-            category=req.category,
-            product_description=req.prompt,
-            target_concerns=None
-        )
-        scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
-        scientific_reasoning = {
-            "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
-            "impliedDesire": scientific_reasoning_response.impliedDesire,
-            "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
-            "valueProposition": scientific_reasoning_response.valueProposition,
-            "targetAudience": scientific_reasoning_response.targetAudience,
-            "indiaTrends": scientific_reasoning_response.indiaTrends,
-            "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
-            "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
-            "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
-            "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
-        }
-    except Exception as e:
-        print(f"❌ Scientific reasoning service error in mock: {e}")
-        # Fallback to hardcoded data
-        scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)
+    # Use fast fallback instead of slow scientific reasoning service
+    scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)

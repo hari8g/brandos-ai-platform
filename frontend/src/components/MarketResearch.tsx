@@ -5,14 +5,12 @@ import type { MarketResearchData } from '../types/formulation';
 interface MarketResearchProps {
   selectedCategory: string | null;
   selectedCity?: string;
-  localMarketData?: MarketResearchData | null;
   marketResearchData?: MarketResearchData | null;
 }
 
 const MarketResearch: React.FC<MarketResearchProps> = ({
   selectedCategory,
   selectedCity = 'Mumbai',
-  localMarketData,
   marketResearchData
 }) => {
   const colors = getCategoryColors(selectedCategory || null);

@@ -139,7 +139,7 @@ export default function PromptInput({
   const [loadingType, setLoadingType] = useState<'assess' | 'generate'>('assess');
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
-  const [location, setLocation] = useState("");
+
   const [currentStep, setCurrentStep] = useState<Step>('draft');
   const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
   const { suggestions, generateSuggestions: fetchSuggestions } = useSuggestions();
@@ -474,20 +474,7 @@ export default function PromptInput({
             </div>
           </div>
 
-          {/* Location Input */}
-          <div className="space-y-2">
-          <label className={`block text-lg font-semibold font-sans ${colors.text}`}>
-              Location (optional)
-            </label>
-            <input
-              type="text"
-              className={`w-full p-3 rounded-lg border ${colors.border} bg-white/90 placeholder-gray-400
-                       ${colors.focus} focus:outline-none transition-all duration-200`}
-              placeholder="e.g. Mumbai, Bangalore, Delhi"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
+
 
           {/* Get Suggestions Button */}
           <button

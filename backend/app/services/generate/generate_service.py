@@ -295,8 +295,20 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
             print(f"🔄 Optimized prompt: {optimized_prompt[:100]}...")
         
         # Create the system prompt with Phase 2 optimizations
+        detailed_steps_instruction = ""
+        if req.detailed_steps:
+            detailed_steps_instruction = """
+SPECIAL FOCUS ON DETAILED MANUFACTURING STEPS:
+- Provide 6-7 highly detailed manufacturing steps
+- Each step should be comprehensive with specific instructions
+- Include exact temperatures, timing, and equipment details
+- Add quality control checkpoints for each major step
+- Specify mixing speeds, holding times, and process parameters
+- Include detailed safety protocols for each step
+- Provide troubleshooting tips for common issues"""
+
         if category == "pet food":
-            system_prompt = """You are an expert pet food formulator. Generate a detailed pet food formulation.
+            system_prompt = f"""You are an expert pet food formulator. Generate a detailed pet food formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -311,9 +323,10 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
         elif category == "wellness":
-            system_prompt = """You are an expert wellness supplement formulator. Generate a detailed supplement formulation.
+            system_prompt = f"""You are an expert wellness supplement formulator. Generate a detailed supplement formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -328,9 +341,10 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
         elif category == "beverages":
-            system_prompt = """You are an expert beverage formulator. Generate a detailed beverage formulation.
+            system_prompt = f"""You are an expert beverage formulator. Generate a detailed beverage formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -345,9 +359,10 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
         elif category == "textiles":
-            system_prompt = """You are an expert textile formulator and material scientist. Generate a detailed textile formulation.
+            system_prompt = f"""You are an expert textile formulator and material scientist. Generate a detailed textile formulation.
 
 Guidelines:
 - Total fiber composition should add up to 100%
@@ -362,9 +377,10 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
         elif category == "desi masala":
-            system_prompt = """You are an expert Indian spice formulator and culinary scientist. Generate a detailed masala formulation.
+            system_prompt = f"""You are an expert Indian spice formulator and culinary scientist. Generate a detailed masala formulation.
 
 Guidelines:
 - Total spice composition should add up to 100%
@@ -379,9 +395,10 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
         else:
-            system_prompt = """You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
+            system_prompt = f"""You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
 
 Guidelines:
 - Total ingredients should add up to 100%
@@ -396,14 +413,29 @@ Guidelines:
 - Include current market trends and competitive analysis
 - Make supplier information realistic but fictional for demonstration purposes
 - Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
-- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data"""
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
+{detailed_steps_instruction}"""
 
+        detailed_steps_request = ""
+        if req.detailed_steps:
+            detailed_steps_request = """
+        
+        🎯 SPECIAL REQUEST - DETAILED MANUFACTURING STEPS:
+        Please provide 6-7 extremely detailed manufacturing steps with:
+        - Specific temperatures, timing, and equipment requirements
+        - Quality control checkpoints and testing procedures  
+        - Detailed mixing parameters and process conditions
+        - Safety protocols and handling instructions
+        - Troubleshooting tips for each critical step
+        - Professional manufacturing guidance suitable for production teams
+        """
+        
         user_prompt = f"""
         Create a formulation for: {optimized_prompt}
         Category: {req.category or 'General'}
         Target cost: {req.target_cost or 'Not specified'}
         
-        Please provide a complete, safe, and effective formulation with detailed ingredient rationales, local supplier information, and step-by-step manufacturing instructions.
+        Please provide a complete, safe, and effective formulation with detailed ingredient rationales, local supplier information, and step-by-step manufacturing instructions.{detailed_steps_request}
         """
 
         print(f"📤 Sending optimized request to OpenAI...")

@@ -29,7 +29,6 @@ from app.routers.auth_router import router as auth_router
 from app.routers.scientific_reasoning import router as scientific_reasoning_router
 from app.routers.market_research import router as market_research_router
 from app.routers.optimization_router import router as optimization_router
-from app.routers.multimodal_router import router as multimodal_router
 from app.routers.local_market_router import router as local_market_router
 
 app.include_router(query_router, prefix=settings.API_PREFIX + "/v1")
@@ -42,7 +41,6 @@ app.include_router(auth_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(scientific_reasoning_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(market_research_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(optimization_router, prefix=settings.API_PREFIX + "/v1")
-app.include_router(multimodal_router, prefix=settings.API_PREFIX + "/v1")
 app.include_router(local_market_router, prefix=settings.API_PREFIX + "/v1")
 
 # 4) serve static files (frontend build)

@@ -344,6 +344,38 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         </div>
       </AccordionSection>
 
+      {/* Enhanced Ingredients Section */}
+      <AccordionSection
+        title="Ingredients & Priority Analysis"
+        icon="⚗️"
+        isOpen={expandedSections.ingredients}
+        onToggle={() => toggleSection("ingredients")}
+        colors={colors}
+        badge={`${data.ingredients.length} ingredients`}
+        badgeColor="bg-indigo-100 text-indigo-800"
+      >
+        <IngredientList 
+          ingredients={data.ingredients} 
+          selectedCategory={selectedCategory}
+        />
+      </AccordionSection>
+
+      {/* Manufacturing Steps Section */}
+      <AccordionSection
+        title="Manufacturing Steps"
+        icon="🏭"
+        isOpen={expandedSections.manufacturing}
+        onToggle={() => toggleSection("manufacturing")}
+        colors={colors}
+        badge="Production guide"
+        badgeColor="bg-orange-100 text-orange-800"
+      >
+        <ManufacturingSteps 
+          steps={data.manufacturing_steps} 
+          selectedCategory={selectedCategory}
+        />
+      </AccordionSection>
+
       {/* Scientific Reasoning Component */}
       {data.scientific_reasoning && (
         <AccordionSection
@@ -397,19 +429,8 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
             {/* Market Research */}
             <MarketResearch
-              tam={data.market_research.tam.marketSize}
-              sam={data.market_research.sam.marketSize}
-              som={data.market_research.tm.marketSize}
-              marketSize={data.market_research.tam.marketSize}
-              growthRate={data.market_research.tam.cagr}
-              keyTrends={data.market_research.tam.insights}
-              competitiveLandscape={data.market_research.tam.competitors}
-              selectedCategory={selectedCategory}
+              selectedCategory={selectedCategory || null}
               marketResearchData={data.market_research}
-              marketOpportunitySummary={data.scientific_reasoning?.marketOpportunitySummary}
-              currentMarketSizeData={marketSizeData || undefined}
-              productName={data.product_name}
-              ingredients={data.ingredients}
             />
 
             {/* Market Size Error */}
@@ -421,38 +442,6 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
           </div>
         </AccordionSection>
       )}
-
-      {/* Enhanced Ingredients Section */}
-      <AccordionSection
-        title="Ingredients & Priority Analysis"
-        icon="⚗️"
-        isOpen={expandedSections.ingredients}
-        onToggle={() => toggleSection("ingredients")}
-        colors={colors}
-        badge={`${data.ingredients.length} ingredients`}
-        badgeColor="bg-indigo-100 text-indigo-800"
-      >
-        <IngredientList 
-          ingredients={data.ingredients} 
-          selectedCategory={selectedCategory}
-        />
-      </AccordionSection>
-
-      {/* Manufacturing Steps Section */}
-      <AccordionSection
-        title="Manufacturing Steps"
-        icon="🏭"
-        isOpen={expandedSections.manufacturing}
-        onToggle={() => toggleSection("manufacturing")}
-        colors={colors}
-        badge="Production guide"
-        badgeColor="bg-orange-100 text-orange-800"
-      >
-        <ManufacturingSteps 
-          steps={data.manufacturing_steps} 
-          selectedCategory={selectedCategory}
-        />
-      </AccordionSection>
 
       {/* Costing and Pricing Strategy Section */}
       <AccordionSection
@@ -518,69 +507,225 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         </div>
       </AccordionSection>
 
-      {/* Packaging Inspiration Section */}
+      {/* Enhanced Marketing & Packaging Strategy Section */}
       <AccordionSection
-        title="Packaging Inspiration"
-        icon="📦"
+        title="Marketing & Packaging Strategy"
+        icon="🎨"
         isOpen={expandedSections.marketing}
         onToggle={() => toggleSection("marketing")}
         colors={colors}
-        badge="Design guide"
+        badge="Brand Ready"
         badgeColor="bg-pink-100 text-pink-800"
       >
-        <div className="space-y-4">
-          {/* Packaging & Marketing Inspiration */}
-          {data.packaging_marketing_inspiration && (
-            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-6`}>
-              <h4 className={`font-semibold ${colors.text} text-base mb-4 flex items-center`}>
-                <span className="mr-2">✨</span>
-                Packaging Design & Inspiration
+        <div className="space-y-6">
+          {/* Strategy Overview Header */}
+          <div className={`bg-gradient-to-r ${colors.lightBg} rounded-2xl p-6 border-2 ${colors.border}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className={`text-xl font-bold ${colors.text} flex items-center gap-3`}>
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors.buttonGradient} flex items-center justify-center text-white text-lg`}>
+                  🚀
+                </div>
+                Go-to-Market Strategy
               </h4>
-              <div className={`${colors.text} text-base leading-relaxed`}>
-                {data.packaging_marketing_inspiration}
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 ${colors.bg} text-white rounded-full text-sm font-medium`}>
+                  Launch Ready
+                </span>
               </div>
             </div>
-          )}
-          
-          {/* Market Trends */}
-          {data.market_trends && data.market_trends.length > 0 && (
-            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-6`}>
-              <h4 className={`font-semibold ${colors.text} text-base mb-4 flex items-center`}>
-                <span className="mr-2">📈</span>
-                Packaging Trends
-              </h4>
-              <div className="space-y-3">
-                {data.market_trends.map((trend, idx) => (
-                  <div key={idx} className={`flex items-center space-x-3 ${colors.text} text-base`}>
-                    <div className={`w-2 h-2 ${colors.bg} rounded-full flex-shrink-0`}></div>
-                    <span>{trend}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            <p className={`${colors.text} opacity-80 text-sm leading-relaxed`}>
+              Comprehensive marketing and packaging recommendations to maximize your product's market impact
+            </p>
+          </div>
 
-          {/* Competitive Landscape */}
-          {data.competitive_landscape && (
-            <div className={`${colors.lightBg} border ${colors.border} rounded-lg p-6`}>
-              <h4 className={`font-semibold ${colors.text} text-base mb-4 flex items-center`}>
-                <span className="mr-2">🏆</span>
-                Competitive Packaging Analysis
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
-                {Object.entries(data.competitive_landscape).map(([key, value]) => (
-                  <div key={key} className="space-y-2">
-                    <div className={`font-medium ${colors.text} capitalize`}>
-                      {key.replace(/_/g, ' ')}:
+          {/* Enhanced Content Sections */}
+          <div className="grid gap-6">
+            {/* Packaging Innovation & Design */}
+            {data.packaging_marketing_inspiration && (
+              <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-sm hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-lg">
+                    📦
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-lg font-bold text-purple-800">Packaging Design Strategy</h5>
+                    <p className="text-purple-600 text-sm">AI-powered packaging and branding insights</p>
+                  </div>
+                </div>
+                
+                {/* Original AI Content */}
+                <div className="mb-6 bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <div className={`${colors.text} text-sm leading-relaxed font-medium`}>
+                    {data.packaging_marketing_inspiration}
+                  </div>
+                </div>
+
+                {/* Structured Insights */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h6 className="font-semibold text-purple-700 text-sm flex items-center gap-2">
+                      <span>🎨</span> Design Elements
+                    </h6>
+                    {getPackagingDesignElements(selectedCategory || null).map((element, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <div className="w-4 h-4 rounded-full bg-purple-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                          ✓
+                        </div>
+                        <span className="text-purple-700">{element}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h6 className="font-semibold text-purple-700 text-sm flex items-center gap-2">
+                      <span>💡</span> Innovation Ideas
+                    </h6>
+                    {getPackagingInnovationIdeas(selectedCategory || null).map((idea, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        <div className="w-4 h-4 rounded-full bg-purple-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                          💡
+                        </div>
+                        <span className="text-purple-700">{idea}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Marketing Channels & Strategy */}
+            <div className="bg-white rounded-2xl p-6 border-2 border-blue-200 shadow-sm hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-lg">
+                  📢
+                </div>
+                <div className="flex-1">
+                  <h5 className="text-lg font-bold text-blue-800">Marketing Strategy & Channels</h5>
+                  <p className="text-blue-600 text-sm">Optimized for {selectedCategory || 'your product'} category</p>
+                </div>
+              </div>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                {getDetailedMarketingChannels(selectedCategory || null).map((channel, index) => (
+                  <div key={index} className="bg-blue-50 rounded-xl p-4 border border-blue-100 hover:bg-blue-100 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">{channel.icon}</span>
+                      <span className="font-semibold text-blue-800 text-sm">{channel.name}</span>
                     </div>
-                    <div className={`${colors.text} leading-relaxed`}>
-                      {typeof value === 'string' ? value : JSON.stringify(value)}
+                    <p className="text-blue-600 text-xs mb-2">{channel.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        channel.priority === 'High' ? 'bg-red-100 text-red-700' : 
+                        channel.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {channel.priority}
+                      </span>
+                      <span className="text-blue-500 text-xs font-medium">{channel.reach}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+
+            {/* Launch Timeline */}
+            <div className="bg-white rounded-2xl p-6 border-2 border-green-200 shadow-sm hover:shadow-lg transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600 text-lg">
+                  📅
+                </div>
+                <div className="flex-1">
+                  <h5 className="text-lg font-bold text-green-800">Go-to-Market Timeline</h5>
+                  <p className="text-green-600 text-sm">Strategic phases for optimal market entry</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {[
+                  { phase: 'Pre-Launch', duration: '4-6 weeks', tasks: ['Brand finalization', 'Packaging design', 'Marketing material creation'], color: 'bg-yellow-100 text-yellow-800' },
+                  { phase: 'Soft Launch', duration: '2-3 weeks', tasks: ['Limited market testing', 'Influencer partnerships', 'Feedback collection'], color: 'bg-blue-100 text-blue-800' },
+                  { phase: 'Full Launch', duration: '4-8 weeks', tasks: ['Mass marketing campaigns', 'Retail partnerships', 'Scale production'], color: 'bg-green-100 text-green-800' },
+                  { phase: 'Growth', duration: 'Ongoing', tasks: ['Market expansion', 'Product line extension', 'Customer retention'], color: 'bg-purple-100 text-purple-800' }
+                ].map((phase, index) => (
+                  <div key={index} className="flex items-start gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
+                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h6 className="font-semibold text-green-800">{phase.phase}</h6>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${phase.color}`}>
+                          {phase.duration}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {phase.tasks.map((task, taskIndex) => (
+                          <span key={taskIndex} className="text-xs bg-white text-green-700 px-2 py-1 rounded-md border border-green-200">
+                            {task}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Market Trends */}
+            {data.market_trends && data.market_trends.length > 0 && (
+              <div className="bg-white rounded-2xl p-6 border-2 border-orange-200 shadow-sm hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 text-lg">
+                    📈
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-lg font-bold text-orange-800">Market Trends & Opportunities</h5>
+                    <p className="text-orange-600 text-sm">Stay ahead of the curve</p>
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  {data.market_trends.map((trend, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100">
+                      <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                        📊
+                      </div>
+                      <span className="text-orange-700 text-sm font-medium">{trend}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Competitive Analysis */}
+            {data.competitive_landscape && (
+              <div className="bg-white rounded-2xl p-6 border-2 border-red-200 shadow-sm hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600 text-lg">
+                    🏆
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-lg font-bold text-red-800">Competitive Packaging Analysis</h5>
+                    <p className="text-red-600 text-sm">Differentiation opportunities</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(data.competitive_landscape).map(([key, value]) => (
+                    <div key={key} className="bg-red-50 rounded-lg p-4 border border-red-100">
+                      <div className="font-semibold text-red-800 text-sm mb-2 capitalize flex items-center gap-2">
+                        <span>🔍</span>
+                        {key.replace(/_/g, ' ')}
+                      </div>
+                      <div className="text-red-700 text-sm leading-relaxed">
+                        {typeof value === 'string' ? value : JSON.stringify(value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </AccordionSection>
 
@@ -627,5 +772,109 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
     </div>
   );
 };
+
+// Helper functions for enhanced marketing section
+function getPackagingDesignElements(category: string | null): string[] {
+  switch (category?.toLowerCase()) {
+    case 'cosmetics':
+      return [
+        'Premium glass or acrylic containers',
+        'Minimalist, elegant typography',
+        'Gradient color schemes',
+        'Sustainable packaging materials',
+        'User-friendly dispensing mechanisms'
+      ];
+    case 'pet food':
+      return [
+        'Resealable, airtight containers',
+        'Colorful, playful imagery',
+        'Clear nutritional information display',
+        'Pet-safe, durable materials',
+        'Easy-to-carry handles or grips'
+      ];
+    default:
+      return [
+        'Clean, professional design',
+        'Clear product information',
+        'Sustainable materials',
+        'User-friendly functionality',
+        'Brand-consistent colors'
+      ];
+  }
+}
+
+function getPackagingInnovationIdeas(category: string | null): string[] {
+  switch (category?.toLowerCase()) {
+    case 'cosmetics':
+      return [
+        'Smart packaging with NFC technology',
+        'Refillable container systems',
+        'UV-protective materials',
+        'Temperature-sensitive labels',
+        'Airless pump dispensers'
+      ];
+    case 'pet food':
+      return [
+        'Portion-controlled dispensing',
+        'Built-in freshness indicators',
+        'Stackable storage design',
+        'Compostable packaging options',
+        'Interactive QR codes for pet tips'
+      ];
+    default:
+      return [
+        'Smart packaging technology',
+        'Eco-friendly materials',
+        'User-centric design features',
+        'Interactive elements',
+        'Innovative dispensing systems'
+      ];
+  }
+}
+
+function getDetailedMarketingChannels(category: string | null): Array<{
+  name: string;
+  icon: string;
+  description: string;
+  priority: 'High' | 'Medium' | 'Low';
+  reach: string;
+}> {
+  const baseChannels = [
+    { name: 'Social Media', icon: '📱', description: 'Instagram, TikTok, Facebook campaigns', priority: 'High' as const, reach: '10M+' },
+    { name: 'Influencers', icon: '🌟', description: 'Micro & macro influencer partnerships', priority: 'High' as const, reach: '5M+' },
+    { name: 'Content Marketing', icon: '📝', description: 'Educational blogs and tutorials', priority: 'Medium' as const, reach: '1M+' },
+    { name: 'Email Campaigns', icon: '📧', description: 'Newsletter and retention marketing', priority: 'Medium' as const, reach: '500K+' },
+    { name: 'Paid Advertising', icon: '💰', description: 'Google Ads, Facebook Ads', priority: 'Medium' as const, reach: '2M+' },
+    { name: 'SEO & Organic', icon: '🔍', description: 'Search engine optimization', priority: 'Low' as const, reach: '800K+' }
+  ];
+
+  const categorySpecific = getChannelsByCategory(category);
+  return [...baseChannels, ...categorySpecific];
+}
+
+function getChannelsByCategory(category: string | null): Array<{
+  name: string;
+  icon: string;
+  description: string;
+  priority: 'High' | 'Medium' | 'Low';
+  reach: string;
+}> {
+  switch (category?.toLowerCase()) {
+    case 'cosmetics':
+      return [
+        { name: 'Beauty Retail', icon: '🏪', description: 'Nykaa, Sephora partnerships', priority: 'High' as const, reach: '3M+' },
+        { name: 'YouTube Beauty', icon: '📺', description: 'Product review channels', priority: 'Medium' as const, reach: '2M+' }
+      ];
+    case 'pet food':
+      return [
+        { name: 'Pet Stores', icon: '🐕', description: 'Local pet store partnerships', priority: 'High' as const, reach: '800K+' },
+        { name: 'Vet Clinics', icon: '🏥', description: 'Veterinary recommendations', priority: 'Medium' as const, reach: '400K+' }
+      ];
+    default:
+      return [
+        { name: 'E-commerce', icon: '🛒', description: 'Amazon, Flipkart listings', priority: 'Medium' as const, reach: '5M+' }
+      ];
+  }
+}
 
 export default FormulationCard;

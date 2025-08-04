@@ -12,6 +12,8 @@ interface Suggestion {
   shelf_life?: string;
 }
 
+
+
 interface SuggestionRequest {
   prompt: string;
   category?: string;
@@ -34,9 +36,16 @@ export const useSuggestions = () => {
     setError(null);
 
     try {
+      console.log('🔍 Sending suggestions request:', request);
       const response = await apiClient.post<SuggestionResponse>('/query/suggestions', request);
+      console.log('📥 Received suggestions response:', response.data);
       
       if (response.data.success && response.data.suggestions) {
+        console.log('✅ Suggestions processed:', response.data.suggestions.map(s => ({ 
+          prompt: s.prompt.substring(0, 50) + '...', 
+          score: s.score,
+          manufacturing_ease: s.manufacturing_ease?.substring(0, 30) + '...' || 'N/A'
+        })));
         setSuggestions(response.data.suggestions);
         return response.data.suggestions;
       } else {
@@ -45,7 +54,7 @@ export const useSuggestions = () => {
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || 'Failed to generate suggestions';
       setError(errorMessage);
-      console.error('Suggestions error:', err);
+      console.error('❌ Suggestions error:', err);
       return null;
     } finally {
       setLoading(false);

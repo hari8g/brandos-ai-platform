@@ -3,7 +3,7 @@ import json
 from dotenv import load_dotenv
 from typing import List, Optional
 from openai import OpenAI
-from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion
+from app.models.query import SuggestionRequest, SuggestionResponse, Suggestion, RecommendedSuggestion
 
 # Load environment variables from the root .env file
 # Navigate from backend/app/services/query/ to project root
@@ -326,6 +326,63 @@ def score_all_suggestions(suggestions: List[Suggestion], category: str, original
         print("score_all_suggestions error:", e)
         return generate_mock_scored_suggestions(suggestions, category)
 
+def generate_recommendation(suggestions: List[Suggestion], category: str, user_prompt: str) -> Optional[RecommendedSuggestion]:
+    """Generate a model recommendation from scored suggestions"""
+    if not suggestions:
+        return None
+    
+    # Find the highest scoring suggestion
+    best_suggestion = max(suggestions, key=lambda x: x.score or 0)
+    
+    # Generate recommendation reason based on category and scores
+    if category == "pet food":
+        reason = f"This formulation excels in pet safety and nutrition with a score of {best_suggestion.score:.1f}/10. It balances manufacturing feasibility with Indian market preferences for natural pet food."
+        strengths = [
+            "High safety profile for pets",
+            "Excellent manufacturing ease in India",
+            "Strong market alignment with natural trends",
+            "Optimal nutritional balance"
+        ]
+    elif category == "wellness":
+        reason = f"This wellness formulation achieves the highest overall score of {best_suggestion.score:.1f}/10 by combining proven efficacy with market-ready manufacturing. It aligns perfectly with Indian consumer preferences for natural wellness solutions."
+        strengths = [
+            "Proven efficacy and performance",
+            "Strong Indian market appeal",
+            "Excellent manufacturing feasibility",
+            "Superior shelf life characteristics"
+        ]
+    elif category == "beverages":
+        reason = f"This beverage formulation scores {best_suggestion.score:.1f}/10 by optimizing taste, nutrition, and production efficiency. It's designed specifically for the Indian beverage market with clean, natural ingredients."
+        strengths = [
+            "Optimal taste and mouthfeel",
+            "Clean label appeal",
+            "Efficient production process",
+            "Strong market positioning"
+        ]
+    elif category == "cosmetics":
+        reason = f"This cosmetic formulation achieves {best_suggestion.score:.1f}/10 by balancing efficacy with safety and market appeal. It uses clean, natural ingredients preferred by Indian consumers."
+        strengths = [
+            "Excellent skin compatibility",
+            "Clean and natural formulation",
+            "Strong market differentiation",
+            "Reliable manufacturing process"
+        ]
+    else:
+        reason = f"This formulation scores {best_suggestion.score:.1f}/10 by optimizing manufacturing ease, market trends, efficacy, and shelf life for the Indian market."
+        strengths = [
+            "Optimal manufacturing efficiency",
+            "Strong market alignment",
+            "Proven performance",
+            "Excellent stability"
+        ]
+    
+    return RecommendedSuggestion(
+        suggestion=best_suggestion,
+        recommendation_reason=reason,
+        confidence_score=best_suggestion.score or 0,
+        key_strengths=strengths
+    )
+
 def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     # If OpenAI client is not available, use mock suggestions
     if not client:
@@ -378,10 +435,19 @@ def generate_suggestions(request: SuggestionRequest) -> SuggestionResponse:
                         except Exception as score_error:
                             print(f"Scoring generation error: {score_error}")
                     
+                    # Generate recommendation
+                    recommendation = None
+                    if scored_suggestions and any(s.score for s in scored_suggestions):
+                        try:
+                            recommendation = generate_recommendation(scored_suggestions, request.category or "general", request.prompt)
+                        except Exception as rec_error:
+                            print(f"Recommendation generation error: {rec_error}")
+                    
                     return SuggestionResponse(
                         suggestions=scored_suggestions, 
+                        recommended_suggestion=recommendation,
                         success=True, 
-                        message="Enriched suggestions generated with scores"
+                        message="Enriched suggestions generated with scores and recommendation"
                     )
                 except json.JSONDecodeError:
                     return generate_mock_suggestions(request)
@@ -548,10 +614,19 @@ def generate_mock_suggestions(request: SuggestionRequest) -> SuggestionResponse:
     # Generate mock scored suggestions
     scored_suggestions = generate_mock_scored_suggestions(suggestions, category)
     
+    # Generate mock recommendation
+    recommendation = None
+    if scored_suggestions:
+        try:
+            recommendation = generate_recommendation(scored_suggestions, category, request.prompt)
+        except Exception as rec_error:
+            print(f"Mock recommendation generation error: {rec_error}")
+    
     return SuggestionResponse(
         suggestions=scored_suggestions,
+        recommended_suggestion=recommendation,
         success=True,
-        message=f"Mock suggestions generated for {category} (AI service unavailable)"
+        message=f"Mock suggestions generated for {category} with recommendation (AI service unavailable)"
     )
 
 # Function calling definitions

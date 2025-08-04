@@ -115,28 +115,28 @@ def generate_fallback_costing(formulation: GenerateResponse, category: str) -> d
             "batch_size": 1000,
             "total_customers": 1000,
             "costing_breakdown": {
-                "capex": 500000 * multiplier["capex"],
-                "opex": 150000 * multiplier["opex"],
-                "total_cost": (500000 + 150000) * multiplier["capex"],
-                "cost_per_unit": 650 * multiplier["opex"],
-                "retail_price": 1200 * multiplier["pricing"],
-                "wholesale_price": 900 * multiplier["pricing"],
-                "profit_margin": 45.5,
-                "revenue_potential": 1200000 * multiplier["pricing"],
-                "break_even_customers": 542
+                "capex": int(500000 * multiplier["capex"]),
+                "opex": int(150000 * multiplier["opex"]),
+                "total_cost": int((500000 * multiplier["capex"]) + (150000 * multiplier["opex"])),
+                "cost_per_unit": int(650 * multiplier["opex"]),
+                "retail_price": int(1200 * multiplier["pricing"]),
+                "wholesale_price": int(900 * multiplier["pricing"]),
+                "profit_margin": round(((1200 * multiplier["pricing"] - 650 * multiplier["opex"]) / (1200 * multiplier["pricing"])) * 100, 1),
+                "revenue_potential": int(1000 * 1200 * multiplier["pricing"]),
+                "break_even_customers": int(((500000 * multiplier["capex"]) + (150000 * multiplier["opex"])) / ((1200 * multiplier["pricing"]) - (650 * multiplier["opex"])))
             },
             "capex_details": {
-                "equipment": 200000 * multiplier["capex"],
-                "machinery": 150000 * multiplier["capex"],
-                "facility_setup": 100000 * multiplier["capex"],
-                "quality_control": 50000 * multiplier["capex"]
+                "equipment": int(200000 * multiplier["capex"]),
+                "machinery": int(150000 * multiplier["capex"]),
+                "facility_setup": int(100000 * multiplier["capex"]),
+                "quality_control": int(50000 * multiplier["capex"])
             },
             "opex_details": {
-                "raw_materials": 80000 * multiplier["opex"],
-                "labor": 30000 * multiplier["opex"],
-                "utilities": 15000 * multiplier["opex"],
-                "packaging": 15000 * multiplier["opex"],
-                "quality_assurance": 10000 * multiplier["opex"]
+                "raw_materials": int(80000 * multiplier["opex"]),
+                "labor": int(30000 * multiplier["opex"]),
+                "utilities": int(15000 * multiplier["opex"]),
+                "packaging": int(15000 * multiplier["opex"]),
+                "quality_assurance": int(10000 * multiplier["opex"])
             },
             "pricing_strategy": {
                 "wholesale_markup": "30%",
@@ -155,28 +155,28 @@ def generate_fallback_costing(formulation: GenerateResponse, category: str) -> d
             "batch_size": 10000,
             "total_customers": 10000,
             "costing_breakdown": {
-                "capex": 1200000 * multiplier["capex"],
-                "opex": 800000 * multiplier["opex"],
-                "total_cost": (1200000 + 800000) * multiplier["capex"],
-                "cost_per_unit": 200 * multiplier["opex"],
-                "retail_price": 450 * multiplier["pricing"],
-                "wholesale_price": 320 * multiplier["pricing"],
-                "profit_margin": 55.6,
-                "revenue_potential": 4500000 * multiplier["pricing"],
-                "break_even_customers": 4444
+                "capex": int(1200000 * multiplier["capex"]),
+                "opex": int(800000 * multiplier["opex"]),
+                "total_cost": int((1200000 * multiplier["capex"]) + (800000 * multiplier["opex"])),
+                "cost_per_unit": int(200 * multiplier["opex"]),
+                "retail_price": int(450 * multiplier["pricing"]),
+                "wholesale_price": int(320 * multiplier["pricing"]),
+                "profit_margin": round(((450 * multiplier["pricing"] - 200 * multiplier["opex"]) / (450 * multiplier["pricing"])) * 100, 1),
+                "revenue_potential": int(10000 * 450 * multiplier["pricing"]),
+                "break_even_customers": int(((1200000 * multiplier["capex"]) + (800000 * multiplier["opex"])) / ((450 * multiplier["pricing"]) - (200 * multiplier["opex"])))
             },
             "capex_details": {
-                "equipment": 400000 * multiplier["capex"],
-                "machinery": 350000 * multiplier["capex"],
-                "facility_setup": 250000 * multiplier["capex"],
-                "quality_control": 200000 * multiplier["capex"]
+                "equipment": int(400000 * multiplier["capex"]),
+                "machinery": int(350000 * multiplier["capex"]),
+                "facility_setup": int(250000 * multiplier["capex"]),
+                "quality_control": int(200000 * multiplier["capex"])
             },
             "opex_details": {
-                "raw_materials": 400000 * multiplier["opex"],
-                "labor": 150000 * multiplier["opex"],
-                "utilities": 80000 * multiplier["opex"],
-                "packaging": 100000 * multiplier["opex"],
-                "quality_assurance": 70000 * multiplier["opex"]
+                "raw_materials": int(400000 * multiplier["opex"]),
+                "labor": int(150000 * multiplier["opex"]),
+                "utilities": int(80000 * multiplier["opex"]),
+                "packaging": int(100000 * multiplier["opex"]),
+                "quality_assurance": int(70000 * multiplier["opex"])
             },
             "pricing_strategy": {
                 "wholesale_markup": "60%",
@@ -195,28 +195,28 @@ def generate_fallback_costing(formulation: GenerateResponse, category: str) -> d
             "batch_size": 50000,
             "total_customers": 50000,
             "costing_breakdown": {
-                "capex": 2500000 * multiplier["capex"],
-                "opex": 3000000 * multiplier["opex"],
-                "total_cost": (2500000 + 3000000) * multiplier["capex"],
-                "cost_per_unit": 110 * multiplier["opex"],
-                "retail_price": 280 * multiplier["pricing"],
-                "wholesale_price": 200 * multiplier["pricing"],
-                "profit_margin": 60.7,
-                "revenue_potential": 14000000 * multiplier["pricing"],
-                "break_even_customers": 19643
+                "capex": int(2500000 * multiplier["capex"]),
+                "opex": int(3000000 * multiplier["opex"]),
+                "total_cost": int((2500000 * multiplier["capex"]) + (3000000 * multiplier["opex"])),
+                "cost_per_unit": int(110 * multiplier["opex"]),
+                "retail_price": int(280 * multiplier["pricing"]),
+                "wholesale_price": int(200 * multiplier["pricing"]),
+                "profit_margin": round(((280 * multiplier["pricing"] - 110 * multiplier["opex"]) / (280 * multiplier["pricing"])) * 100, 1),
+                "revenue_potential": int(50000 * 280 * multiplier["pricing"]),
+                "break_even_customers": int(((2500000 * multiplier["capex"]) + (3000000 * multiplier["opex"])) / ((280 * multiplier["pricing"]) - (110 * multiplier["opex"])))
             },
             "capex_details": {
-                "equipment": 800000 * multiplier["capex"],
-                "machinery": 700000 * multiplier["capex"],
-                "facility_setup": 500000 * multiplier["capex"],
-                "quality_control": 500000 * multiplier["capex"]
+                "equipment": int(800000 * multiplier["capex"]),
+                "machinery": int(700000 * multiplier["capex"]),
+                "facility_setup": int(500000 * multiplier["capex"]),
+                "quality_control": int(500000 * multiplier["capex"])
             },
             "opex_details": {
-                "raw_materials": 1500000 * multiplier["opex"],
-                "labor": 500000 * multiplier["opex"],
-                "utilities": 300000 * multiplier["opex"],
-                "packaging": 400000 * multiplier["opex"],
-                "quality_assurance": 300000 * multiplier["opex"]
+                "raw_materials": int(1500000 * multiplier["opex"]),
+                "labor": int(500000 * multiplier["opex"]),
+                "utilities": int(300000 * multiplier["opex"]),
+                "packaging": int(400000 * multiplier["opex"]),
+                "quality_assurance": int(300000 * multiplier["opex"])
             },
             "pricing_strategy": {
                 "wholesale_markup": "82%",

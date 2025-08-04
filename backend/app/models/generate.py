@@ -69,6 +69,7 @@ class GenerateRequest(BaseModel):
     prompt: str
     category: Optional[str] = None
     target_cost: Optional[str] = None
+    detailed_steps: Optional[bool] = False  # Flag for detailed 6-7 step formulation
 
 class GenerateResponse(BaseModel):
     product_name: str

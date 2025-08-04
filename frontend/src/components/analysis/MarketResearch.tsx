@@ -102,21 +102,13 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
     // Category multipliers for national extrapolation
     const categoryMultipliers = {
       'cosmetics': 1.2,
-      'pet food': 0.8,
-      'wellness': 1.1,
-      'beverages': 1.3,
-      'textiles': 0.9,
-      'desi masala': 1.4
+      'pet food': 0.8
     };
 
     // Market penetration rates by category
     const penetrationRates = {
       'cosmetics': { min: 15, max: 25 },
-      'pet food': { min: 8, max: 12 },
-      'wellness': { min: 12, max: 18 },
-      'beverages': { min: 20, max: 30 },
-      'textiles': { min: 10, max: 15 },
-      'desi masala': { min: 25, max: 35 }
+      'pet food': { min: 8, max: 12 }
     };
 
     const cityPopulation = cityPopulations[selectedCity as keyof typeof cityPopulations] || 20.4;
@@ -175,7 +167,7 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
     // Extract product characteristics from query
     const isPremium = query.includes('premium') || query.includes('luxury') || query.includes('high-end');
     const isNatural = query.includes('natural') || query.includes('organic') || query.includes('herbal');
-    const isFunctional = query.includes('functional') || query.includes('health') || query.includes('wellness');
+    const isFunctional = query.includes('functional') || query.includes('health');
     const isTraditional = query.includes('traditional') || query.includes('desi') || query.includes('authentic');
     const isSustainable = query.includes('sustainable') || query.includes('eco') || query.includes('green');
     const isConvenient = query.includes('convenient') || query.includes('easy') || query.includes('quick');
@@ -192,30 +184,10 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
         highValue: 'Premium pet parents, brand loyal, high disposable income, pet humanization trend',
         midValue: 'Value-conscious pet owners, quality seekers, moderate income, responsible pet care',
         entryLevel: 'Price-sensitive pet owners, trial seekers, lower income, basic pet needs'
-      },
-      'wellness': {
-        highValue: 'Health-focused professionals, quality conscious, high disposable income, preventive care',
-        midValue: 'Health-conscious individuals, value seekers, moderate income, wellness aware',
-        entryLevel: 'Price-sensitive health seekers, trial seekers, lower income, basic health needs'
-      },
-      'beverages': {
-        highValue: 'Health-conscious urban professionals, convenience seekers, moderate-high income, lifestyle focused',
-        midValue: 'Health-conscious individuals, convenience seekers, moderate income, functional benefits',
-        entryLevel: 'Price-sensitive consumers, convenience seekers, lower income, basic hydration'
-      },
-      'textiles': {
-        highValue: 'Fashion-forward professionals, sustainability conscious, high disposable income, trend setters',
-        midValue: 'Fashion-conscious individuals, value seekers, moderate income, style aware',
-        entryLevel: 'Price-sensitive consumers, basic needs, lower income, functional clothing'
-      },
-      'desi masala': {
-        highValue: 'Traditional food enthusiasts, quality conscious, moderate-high income, authentic seekers',
-        midValue: 'Traditional food lovers, value seekers, moderate income, cultural connection',
-        entryLevel: 'Price-sensitive consumers, basic needs, lower income, essential cooking'
       }
     };
 
-    let profiles = baseProfiles[category as keyof typeof baseProfiles] || baseProfiles['wellness'];
+    let profiles = baseProfiles[category as keyof typeof baseProfiles] || baseProfiles['cosmetics'];
 
     // Enhance profiles based on product characteristics
     if (isPremium) {

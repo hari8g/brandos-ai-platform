@@ -4,8 +4,21 @@ import { categoryPrompts } from "../../utils/rotating-prompts";
 import { Badge } from "@/components/ui/badge";
 import apiClient from "@/services/apiClient";
 import type { GenerateResponse } from "@/types/formulation";
-import SuggestionCard, { type Suggestion } from "./SuggestionCard";
+import SuggestionCard from "./SuggestionCard";
+import FormulationDetails from "./FormulationDetails";
 import { useSuggestions } from "@/hooks/useSuggestions";
+import { getCategoryColors } from "@/lib/colorUtils";
+
+type Suggestion = {
+  prompt: string;
+  why: string;
+  how: string;
+  score?: number;
+  manufacturing_ease?: string;
+  indian_market_trends?: string;
+  efficacy_performance?: string;
+  shelf_life?: string;
+};
 
 interface QueryQualityResponse {
   score: number;
@@ -118,7 +131,7 @@ export default function PromptInput({
   onResult: (data: GenerateResponse) => void;
   selectedCategory: string | null;
 }) {
-  const [stage, setStage] = useState<'input' | 'suggestions' | 'ready'>('input');
+  const [stage, setStage] = useState<'input' | 'suggestions' | 'ready' | 'detailed-formulation'>('input');
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -132,6 +145,7 @@ export default function PromptInput({
   const { suggestions, generateSuggestions: fetchSuggestions } = useSuggestions();
   const [feedback, setFeedback] = useState("");
   const [moreInfo, setMoreInfo] = useState("");
+  const [detailedFormulation, setDetailedFormulation] = useState<GenerateResponse | null>(null);
   
   const [exampleIdx, setExampleIdx] = useState(0);
   const [fade, setFade] = useState(true);
@@ -230,102 +244,7 @@ export default function PromptInput({
     return () => clearInterval(interval);
   }, [moreInfoSuggestions.length, moreInfoIdx, selectedCategory]);
 
-  // Helper function to get category colors
-  const getCategoryColors = (category: string | null) => {
-    switch (category) {
-      case 'cosmetics':
-        return {
-          primary: 'pink',
-          secondary: 'purple',
-          tertiary: 'indigo',
-          gradient: 'from-pink-400 via-purple-400 to-indigo-400',
-          hoverGradient: 'from-pink-500 via-purple-500 to-indigo-500',
-          text: 'text-pink-600',
-          border: 'border-pink-200',
-          focus: 'focus:border-pink-500 focus:ring-pink-200',
-          bg: 'bg-pink-50',
-          icon: 'text-pink-700'
-        };
-      case 'pet food':
-        return {
-          primary: 'orange',
-          secondary: 'amber',
-          tertiary: 'yellow',
-          gradient: 'from-orange-400 via-amber-400 to-yellow-400',
-          hoverGradient: 'from-orange-500 via-amber-500 to-yellow-500',
-          text: 'text-orange-600',
-          border: 'border-orange-200',
-          focus: 'focus:border-orange-500 focus:ring-orange-200',
-          bg: 'bg-orange-50',
-          icon: 'text-orange-700'
-        };
-      case 'wellness':
-        return {
-          primary: 'green',
-          secondary: 'emerald',
-          tertiary: 'teal',
-          gradient: 'from-green-400 via-emerald-400 to-teal-400',
-          hoverGradient: 'from-green-500 via-emerald-500 to-teal-500',
-          text: 'text-green-600',
-          border: 'border-green-200',
-          focus: 'focus:border-green-500 focus:ring-green-200',
-          bg: 'bg-green-50',
-          icon: 'text-green-700'
-        };
-      case 'beverages':
-        return {
-          primary: 'blue',
-          secondary: 'cyan',
-          tertiary: 'teal',
-          gradient: 'from-blue-400 via-cyan-400 to-teal-400',
-          hoverGradient: 'from-blue-500 via-cyan-500 to-teal-500',
-          text: 'text-blue-600',
-          border: 'border-blue-200',
-          focus: 'focus:border-blue-500 focus:ring-blue-200',
-          bg: 'bg-blue-50',
-          icon: 'text-blue-700'
-        };
-      case 'textiles':
-        return {
-          primary: 'red',
-          secondary: 'pink',
-          tertiary: 'purple',
-          gradient: 'from-red-400 via-pink-400 to-purple-400',
-          hoverGradient: 'from-red-500 via-pink-500 to-purple-500',
-          text: 'text-red-600',
-          border: 'border-red-200',
-          focus: 'focus:border-red-500 focus:ring-red-200',
-          bg: 'bg-red-50',
-          icon: 'text-red-700'
-        };
-      case 'desi masala':
-        return {
-          primary: 'yellow',
-          secondary: 'orange',
-          tertiary: 'red',
-          gradient: 'from-yellow-400 via-orange-400 to-red-400',
-          hoverGradient: 'from-yellow-500 via-orange-500 to-red-500',
-          text: 'text-yellow-600',
-          border: 'border-yellow-200',
-          focus: 'focus:border-yellow-500 focus:ring-yellow-200',
-          bg: 'bg-yellow-50',
-          icon: 'text-yellow-700'
-        };
-      default:
-        return {
-          primary: 'purple',
-          secondary: 'indigo',
-          tertiary: 'blue',
-          gradient: 'from-purple-400 via-indigo-400 to-blue-400',
-          hoverGradient: 'from-purple-500 via-indigo-500 to-blue-500',
-          text: 'text-purple-600',
-          border: 'border-purple-200',
-          focus: 'focus:border-purple-500 focus:ring-purple-200',
-          bg: 'bg-purple-50',
-          icon: 'text-purple-700'
-        };
-    }
-  };
+
 
   const colors = getCategoryColors(selectedCategory);
 
@@ -453,6 +372,66 @@ export default function PromptInput({
     }
   };
 
+  // New function to directly generate formulation from suggestion
+  const handleGenerateFormulation = async (suggestionPrompt: string, category: string | null) => {
+    setLoading(true);
+    setLoadingType('generate');
+    setLoadingProgress(0);
+    setLoadingStep('🧪 Processing your suggestion...');
+    
+    const formulationSteps = [
+      { step: '🧪 Processing your suggestion...', progress: 0 },
+      { step: '🔬 Analyzing requirements...', progress: 15 },
+      { step: '⚗️ Formulating ingredients...', progress: 30 },
+      { step: '🧬 Optimizing composition...', progress: 50 },
+      { step: '⚡ Adding finishing touches...', progress: 70 },
+      { step: '🎯 Finalizing formulation...', progress: 90 },
+      { step: '✨ Your formulation is ready!', progress: 100 }
+    ];
+    
+    let currentStepIndex = 0;
+    
+    const progressInterval = setInterval(() => {
+      if (currentStepIndex < formulationSteps.length - 1) {
+        currentStepIndex++;
+        setLoadingStep(formulationSteps[currentStepIndex].step);
+        setLoadingProgress(formulationSteps[currentStepIndex].progress);
+      }
+    }, 1500); // Update every 1.5 seconds for detailed steps
+    
+    try {
+      const resp = await apiClient.post("/formulation/generate", { 
+        prompt: suggestionPrompt, 
+        category: category || selectedCategory,
+        detailed_steps: true // Flag for detailed step-by-step formulation
+      });
+      
+      // Complete the progress
+      setLoadingProgress(100);
+      setLoadingStep('✨ Your detailed formulation is ready!');
+      
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+        setDetailedFormulation(resp.data);
+        setStage('detailed-formulation');
+        // Also call onResult for parent component handling if needed
+        onResult(resp.data);
+      }, 1000);
+    } catch (error) {
+      console.error('Formulation generation error:', error);
+      setLoadingStep('😅 Oops! Something went wrong...');
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      clearInterval(progressInterval);
+    }
+  };
+
   // Render the main content based on stage
   const renderMainContent = () => {
     // Step 1: Draft
@@ -460,7 +439,7 @@ export default function PromptInput({
       return (
         <div className="space-y-6">
           <div className="space-y-4">
-            <label htmlFor="prompt" className={`block text-lg font-medium ${colors.text} mb-2`}>
+          <label className={`block text-lg font-semibold font-sans ${colors.text}`}>
               Describe your product idea
             </label>
             {/* Dynamic Example Prompt */}
@@ -497,7 +476,7 @@ export default function PromptInput({
 
           {/* Location Input */}
           <div className="space-y-2">
-            <label className={`block text-sm font-medium ${colors.text}`}>
+          <label className={`block text-lg font-semibold font-sans ${colors.text}`}>
               Location (optional)
             </label>
             <input
@@ -582,14 +561,24 @@ export default function PromptInput({
               <div>
                 <h3 className={`text-lg font-semibold ${colors.text} mb-4 flex items-center gap-2`}>
                   <span className="text-2xl">⭐</span>
-                  Recommended Suggestions
+                  All Suggestions
                 </h3>
+                
                 <div className="space-y-4">
                   {suggestions.map((s, i) => (
-                    <SuggestionCard key={i} suggestion={s} onUse={() => handleUse(s)} index={i} selectedCategory={selectedCategory} />
+                    <SuggestionCard 
+                      key={i} 
+                      suggestion={s} 
+                      onUse={() => handleUse(s)} 
+                      onGenerateFormulation={handleGenerateFormulation}
+                      index={i} 
+                      selectedCategory={selectedCategory} 
+                    />
                   ))}
                 </div>
               </div>
+
+
             </div>
           )}
         </div>
@@ -687,6 +676,46 @@ export default function PromptInput({
       );
     }
 
+    // Step 4: Detailed Formulation View
+    if (stage === 'detailed-formulation' && detailedFormulation) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className={`text-2xl font-bold ${colors.text}`}>Detailed Formulation</h3>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStage('suggestions')}
+                className={`flex items-center gap-2 px-4 py-2 border ${colors.border} rounded-lg hover:bg-gray-50 transition-colors`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Suggestions
+              </button>
+              <button
+                onClick={() => {
+                  setStage('input');
+                  setDetailedFormulation(null);
+                  setPrompt('');
+                }}
+                className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r ${colors.buttonGradient} text-white rounded-lg hover:opacity-90 transition-opacity`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                New Formulation
+              </button>
+            </div>
+          </div>
+          
+          <FormulationDetails 
+            formulation={detailedFormulation} 
+            selectedCategory={selectedCategory}
+          />
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -695,44 +724,46 @@ export default function PromptInput({
       {/* Modern Loading Overlay - Always rendered when loading */}
       {loading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 md:p-8 relative">
             {/* Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full translate-y-12 -translate-x-12"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 opacity-50 rounded-3xl"></div>
+            <div className="absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-12 translate-x-12 md:-translate-y-16 md:translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-16 h-16 md:w-24 md:h-24 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full translate-y-8 -translate-x-8 md:translate-y-12 md:-translate-x-12"></div>
             
             <div className="relative z-10">
               {/* Header */}
-              <div className="text-center mb-8">
-                <div className={`w-16 h-16 bg-gradient-to-r ${colors.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+              <div className="text-center mb-6 md:mb-8">
+                <div className={`w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r ${colors.gradient} rounded-2xl flex items-center justify-center mx-auto mb-3 md:mb-4 shadow-lg`}>
                   {loadingType === 'assess' ? (
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 md:w-8 md:h-8 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   ) : (
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-6 h-6 md:w-8 md:h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {loadingType === 'assess' ? 'Scrtch.AI is scratching it\'s head' : '🧪 Scrtch.AI is brewing magic'}
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+                  {loadingType === 'assess' ? 'Recommendation Engine' : '🧪 Formulation Laboratory'}
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 text-xs md:text-sm leading-relaxed px-2">
                   {loadingType === 'assess' 
-                    ? 'Don\'t worry, i want to be absolutley sure of what you meant..'
-                    : 'Creating your perfect formulation with a dash of chemistry humor!'
+                    ? 'Analyzing your requirements to generate personalized product recommendations with AI scoring'
+                    : 'Crafting your perfect formulation with scientific precision and market insights'
                   }
                 </p>
               </div>
 
               {/* Progress Bar */}
-              <div className="mb-6">
+              <div className="mb-4 md:mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <span className={`text-sm font-medium ${colors.text}`}>Progress</span>
-                  <span className={`text-sm font-bold ${colors.text}`}>{Math.round(loadingProgress)}%</span>
+                  <span className={`text-xs md:text-sm font-medium ${colors.text}`}>
+                    {loadingType === 'assess' ? 'Recommendation Progress' : 'Formulation Progress'}
+                  </span>
+                  <span className={`text-xs md:text-sm font-bold ${colors.text}`}>{Math.round(loadingProgress)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-200 rounded-full h-2 md:h-3 overflow-hidden">
                   <div 
                     className={`h-full bg-gradient-to-r ${colors.gradient} rounded-full transition-all duration-500 ease-out relative`}
                     style={{ width: `${loadingProgress}%` }}
@@ -743,54 +774,189 @@ export default function PromptInput({
                 </div>
               </div>
 
-              {/* Current Step */}
-              <div className="text-center mb-6">
-                <div className={`inline-flex items-center px-4 py-2 ${colors.bg} rounded-full`}>
-                  <div className={`w-2 h-2 ${colors.icon} rounded-full mr-2 animate-pulse`}></div>
-                  <span className={`text-sm font-medium ${colors.text}`}>{loadingStep}</span>
+              {/* Current Step with Detailed Information */}
+              <div className="text-center mb-4 md:mb-6">
+                <div className={`inline-flex items-center px-3 py-1 md:px-4 md:py-2 ${colors.bg} rounded-full mb-3`}>
+                  <div className={`w-1.5 h-1.5 md:w-2 md:h-2 ${colors.icon} rounded-full mr-2 animate-pulse`}></div>
+                  <span className={`text-xs md:text-sm font-medium ${colors.text}`}>{loadingStep}</span>
                 </div>
+                
+                {/* Detailed Process Information */}
+                {loadingType === 'assess' && (
+                  <div className="bg-white/90 border border-gray-200 rounded-xl p-3 md:p-4 text-left">
+                    <h4 className="font-semibold text-gray-800 mb-2 md:mb-3 flex items-center text-sm md:text-base">
+                      <span className="text-base md:text-lg mr-2">🎯</span>
+                      What We're Generating for You:
+                    </h4>
+                    <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-700">
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong>3 Strategic Formulations:</strong> Tailored to your {selectedCategory || 'product'} requirements</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong>AI Performance Scores:</strong> Manufacturing ease, market trends, efficacy & shelf life</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong>Clean & Natural Focus:</strong> 100% clean ingredients, 80%+ natural formulations</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong>Business Insights:</strong> Why each formulation works and how to implement</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-green-500 mr-2 mt-0.5 flex-shrink-0">✓</span>
+                        <span><strong>Indian Market Optimization:</strong> Localized for Indian consumer preferences</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {loadingType === 'generate' && (
+                  <div className="bg-white/90 border border-gray-200 rounded-xl p-3 md:p-4 text-left">
+                    <h4 className="font-semibold text-gray-800 mb-2 md:mb-3 flex items-center text-sm md:text-base">
+                      <span className="text-base md:text-lg mr-2"></span>
+                      Comprehensive Analysis Being Created:
+                    </h4>
+                    <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-700">
+                      <div className="flex items-start">
+                        <span className="text-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
+                        <span><strong>Formulation Details:</strong> Precise ingredient ratios and specifications</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
+                        <span><strong>Market Research:</strong> Competitive analysis and positioning strategy</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
+                        <span><strong>Manufacturing Guide:</strong> Production processes and quality control</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
+                        <span><strong>Unit Economics:</strong> Cost analysis and profitability projections</span>
+                      </div>
+                      <div className="flex items-start">
+                        <span className="text-blue-500 mr-2 mt-0.5 flex-shrink-0"></span>
+                        <span><strong>Packaging & Branding:</strong> Design recommendations and brand strategy</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Estimated Time */}
-              <div className="text-center mb-4">
-                <div className={`inline-flex items-center ${colors.text} text-sm`}>
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Estimated Time with Context */}
+              <div className="text-center mb-4 md:mb-6">
+                <div className={`inline-flex items-center ${colors.text} text-xs md:text-sm bg-white/80 rounded-lg px-2 py-1 md:px-3 md:py-2`}>
+                  <svg className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>Estimated time: {loadingProgress < 30 ? '10-15 seconds' : loadingProgress < 70 ? '5-8 seconds' : 'Just few more ticks...'}</span>
+                  <span className="text-center">
+                    {loadingType === 'assess' 
+                      ? `Analyzing ${selectedCategory || 'product'} requirements: ${loadingProgress < 30 ? '10-15 seconds' : loadingProgress < 70 ? '5-8 seconds' : 'Almost ready!'}`
+                      : `Creating comprehensive analysis: ${loadingProgress < 30 ? '15-20 seconds' : loadingProgress < 70 ? '8-12 seconds' : 'Finalizing results!'}`
+                    }
+                  </span>
                 </div>
               </div>
 
-              {/* Chemistry Puns for Generate */}
-              {loadingType === 'generate' && (
-                <div className="text-center mb-4">
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3">
-                    <p className="text-purple-700 text-sm font-medium">
-                      💡 Chemistry Pun: {(() => {
-                        const puns = [
-                          'Why did the chemist go broke? Because he lost his solution!',
-                          'What do you call a chemist who\'s always late? A slow reaction!',
-                          'Why are chemists great at solving problems? They have all the solutions!',
-                          'What did the DNA say to the other DNA? Do these genes make me look fat?',
-                          'Why did the chemist like working with ammonia? Because it was pretty basic!',
-                          'What\'s a chemist\'s favorite type of tree? A chemist-tree!',
-                          'Why did the chemist go to the beach? To get a tan-gent!',
-                          'What do you call a chemist who\'s also a comedian? A reaction-ary!'
-                        ];
-                        return puns[Math.floor((loadingProgress / 100) * puns.length)] || puns[0];
-                      })()}
-                    </p>
-                  </div>
+              {/* Process Indicators */}
+              <div className="mb-4 md:mb-6">
+                <div className="flex justify-center space-x-2 md:space-x-4">
+                  {loadingType === 'assess' ? (
+                    <>
+                      <div className={`flex flex-col items-center ${loadingProgress > 20 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 20 ? 'border-green-600 bg-green-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Analyze</span>
+                      </div>
+                      <div className={`flex flex-col items-center ${loadingProgress > 50 ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 50 ? 'border-blue-600 bg-blue-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Generate</span>
+                      </div>
+                      <div className={`flex flex-col items-center ${loadingProgress > 80 ? 'text-purple-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 80 ? 'border-purple-600 bg-purple-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Score</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={`flex flex-col items-center ${loadingProgress > 25 ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 25 ? 'border-green-600 bg-green-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Formula</span>
+                      </div>
+                      <div className={`flex flex-col items-center ${loadingProgress > 50 ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 50 ? 'border-blue-600 bg-blue-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Market</span>
+                      </div>
+                      <div className={`flex flex-col items-center ${loadingProgress > 75 ? 'text-purple-600' : 'text-gray-400'}`}>
+                        <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center mb-1 ${loadingProgress > 75 ? 'border-purple-600 bg-purple-100' : 'border-gray-300'}`}>
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-medium">Economics</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Fun Facts or Tips */}
+              <div className="text-center mb-4">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-2 md:p-3">
+                  <p className="text-indigo-700 text-xs md:text-sm font-medium">
+                    {loadingType === 'assess' ? (
+                      <>
+                         <strong>Did you know?</strong> Our AI analyzes over 50 formulation parameters to ensure your {selectedCategory || 'product'} meets both efficacy and market demands!
+                      </>
+                    ) : (
+                      <>
+                        🧪 <strong>Pro Tip:</strong> {(() => {
+                          const tips = [
+                            'Great formulations balance efficacy, safety, and cost-effectiveness!',
+                            'Indian consumers prefer natural ingredients - we optimize for this!',
+                            'Shelf life considerations are crucial for market success!',
+                            'Manufacturing ease directly impacts your product\'s profitability!',
+                            'Market positioning determines 70% of your product\'s success!',
+                            'Clean labels are becoming the new standard in formulation!',
+                            'Cost optimization starts with smart ingredient selection!',
+                            'Packaging design can make or break consumer perception!'
+                          ];
+                          return tips[Math.floor((loadingProgress / 100) * tips.length)] || tips[0];
+                        })()}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
 
               {/* Loading Animation */}
-              <div className="mt-6 flex justify-center">
+              <div className="flex justify-center">
                 <div className="flex space-x-1">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className={`w-2 h-2 ${colors.icon} rounded-full animate-bounce`}
+                      className={`w-1.5 h-1.5 md:w-2 md:h-2 ${colors.icon} rounded-full animate-bounce`}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     ></div>
                   ))}

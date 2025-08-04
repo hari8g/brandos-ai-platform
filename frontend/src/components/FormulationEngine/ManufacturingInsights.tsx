@@ -345,8 +345,8 @@ const ManufacturingInsights: React.FC<ManufacturingInsightsProps> = ({
             colorClass="bg-orange-100 text-orange-700"
             details={{
               "Gross Margin": scenario.margin_analysis.gross_margin || scenario.costing_breakdown.profit_margin,
-              "Operating Margin": scenario.margin_analysis.operating_margin || scenario.costing_breakdown.profit_margin * 0.8,
-              "Net Margin": scenario.margin_analysis.net_margin || scenario.costing_breakdown.profit_margin * 0.7,
+              "Operating Margin": scenario.margin_analysis.operating_margin || (scenario.costing_breakdown.profit_margin * 0.8),
+              "Net Margin": scenario.margin_analysis.net_margin || (scenario.costing_breakdown.profit_margin * 0.7),
               "Break-even Customers": scenario.costing_breakdown.break_even_customers
             }}
           />

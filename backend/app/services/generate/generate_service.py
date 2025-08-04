@@ -1456,3 +1456,110 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
     
     # Use fast fallback instead of slow scientific reasoning service
     scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)
+    
+    # Generate basic market research
+    market_research = _generate_market_research(category, req.prompt)
+    
+    # Create basic ingredients based on category
+    if category == "pet food":
+        ingredients = [
+            IngredientDetail(
+                name="Chicken Meal",
+                percent=35.0,
+                cost_per_100ml=12.50,
+                why_chosen="High-quality protein source for healthy muscle development",
+                suppliers=[
+                    SupplierInfo("PetNutrition India", "contact@petnutrition.in", "Mumbai", 125.0, 4.38),
+                    SupplierInfo("Animal Feed Co.", "info@animalfeed.co.in", "Delhi", 120.0, 4.20)
+                ]
+            ),
+            IngredientDetail(
+                name="Brown Rice",
+                percent=25.0,
+                cost_per_100ml=8.00,
+                why_chosen="Digestible carbohydrate source providing energy",
+                suppliers=[
+                    SupplierInfo("Grain Masters", "sales@grainmasters.in", "Punjab", 80.0, 2.00),
+                    SupplierInfo("Rice Processors Ltd", "orders@riceproc.in", "Karnataka", 85.0, 2.13)
+                ]
+            ),
+            IngredientDetail(
+                name="Fish Oil",
+                percent=5.0,
+                cost_per_100ml=45.00,
+                why_chosen="Omega-3 fatty acids for healthy skin and coat",
+                suppliers=[
+                    SupplierInfo("Marine Nutrients", "info@marinenutrients.in", "Kerala", 450.0, 2.25),
+                    SupplierInfo("Ocean Health Co.", "sales@oceanhealth.in", "Tamil Nadu", 440.0, 2.20)
+                ]
+            )
+        ]
+        manufacturing_steps = [
+            "Prepare and clean all equipment to pet food safety standards",
+            "Mix dry ingredients (chicken meal, brown rice) in large industrial mixer",
+            "Add fish oil and mix thoroughly for 10 minutes at medium speed",
+            "Form mixture into kibble shapes using extruder at 140°C",
+            "Cool kibbles to room temperature and package in sealed bags"
+        ]
+        product_name = f"Premium {req.prompt[:30]}... Pet Food"
+    else:
+        # Default to cosmetics
+        ingredients = [
+            IngredientDetail(
+                name="Aqua (Water)",
+                percent=65.0,
+                cost_per_100ml=0.50,
+                why_chosen="Base ingredient for hydration and formula consistency",
+                suppliers=[
+                    SupplierInfo("Pure Water Systems", "contact@purewater.in", "Bangalore", 5.0, 0.33),
+                    SupplierInfo("Cosmetic Waters Ltd", "info@cosmeticwaters.in", "Mumbai", 4.8, 0.31)
+                ]
+            ),
+            IngredientDetail(
+                name="Glycerin",
+                percent=15.0,
+                cost_per_100ml=25.00,
+                why_chosen="Humectant that attracts and retains moisture in skin",
+                suppliers=[
+                    SupplierInfo("Glycerin Industries", "sales@glycerin.in", "Gujarat", 250.0, 3.75),
+                    SupplierInfo("Cosmetic Chemicals Co.", "orders@cosmeticchem.in", "Delhi", 245.0, 3.68)
+                ]
+            ),
+            IngredientDetail(
+                name="Aloe Vera Extract",
+                percent=10.0,
+                cost_per_100ml=35.00,
+                why_chosen="Soothing and healing properties for sensitive skin",
+                suppliers=[
+                    SupplierInfo("Aloe Processors", "info@aloeproc.in", "Rajasthan", 350.0, 3.50),
+                    SupplierInfo("Natural Extracts Ltd", "sales@naturalext.in", "Kerala", 340.0, 3.40)
+                ]
+            )
+        ]
+        manufacturing_steps = [
+            "Sanitize all equipment and prepare clean room environment",
+            "Heat water phase (aqua) to 70°C in main mixing vessel",
+            "Add glycerin and aloe vera extract, mix thoroughly for 5 minutes",
+            "Cool mixture to 40°C while stirring continuously",
+            "Fill into sterilized containers and seal immediately"
+        ]
+        product_name = f"Natural {req.prompt[:30]}... Formula"
+    
+    # Create the response
+    return GenerateResponse(
+        product_name=product_name,
+        reasoning=f"This {category} formulation is designed to meet your specific requirements with high-quality, safe ingredients.",
+        ingredients=ingredients,
+        manufacturing_steps=manufacturing_steps,
+        estimated_cost=22.5,
+        safety_notes=[
+            "All ingredients are safe for intended use",
+            "Follow proper manufacturing hygiene protocols",
+            "Store in cool, dry conditions"
+        ],
+        packaging_marketing_inspiration=f"Consider eco-friendly packaging that highlights the natural, quality ingredients in this {category} product.",
+        market_trends=[f"Growing demand for natural {category} products", "Focus on sustainability and clean ingredients"],
+        competitive_landscape={"market_position": "Premium natural product segment"},
+        scientific_reasoning=scientific_reasoning,
+        market_research=market_research
+    )

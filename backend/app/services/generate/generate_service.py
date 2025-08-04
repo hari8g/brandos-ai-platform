@@ -1469,8 +1469,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=12.50,
                 why_chosen="High-quality protein source for healthy muscle development",
                 suppliers=[
-                    SupplierInfo("PetNutrition India", "contact@petnutrition.in", "Mumbai", 125.0, 4.38),
-                    SupplierInfo("Animal Feed Co.", "info@animalfeed.co.in", "Delhi", 120.0, 4.20)
+                    SupplierInfo(name="PetNutrition India", contact="contact@petnutrition.in", location="Mumbai", price_per_unit=125.0, price_per_100ml=4.38),
+                    SupplierInfo(name="Animal Feed Co.", contact="info@animalfeed.co.in", location="Delhi", price_per_unit=120.0, price_per_100ml=4.20)
                 ]
             ),
             IngredientDetail(
@@ -1479,8 +1479,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=8.00,
                 why_chosen="Digestible carbohydrate source providing energy",
                 suppliers=[
-                    SupplierInfo("Grain Masters", "sales@grainmasters.in", "Punjab", 80.0, 2.00),
-                    SupplierInfo("Rice Processors Ltd", "orders@riceproc.in", "Karnataka", 85.0, 2.13)
+                    SupplierInfo(name="Grain Masters", contact="sales@grainmasters.in", location="Punjab", price_per_unit=80.0, price_per_100ml=2.00),
+                    SupplierInfo(name="Rice Processors Ltd", contact="orders@riceproc.in", location="Karnataka", price_per_unit=85.0, price_per_100ml=2.13)
                 ]
             ),
             IngredientDetail(
@@ -1489,8 +1489,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=45.00,
                 why_chosen="Omega-3 fatty acids for healthy skin and coat",
                 suppliers=[
-                    SupplierInfo("Marine Nutrients", "info@marinenutrients.in", "Kerala", 450.0, 2.25),
-                    SupplierInfo("Ocean Health Co.", "sales@oceanhealth.in", "Tamil Nadu", 440.0, 2.20)
+                    SupplierInfo(name="Marine Nutrients", contact="info@marinenutrients.in", location="Kerala", price_per_unit=450.0, price_per_100ml=2.25),
+                    SupplierInfo(name="Ocean Health Co.", contact="sales@oceanhealth.in", location="Tamil Nadu", price_per_unit=440.0, price_per_100ml=2.20)
                 ]
             )
         ]
@@ -1511,8 +1511,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=0.50,
                 why_chosen="Base ingredient for hydration and formula consistency",
                 suppliers=[
-                    SupplierInfo("Pure Water Systems", "contact@purewater.in", "Bangalore", 5.0, 0.33),
-                    SupplierInfo("Cosmetic Waters Ltd", "info@cosmeticwaters.in", "Mumbai", 4.8, 0.31)
+                    SupplierInfo(name="Pure Water Systems", contact="contact@purewater.in", location="Bangalore", price_per_unit=5.0, price_per_100ml=0.33),
+                    SupplierInfo(name="Cosmetic Waters Ltd", contact="info@cosmeticwaters.in", location="Mumbai", price_per_unit=4.8, price_per_100ml=0.31)
                 ]
             ),
             IngredientDetail(
@@ -1521,8 +1521,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=25.00,
                 why_chosen="Humectant that attracts and retains moisture in skin",
                 suppliers=[
-                    SupplierInfo("Glycerin Industries", "sales@glycerin.in", "Gujarat", 250.0, 3.75),
-                    SupplierInfo("Cosmetic Chemicals Co.", "orders@cosmeticchem.in", "Delhi", 245.0, 3.68)
+                    SupplierInfo(name="Glycerin Industries", contact="sales@glycerin.in", location="Gujarat", price_per_unit=250.0, price_per_100ml=3.75),
+                    SupplierInfo(name="Cosmetic Chemicals Co.", contact="orders@cosmeticchem.in", location="Delhi", price_per_unit=245.0, price_per_100ml=3.68)
                 ]
             ),
             IngredientDetail(
@@ -1531,8 +1531,8 @@ def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
                 cost_per_100ml=35.00,
                 why_chosen="Soothing and healing properties for sensitive skin",
                 suppliers=[
-                    SupplierInfo("Aloe Processors", "info@aloeproc.in", "Rajasthan", 350.0, 3.50),
-                    SupplierInfo("Natural Extracts Ltd", "sales@naturalext.in", "Kerala", 340.0, 3.40)
+                    SupplierInfo(name="Aloe Processors", contact="info@aloeproc.in", location="Rajasthan", price_per_unit=350.0, price_per_100ml=3.50),
+                    SupplierInfo(name="Natural Extracts Ltd", contact="sales@naturalext.in", location="Kerala", price_per_unit=340.0, price_per_100ml=3.40)
                 ]
             )
         ]

@@ -63,7 +63,6 @@ async def generate_formulation_stream(request: GenerateRequest):
         
         # Generate the actual formulation with timeout handling
         try:
-            import asyncio
             from concurrent.futures import ThreadPoolExecutor
             
             def run_generation():

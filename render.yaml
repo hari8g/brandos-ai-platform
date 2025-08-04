@@ -1,0 +1,46 @@
+services:
+  # Backend API Service
+  - type: web
+    name: brandos-api
+    runtime: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    plan: free
+    autoDeploy: false
+    env: python
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      - key: ENVIRONMENT
+        value: production
+      
+  # Frontend Static Site
+  - type: static
+    name: brandos-frontend
+    buildCommand: "cd frontend && npm ci && npm run build"
+    staticPublishPath: "./frontend/dist"
+    pullRequestPreviewsEnabled: true
+    buildFilter:
+      paths:
+      - frontend/**
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://brandos-api.onrender.com/api/*
+      - type: rewrite  
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    envVars:
+      - key: NODE_VERSION
+        value: 18.20.0 

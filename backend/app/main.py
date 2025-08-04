@@ -18,6 +18,11 @@ app = FastAPI(
 # 2) wire up CORS
 setup_cors(app)
 
+# Health check endpoint for Render
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "Brandos AI Platform API is running"}
+
 # 3) include all your routers under the same /api prefix
 from app.routers.query import router as query_router
 from app.routers.formulation import router as formulation_router

@@ -1,8 +1,11 @@
 {
-    "rewrites": [
-      {
-        "source": "/api/v1/:path*",
-        "destination": "https://brandos-ai-platform-1.onrender.com/api/v1/:path*"
-      }
-    ]
-  }
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://brandos-ai-platform-1.onrender.com/api/v1/:path*"
+    }
+  ]
+}

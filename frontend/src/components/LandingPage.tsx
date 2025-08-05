@@ -348,7 +348,7 @@ export default function LandingPage({ onComplete }: LandingPageProps) {
 
           {/* Sub-headline */}
           <p className="text-lg md:text-xl text-gray-100 mt-4 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Imagine having an R&D, Compliance, Marketing and Branding team - All in one intutive engine. Join our beta to experience it.
+            Imagine having an R&D, Compliance, Marketing and Branding team - All in one intuitive engine. Join our beta to experience it.
           </p>
 
           {/* CTA Buttons */}

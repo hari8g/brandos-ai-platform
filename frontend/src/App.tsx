@@ -1,7 +1,7 @@
 import React, { useState, useRef, Suspense } from 'react';
-import { PromptInput } from './components/FormulationEngine';
 // Code splitting with React.lazy for large components
 const LandingPage = React.lazy(() => import('./components/LandingPage'));
+const PromptInput = React.lazy(() => import('./components/FormulationEngine/PromptInput'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -98,12 +98,14 @@ function App() {
         {/* Prompt Input - Only Text Mode */}
         {selectedCategory ? (
           <div ref={promptInputRef}>
-            <PromptInput
-              onResult={(data) => {
-                // Handle text-only formulation if needed
-              }}
-              selectedCategory={selectedCategory}
-            />
+            <Suspense fallback={<LoadingSpinner />}>
+              <PromptInput
+                onResult={(data) => {
+                  // Handle text-only formulation if needed
+                }}
+                selectedCategory={selectedCategory}
+              />
+            </Suspense>
           </div>
         ) : (
           <div className="text-center py-12">

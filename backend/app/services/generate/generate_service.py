@@ -437,9 +437,13 @@ Key Requirements:
         print(f"📤 Sending optimized request to OpenAI...")
         print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
-        # Call OpenAI with very aggressive timeout handling
+        # Call OpenAI with deployment-optimized timeout handling
         try:
-            print("⏱️ Starting OpenAI API call with 20-second timeout...")
+            import os
+            is_production = os.getenv('ENVIRONMENT') == 'production'
+            openai_timeout = 45 if is_production else 20  # Longer timeout for production
+            
+            print(f"⏱️ Starting OpenAI API call with {openai_timeout}-second timeout...")
             response = client.chat.completions.create(
                 model="gpt-4o-mini",  # Faster model
                 messages=[
@@ -447,8 +451,8 @@ Key Requirements:
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.7,
-                max_tokens=2000,  # Further reduced to 2000 for speed
-                timeout=20,  # Very aggressive 20 seconds timeout
+                max_tokens=2000,  # Optimized for speed
+                timeout=openai_timeout,  # Environment-specific timeout
                 tools=get_formulation_function_definitions(),
                 tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
             )

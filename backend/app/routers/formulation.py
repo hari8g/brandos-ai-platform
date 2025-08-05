@@ -61,20 +61,24 @@ async def generate_formulation_stream(request: GenerateRequest):
             yield f"data: {json.dumps(status_update)}\n\n"
             await asyncio.sleep(0.8)  # Reduced from 1.5 to 0.8 seconds for faster UX
         
-        # Generate the actual formulation with aggressive timeout handling
+        # Generate the actual formulation with deployment-optimized timeout handling
         try:
             from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+            import os
             
             def run_generation():
                 return generate_formulation(request)
             
-            # Use thread pool with very aggressive timeout
+            # Environment-specific timeout (longer for production due to cold starts)
+            is_production = os.getenv('ENVIRONMENT') == 'production'
+            timeout_seconds = 90 if is_production else 30
+            
+            # Use thread pool with environment-optimized timeout
             with ThreadPoolExecutor() as executor:
                 future = executor.submit(run_generation)
                 try:
-                    print("⏱️ Starting formulation generation with 30-second timeout...")
-                    # Reduced timeout to 30 seconds for faster failure
-                    formulation = future.result(timeout=30)
+                    print(f"⏱️ Starting formulation generation with {timeout_seconds}-second timeout...")
+                    formulation = future.result(timeout=timeout_seconds)
                     print("✅ Formulation generation completed successfully")
                     
                     final_response = {

@@ -23,6 +23,17 @@ setup_cors(app)
 async def health_check():
     return {"status": "healthy", "message": "Brandos AI Platform API is running"}
 
+@app.get("/keepalive")
+async def keepalive():
+    """Endpoint to prevent Render cold starts"""
+    import datetime
+    return {
+        "status": "alive",
+        "message": "Service is active and warm",
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
+
 # 3) include all your routers under the same /api prefix
 from app.routers.query import router as query_router
 from app.routers.formulation import router as formulation_router

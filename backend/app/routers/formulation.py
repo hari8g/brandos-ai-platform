@@ -11,31 +11,28 @@ router = APIRouter(prefix="/formulation", tags=["formulation"])
 
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_endpoint(request: GenerateRequest):
-    """Generate a formulation based on the request (with timeout handling)"""
+    """Generate a formulation based on the request"""
     try:
-        # Add timeout handling - run in background task with timeout
-        import asyncio
-        from concurrent.futures import ThreadPoolExecutor
-        
-        def run_generation():
-            return generate_formulation(request)
-        
-        # Use thread pool to run sync function with timeout
-        with ThreadPoolExecutor() as executor:
-            future = executor.submit(run_generation)
-            try:
-                # Wait for up to 90 seconds
-                formulation = future.result(timeout=90)
-                return formulation
-            except Exception as timeout_error:
-                future.cancel()
-                raise timeout_error
-                
+        # Call the generate service
+        formulation = generate_formulation(request)
+        return formulation
     except Exception as e:
-        print(f"❌ Generation failed: {e}")
-        # Return a proper mock formulation instead of basic one
-        from app.services.generate.generate_service import _generate_mock_formulation
-        return _generate_mock_formulation(request)
+        # Return a mock formulation for now
+        return GenerateResponse(
+            product_name="Sample Product",
+            reasoning="This is a sample formulation generated for testing purposes.",
+            ingredients=[],
+            manufacturing_steps=[
+                "Step 1: Prepare equipment",
+                "Step 2: Mix ingredients",
+                "Step 3: Package product"
+            ],
+            estimated_cost=15.0,
+            safety_notes=["Test formulation", "For development only"],
+            packaging_marketing_inspiration="Sample packaging ideas",
+            market_trends=["Sample trend"],
+            competitive_landscape={"sample": "data"}
+        )
 
 @router.post("/generate/stream")
 async def generate_formulation_stream(request: GenerateRequest):
@@ -56,93 +53,25 @@ async def generate_formulation_stream(request: GenerateRequest):
             {"status": "finalizing", "message": "🎯 Finalizing your comprehensive formulation...", "progress": 95},
         ]
         
-        # Stream each status update (optimized for speed)
+        # Stream each status update
         for status_update in status_messages:
             yield f"data: {json.dumps(status_update)}\n\n"
-            await asyncio.sleep(0.8)  # Reduced from 1.5 to 0.8 seconds for faster UX
+            await asyncio.sleep(1.5)  # Wait 1.5 seconds between updates
         
-        # Generate the actual formulation with deployment-optimized timeout handling
+        # Generate the actual formulation
         try:
-            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
-            import os
-            
-            def run_generation():
-                return generate_formulation(request)
-            
-            # Environment-specific timeout (longer for production due to cold starts)
-            is_production = os.getenv('ENVIRONMENT') == 'production'
-            timeout_seconds = 90 if is_production else 30
-            
-            # Use thread pool with environment-optimized timeout
-            with ThreadPoolExecutor() as executor:
-                future = executor.submit(run_generation)
-                try:
-                    print(f"⏱️ Starting formulation generation with {timeout_seconds}-second timeout...")
-                    formulation = future.result(timeout=timeout_seconds)
-                    print("✅ Formulation generation completed successfully")
-                    
-                    final_response = {
-                        "status": "complete",
-                        "message": "🎉 Your formulation is ready!",
-                        "progress": 100,
-                        "data": formulation.dict()
-                    }
-                    yield f"data: {json.dumps(final_response)}\n\n"
-                    
-                except (FutureTimeoutError, TimeoutError) as timeout_error:
-                    print(f"⏰ Formulation generation timed out after 30 seconds")
-                    future.cancel()
-                    # Generate quick fallback response
-                    try:
-                        from app.services.generate.generate_service import _generate_mock_formulation
-                        fallback_formulation = _generate_mock_formulation(request)
-                        
-                        if fallback_formulation is not None:
-                            fallback_response = {
-                                "status": "complete",
-                                "message": "🚀 Generated fast formulation (timeout fallback)",
-                                "progress": 100,
-                                "data": fallback_formulation.dict()
-                            }
-                            yield f"data: {json.dumps(fallback_response)}\n\n"
-                        else:
-                            print("❌ Fallback formulation returned None, using basic response")
-                            raise Exception("Fallback formulation failed")
-                    except Exception as fallback_error:
-                        print(f"❌ Fallback formulation error: {fallback_error}")
-                        # Create a basic successful response when all else fails
-                        basic_response = {
-                            "status": "complete",
-                            "message": "🔄 Generated basic formulation (fallback error)",
-                            "progress": 100,
-                            "data": {
-                                "product_name": f"Basic {request.category or 'Cosmetic'} Formulation",
-                                "reasoning": "This is a basic formulation generated when our advanced systems are unavailable.",
-                                "ingredients": [],
-                                "manufacturing_steps": ["Step 1: Prepare basic formulation", "Step 2: Mix ingredients", "Step 3: Package product"],
-                                "estimated_cost": 25.0,
-                                "safety_notes": ["Basic formulation for reference only"],
-                                "packaging_marketing_inspiration": "Simple, effective packaging design",
-                                "market_trends": ["Growing demand for reliable products"],
-                                "competitive_landscape": {},
-                                "scientific_reasoning": {},
-                                "market_research": {}
-                            }
-                        }
-                        yield f"data: {json.dumps(basic_response)}\n\n"
-                    
-                except Exception as other_error:
-                    print(f"❌ Formulation generation failed: {other_error}")
-                    future.cancel()
-                    raise other_error
-                    
+            formulation = generate_formulation(request)
+            final_response = {
+                "status": "complete",
+                "message": "🎉 Your formulation is ready!",
+                "progress": 100,
+                "data": formulation.dict()
+            }
+            yield f"data: {json.dumps(final_response)}\n\n"
         except Exception as e:
-            # Handle all other errors
-            print(f"❌ Critical error in streaming generation: {e}")
-            error_message = "Generation failed - please try again with a simpler request"
             error_response = {
-                "status": "error", 
-                "message": f"❌ {error_message}",
+                "status": "error",
+                "message": f"❌ Oops! Something went wrong: {str(e)}",
                 "progress": 0,
                 "error": str(e)
             }

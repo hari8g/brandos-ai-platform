@@ -118,7 +118,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
     setIsPaused(!isPaused);
   };
 
-  const progressVelocity = progressHistory.length >= 2
+  const progressVelocity = progressHistory.length >= 2 
     ? progressHistory[progressHistory.length - 1] - progressHistory[progressHistory.length - 2]
     : 0;
 
@@ -160,8 +160,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             >
               {isExpanded ? '−' : '+'}
             </button>
-          </div>
-
+            </div>
+            
           {/* Progress Bar */}
           {progress > 0 && (
             <div className="mb-3">
@@ -197,10 +197,10 @@ const StatusBar: React.FC<StatusBarProps> = ({
               >
                 ❌ Cancel
               </button>
-            </div>
+          </div>
           )}
         </div>
-
+        
         {/* Expanded Details */}
         <AnimatePresence>
           {isExpanded && (
@@ -231,7 +231,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
           )}
         </AnimatePresence>
       </div>
-
+      
       {/* Audio element for sound effects */}
       <audio
         ref={audioRef}

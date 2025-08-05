@@ -16,18 +16,13 @@ from app.services.streaming_service import streaming_middleware
 # Load environment variables from the root .env file
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env'))
 
-# Initialize OpenAI client with timeout configuration
+# Initialize OpenAI client only if API key is available
 client = None
 try:
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key and api_key != "your_openai_api_key_here" and api_key.strip():
-        # Configure client with timeout settings
-        client = OpenAI(
-            api_key=api_key,
-            timeout=30.0,  # 30 second default timeout
-            max_retries=1   # Reduce retries for faster failures
-        )
-        print("✅ OpenAI client initialized successfully with 30s timeout")
+        client = OpenAI(api_key=api_key)
+        print("✅ OpenAI client initialized successfully")
         print(f"🔍 API Key found: {'Yes' if api_key else 'No'}")
         if api_key:
             print(f"🔍 API Key length: {len(api_key)}")
@@ -245,29 +240,28 @@ def get_formulation_function_definitions():
 
 def generate_formulation(req: GenerateRequest) -> GenerateResponse:
     """
-    Use OpenAI to generate a real formulation with aggressive timeout handling.
+    Use OpenAI to generate a real formulation based on the request with Phase 2 optimizations.
     """
-    print(f"🔍 Starting fast formulation generation for: {req.prompt}")
+    print(f"🔍 Starting formulation generation for: {req.prompt}")
     category = (req.category or '').lower()
     
-    # Rely on ThreadPoolExecutor timeout from streaming endpoint
+    # Phase 2: Check cache first
     try:
-        # Phase 2: Check cache first
-        try:
-            cached_response = get_cached_formulation_sync(req.prompt, {"category": category})
-            if cached_response:
-                print("✅ Using cached formulation response")
-                return GenerateResponse(**cached_response)
-        except Exception as e:
-            print(f"⚠️ Cache check failed: {e}")
-        
-        # Check if OpenAI client is available
-        if not client:
-            print("🔄 Using fallback mock formulation (OpenAI not available)")
-            return _generate_mock_formulation(req)
-        
-        print("✅ OpenAI client is available, proceeding with API call")
-        
+        cached_response = get_cached_formulation_sync(req.prompt, {"category": category})
+        if cached_response:
+            print("✅ Using cached formulation response")
+            return GenerateResponse(**cached_response)
+    except Exception as e:
+        print(f"⚠️ Cache check failed: {e}")
+    
+    # Check if OpenAI client is available
+    if not client:
+        print("🔄 Using fallback mock formulation (OpenAI not available)")
+        return _generate_mock_formulation(req)
+    
+    print("✅ OpenAI client is available, proceeding with API call")
+    
+    try:
         # Phase 2: Use adaptive prompt optimization only if the prompt is not already comprehensive
         # Check if the prompt is already a detailed formulation request
         is_comprehensive_prompt = (
@@ -300,7 +294,7 @@ def generate_formulation(req: GenerateRequest) -> GenerateResponse:
             )
             print(f"🔄 Optimized prompt: {optimized_prompt[:100]}...")
         
-        # Create simplified system prompt for faster processing
+        # Create the system prompt with Phase 2 optimizations
         detailed_steps_instruction = ""
         if req.detailed_steps:
             detailed_steps_instruction = """
@@ -314,17 +308,22 @@ SPECIAL FOCUS ON DETAILED MANUFACTURING STEPS:
 - Provide troubleshooting tips for common issues"""
 
         if category == "pet food":
-            system_prompt = f"""You are an expert pet food formulator. Create a practical pet food formulation quickly.
+            system_prompt = f"""You are an expert pet food formulator. Generate a detailed pet food formulation.
 
-Key Requirements:
-- Total ingredients = 100%
-- Realistic percentages for safe, nutritious pet food
-- Include essential vitamins and minerals
-- Consider target animal needs
-- Provide basic rationale for each ingredient
-- Include 2 Indian suppliers per ingredient
-- List 4-5 manufacturing steps
-- Keep response concise but complete
+Guidelines:
+- Total ingredients should add up to 100%
+- Use realistic ingredient percentages
+- Include proper vitamins, minerals, and supplements
+- Consider the target animal, age, and dietary needs
+- Provide detailed nutritional reasoning with per-ingredient explanations
+- Include safety considerations
+- Use ingredients appropriate for the animal and product type
+- For each ingredient, provide 2-3 Indian suppliers with realistic contact information and pricing
+- Manufacturing steps should be detailed and sequential
+- Include current market trends and competitive analysis
+- Make supplier information realistic but fictional for demonstration purposes
+- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
 {detailed_steps_instruction}"""
         elif category == "wellness":
             system_prompt = f"""You are an expert wellness supplement formulator. Generate a detailed supplement formulation.
@@ -399,17 +398,22 @@ Guidelines:
 - Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
 {detailed_steps_instruction}"""
         else:
-            system_prompt = f"""You are an expert cosmetic formulator. Create a practical cosmetic formulation quickly.
+            system_prompt = f"""You are an expert cosmetic formulator. Generate a detailed cosmetic formulation.
 
-Key Requirements:
-- Total ingredients = 100%
-- Realistic percentages with proper emulsifiers and preservatives
-- Include active ingredients for target skin concerns
-- Consider target skin type
-- Provide basic rationale for each ingredient
-- Include 2 Indian suppliers per ingredient
-- List 4-5 manufacturing steps
-- Keep response concise but complete
+Guidelines:
+- Total ingredients should add up to 100%
+- Use realistic ingredient percentages
+- Include proper emulsifiers, preservatives, and active ingredients
+- Consider the target skin type and concerns
+- Provide detailed scientific reasoning with per-ingredient explanations
+- Include safety considerations
+- Use ingredients appropriate for the cosmetic type
+- For each ingredient, provide 2-3 Indian suppliers with realistic contact information and pricing
+- Manufacturing steps should be detailed and sequential
+- Include current market trends and competitive analysis
+- Make supplier information realistic but fictional for demonstration purposes
+- Include comprehensive scientific reasoning with key components, target audience analysis, and Indian market trends
+- Include detailed market research with TAM, SAM, and TM analysis using latest Indian market data
 {detailed_steps_instruction}"""
 
         detailed_steps_request = ""
@@ -437,30 +441,18 @@ Key Requirements:
         print(f"📤 Sending optimized request to OpenAI...")
         print(f"📝 Optimized prompt: {user_prompt[:100]}...")
 
-        # Call OpenAI with deployment-optimized timeout handling
-        try:
-            import os
-            is_production = os.getenv('ENVIRONMENT') == 'production'
-            openai_timeout = 45 if is_production else 20  # Longer timeout for production
-            
-            print(f"⏱️ Starting OpenAI API call with {openai_timeout}-second timeout...")
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Faster model
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2000,  # Optimized for speed
-                timeout=openai_timeout,  # Environment-specific timeout
-                tools=get_formulation_function_definitions(),
-                tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
-            )
-            print("✅ OpenAI API call completed successfully")
-        except Exception as openai_error:
-            print(f"❌ OpenAI API call failed or timed out: {openai_error}")
-            print("🔄 Using enhanced mock formulation instead")
-            return _generate_mock_formulation(req)
+        # Call OpenAI with function calling
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=4000,
+            tools=get_formulation_function_definitions(),
+            tool_choice={"type": "function", "function": {"name": "generate_formulation"}}
+        )
 
         # Parse the function call response
         message = response.choices[0].message
@@ -525,14 +517,36 @@ Key Requirements:
                     converted_steps.append(str(step))
             manufacturing_steps = converted_steps
         
-        # Get scientific reasoning from OpenAI response or use fast fallback
+        # Get scientific reasoning from OpenAI response or use scientific reasoning service
         scientific_reasoning = data.get('scientific_reasoning')
         
         # Check if the scientific reasoning is comprehensive (has our expected format)
         if not scientific_reasoning or not _is_comprehensive_scientific_reasoning(scientific_reasoning):
-            # For speed optimization, use fast fallback instead of slow service call
-            print("⚡ Using fast scientific reasoning fallback for better performance")
-            scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
+            # Use the scientific reasoning service to get real OpenAI data
+            try:
+                scientific_reasoning_service = ScientificReasoningService()
+                scientific_reasoning_request = ScientificReasoningRequest(
+                    category=req.category,
+                    product_description=req.prompt,
+                    target_concerns=None
+                )
+                scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
+                scientific_reasoning = {
+                    "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
+                    "impliedDesire": scientific_reasoning_response.impliedDesire,
+                    "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
+                    "valueProposition": scientific_reasoning_response.valueProposition,
+                    "targetAudience": scientific_reasoning_response.targetAudience,
+                    "indiaTrends": scientific_reasoning_response.indiaTrends,
+                    "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
+                    "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
+                    "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
+                    "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
+                }
+            except Exception as e:
+                print(f"❌ Scientific reasoning service error: {e}")
+                # Fallback to mock data if scientific reasoning service fails
+                scientific_reasoning = _generate_scientific_reasoning(req.category or 'cosmetics', req.prompt)
         
         # Get market research from OpenAI response or use mock data
         market_research = data.get('market_research')
@@ -582,7 +596,6 @@ Key Requirements:
         
     except Exception as e:
         print(f"❌ Error in formulation generation: {e}")
-        print("🚀 Using fast mock formulation")
         return _generate_mock_formulation(req)
 
 def _is_comprehensive_scientific_reasoning(scientific_reasoning: dict) -> bool:
@@ -1453,117 +1466,32 @@ def _generate_market_research(category: str, prompt: str) -> dict:
         }
 
 def _generate_mock_formulation(req: GenerateRequest) -> GenerateResponse:
-    """Generate a fast mock formulation when OpenAI is unavailable or times out"""
+    """Generate a mock formulation when OpenAI is unavailable"""
     
     category = req.category or "cosmetics"
-    print(f"🚀 Generating fast mock formulation for {category}")
     
-    # Use fast fallback instead of slow scientific reasoning service
-    scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)
-    
-    # Generate basic market research
-    market_research = _generate_market_research(category, req.prompt)
-    
-    # Create basic ingredients based on category
-    if category == "pet food":
-        ingredients = [
-            IngredientDetail(
-                name="Chicken Meal",
-                percent=35.0,
-                cost_per_100ml=12.50,
-                why_chosen="High-quality protein source for healthy muscle development",
-                suppliers=[
-                    SupplierInfo(name="PetNutrition India", contact="contact@petnutrition.in", location="Mumbai", price_per_unit=125.0, price_per_100ml=4.38),
-                    SupplierInfo(name="Animal Feed Co.", contact="info@animalfeed.co.in", location="Delhi", price_per_unit=120.0, price_per_100ml=4.20)
-                ]
-            ),
-            IngredientDetail(
-                name="Brown Rice",
-                percent=25.0,
-                cost_per_100ml=8.00,
-                why_chosen="Digestible carbohydrate source providing energy",
-                suppliers=[
-                    SupplierInfo(name="Grain Masters", contact="sales@grainmasters.in", location="Punjab", price_per_unit=80.0, price_per_100ml=2.00),
-                    SupplierInfo(name="Rice Processors Ltd", contact="orders@riceproc.in", location="Karnataka", price_per_unit=85.0, price_per_100ml=2.13)
-                ]
-            ),
-            IngredientDetail(
-                name="Fish Oil",
-                percent=5.0,
-                cost_per_100ml=45.00,
-                why_chosen="Omega-3 fatty acids for healthy skin and coat",
-                suppliers=[
-                    SupplierInfo(name="Marine Nutrients", contact="info@marinenutrients.in", location="Kerala", price_per_unit=450.0, price_per_100ml=2.25),
-                    SupplierInfo(name="Ocean Health Co.", contact="sales@oceanhealth.in", location="Tamil Nadu", price_per_unit=440.0, price_per_100ml=2.20)
-                ]
-            )
-        ]
-        manufacturing_steps = [
-            "Prepare and clean all equipment to pet food safety standards",
-            "Mix dry ingredients (chicken meal, brown rice) in large industrial mixer",
-            "Add fish oil and mix thoroughly for 10 minutes at medium speed",
-            "Form mixture into kibble shapes using extruder at 140°C",
-            "Cool kibbles to room temperature and package in sealed bags"
-        ]
-        product_name = f"Premium {req.prompt[:30]}... Pet Food"
-    else:
-        # Default to cosmetics
-        ingredients = [
-            IngredientDetail(
-                name="Aqua (Water)",
-                percent=65.0,
-                cost_per_100ml=0.50,
-                why_chosen="Base ingredient for hydration and formula consistency",
-                suppliers=[
-                    SupplierInfo(name="Pure Water Systems", contact="contact@purewater.in", location="Bangalore", price_per_unit=5.0, price_per_100ml=0.33),
-                    SupplierInfo(name="Cosmetic Waters Ltd", contact="info@cosmeticwaters.in", location="Mumbai", price_per_unit=4.8, price_per_100ml=0.31)
-                ]
-            ),
-            IngredientDetail(
-                name="Glycerin",
-                percent=15.0,
-                cost_per_100ml=25.00,
-                why_chosen="Humectant that attracts and retains moisture in skin",
-                suppliers=[
-                    SupplierInfo(name="Glycerin Industries", contact="sales@glycerin.in", location="Gujarat", price_per_unit=250.0, price_per_100ml=3.75),
-                    SupplierInfo(name="Cosmetic Chemicals Co.", contact="orders@cosmeticchem.in", location="Delhi", price_per_unit=245.0, price_per_100ml=3.68)
-                ]
-            ),
-            IngredientDetail(
-                name="Aloe Vera Extract",
-                percent=10.0,
-                cost_per_100ml=35.00,
-                why_chosen="Soothing and healing properties for sensitive skin",
-                suppliers=[
-                    SupplierInfo(name="Aloe Processors", contact="info@aloeproc.in", location="Rajasthan", price_per_unit=350.0, price_per_100ml=3.50),
-                    SupplierInfo(name="Natural Extracts Ltd", contact="sales@naturalext.in", location="Kerala", price_per_unit=340.0, price_per_100ml=3.40)
-                ]
-            )
-        ]
-        manufacturing_steps = [
-            "Sanitize all equipment and prepare clean room environment",
-            "Heat water phase (aqua) to 70°C in main mixing vessel",
-            "Add glycerin and aloe vera extract, mix thoroughly for 5 minutes",
-            "Cool mixture to 40°C while stirring continuously",
-            "Fill into sterilized containers and seal immediately"
-        ]
-        product_name = f"Natural {req.prompt[:30]}... Formula"
-    
-    # Create the response
-    return GenerateResponse(
-        product_name=product_name,
-        reasoning=f"This {category} formulation is designed to meet your specific requirements with high-quality, safe ingredients.",
-        ingredients=ingredients,
-        manufacturing_steps=manufacturing_steps,
-        estimated_cost=22.5,
-        safety_notes=[
-            "All ingredients are safe for intended use",
-            "Follow proper manufacturing hygiene protocols",
-            "Store in cool, dry conditions"
-        ],
-        packaging_marketing_inspiration=f"Consider eco-friendly packaging that highlights the natural, quality ingredients in this {category} product.",
-        market_trends=[f"Growing demand for natural {category} products", "Focus on sustainability and clean ingredients"],
-        competitive_landscape={"market_position": "Premium natural product segment"},
-        scientific_reasoning=scientific_reasoning,
-        market_research=market_research
-    )
+    # Use scientific reasoning service for real data
+    try:
+        scientific_reasoning_service = ScientificReasoningService()
+        scientific_reasoning_request = ScientificReasoningRequest(
+            category=req.category,
+            product_description=req.prompt,
+            target_concerns=None
+        )
+        scientific_reasoning_response = scientific_reasoning_service.generate_scientific_reasoning(scientific_reasoning_request)
+        scientific_reasoning = {
+            "keyComponents": [{"name": comp.name, "why": comp.why} for comp in scientific_reasoning_response.keyComponents],
+            "impliedDesire": scientific_reasoning_response.impliedDesire,
+            "psychologicalDrivers": scientific_reasoning_response.psychologicalDrivers,
+            "valueProposition": scientific_reasoning_response.valueProposition,
+            "targetAudience": scientific_reasoning_response.targetAudience,
+            "indiaTrends": scientific_reasoning_response.indiaTrends,
+            "regulatoryStandards": scientific_reasoning_response.regulatoryStandards,
+            "demographicBreakdown": scientific_reasoning_response.demographic_breakdown.dict() if scientific_reasoning_response.demographic_breakdown else None,
+            "psychographicProfile": scientific_reasoning_response.psychographic_profile.dict() if scientific_reasoning_response.psychographic_profile else None,
+            "marketOpportunitySummary": scientific_reasoning_response.market_opportunity_summary
+        }
+    except Exception as e:
+        print(f"❌ Scientific reasoning service error in mock: {e}")
+        # Fallback to hardcoded data
+        scientific_reasoning = _generate_scientific_reasoning(category, req.prompt)

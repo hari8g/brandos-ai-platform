@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 interface MarketResearchProps {
   selectedCategory: string;
   selectedCity?: string;
+  localMarketData?: any;
   onCityChange?: (city: string) => void;
   productQuery?: string; // Add product query for dynamic profiling
 }
@@ -11,6 +12,7 @@ interface MarketResearchProps {
 const MarketResearch: React.FC<MarketResearchProps> = ({ 
   selectedCategory, 
   selectedCity = 'Mumbai',
+  localMarketData,
   onCityChange,
   productQuery = ''
 }) => {
@@ -39,24 +41,119 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
     }));
   };
 
-  // Calculate customer segments based on category defaults
+  // Calculate customer segments based on local market data
   const calculateCustomerSegments = () => {
-    return {
-      highValue: { purchasers: '2.4M', aov: '₹2,500 - ₹4,000', revenue: '₹7.2M - ₹15.4M' },
-      midValue: { purchasers: '6.0M', aov: '₹1,200 - ₹2,500', revenue: '₹8.6M - ₹24.0M' },
-      entryLevel: { purchasers: '3.6M', aov: '₹500 - ₹1,200', revenue: '₹2.2M - ₹6.9M' }
-    };
+    if (!localMarketData) {
+      return {
+        highValue: { purchasers: '2.4M', aov: '₹2,500 - ₹4,000', revenue: '₹7.2M - ₹15.4M' },
+        midValue: { purchasers: '6.0M', aov: '₹1,200 - ₹2,500', revenue: '₹8.6M - ₹24.0M' },
+        entryLevel: { purchasers: '3.6M', aov: '₹500 - ₹1,200', revenue: '₹2.2M - ₹6.9M' }
+      };
+    }
+
+    const actualPurchasers = parseInt(localMarketData.actual_purchasers?.replace(/,/g, '') || '0');
+    const avgOrderValue = parseInt(localMarketData.average_order_value?.replace('₹', '').replace(',', '') || '2000');
     
+    return {
+      highValue: {
+        purchasers: `${(actualPurchasers * 0.2 / 1000000).toFixed(1)}M`,
+        aov: `₹${avgOrderValue.toLocaleString()}`,
+        revenue: `${((actualPurchasers * 0.2 * avgOrderValue) / 1000000).toFixed(1)}M`
+      },
+      midValue: {
+        purchasers: `${(actualPurchasers * 0.5 / 1000000).toFixed(1)}M`,
+        aov: `₹${Math.round(avgOrderValue * 0.6).toLocaleString()}`,
+        revenue: `${((actualPurchasers * 0.5 * avgOrderValue * 0.6) / 1000000).toFixed(1)}M`
+      },
+      entryLevel: {
+        purchasers: `${(actualPurchasers * 0.3 / 1000000).toFixed(1)}M`,
+        aov: `₹${Math.round(avgOrderValue * 0.4).toLocaleString()}`,
+        revenue: `${((actualPurchasers * 0.3 * avgOrderValue * 0.4) / 1000000).toFixed(1)}M`
+      }
+    };
   };
 
   const segments = calculateCustomerSegments();
 
-  // Calculate TAM, SAM, SOM based on category defaults
+  // Calculate TAM, SAM, SOM based on city and category
   const calculateMarketSizes = () => {
+    if (!localMarketData) {
+      return {
+        tam: { marketSize: '₹1,260M', population: '1.4B', growthRate: '8-12%' },
+        sam: { marketSize: '₹189M', penetration: '15%', accessibility: '85%' },
+        som: { marketSize: '₹7.6M', marketShare: '4%', efficiency: '75%' }
+      };
+    }
+
+    // City population data (in millions)
+    const cityPopulations = {
+      'Mumbai': 20.4,
+      'Delhi': 16.8,
+      'Bangalore': 12.4,
+      'Hyderabad': 10.5,
+      'Chennai': 11.5,
+      'Kolkata': 14.9,
+      'Pune': 6.5,
+      'Ahmedabad': 7.2,
+      'Surat': 6.8,
+      'Jaipur': 3.5
+    };
+
+    // Category multipliers for national extrapolation
+    const categoryMultipliers = {
+      'cosmetics': 1.2,
+      'pet food': 0.8
+    };
+
+    // Market penetration rates by category
+    const penetrationRates = {
+      'cosmetics': { min: 15, max: 25 },
+      'pet food': { min: 8, max: 12 }
+    };
+
+    const cityPopulation = cityPopulations[selectedCity as keyof typeof cityPopulations] || 20.4;
+    const nationalPopulation = 1400; // 1.4B in millions
+    const categoryMultiplier = categoryMultipliers[selectedCategory?.toLowerCase() as keyof typeof categoryMultipliers] || 1.0;
+    const penetration = penetrationRates[selectedCategory?.toLowerCase() as keyof typeof penetrationRates] || { min: 15, max: 25 };
+
+    // Extract local market size in millions
+    const localMarketSize = parseInt(localMarketData.market_size?.replace(/[₹,]/g, '') || '0') / 1000000;
+    
+    // FIXED LOGIC: Start with TAM and work down
+    // TAM = National market size for the category
+    const tam = localMarketSize * (nationalPopulation / cityPopulation) * categoryMultiplier;
+    
+    // SAM = Realistically addressable portion (average penetration rate)
+    const avgPenetration = (penetration.min + penetration.max) / 2 / 100;
+    const sam = tam * avgPenetration * 0.85; // 85% accessibility factor
+    
+    // SOM = Achievable market for new entrants (4% of SAM)
+    const som = sam * 0.04 * 0.75; // 4% market share, 75% efficiency
+
+    // Validate that local market size is smaller than SOM
+    // If local market is larger than SOM, adjust SOM to be 1.5x local market
+    // This ensures logical progression: TAM > SAM > SOM > Local Market
+    const adjustedSom = Math.max(som, localMarketSize * 1.5);
+    
+    // Additional validation: Ensure SAM is not smaller than local market
+    const adjustedSam = Math.max(sam, localMarketSize * 3); // SAM should be at least 3x local market
+
     return {
-      tam: { marketSize: '₹1,260M', population: '1.4B', growthRate: '8-12%' },
-      sam: { marketSize: '₹189M', penetration: '15%', accessibility: '85%' },
-      som: { marketSize: '₹7.6M', marketShare: '4%', efficiency: '75%' }
+      tam: { 
+        marketSize: `${tam.toFixed(1)}M`, 
+        population: '1.4B', 
+        growthRate: '8-12%' 
+      },
+      sam: { 
+        marketSize: `${adjustedSam.toFixed(1)}M`, 
+        penetration: `${avgPenetration * 100}%`, 
+        accessibility: '85%' 
+      },
+      som: { 
+        marketSize: `${adjustedSom.toFixed(1)}M`, 
+        marketShare: '4%', 
+        efficiency: '75%' 
+      }
     };
   };
 
@@ -204,7 +301,15 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
               </select>
             </div>
           </div>
-
+          {localMarketData && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <span className="font-semibold">Location:</span> {selectedCity} | 
+                <span className="font-semibold"> Market Size:</span> {`₹${(parseInt(localMarketData.market_size?.replace(/[₹,]/g, '') || '0') / 1000000).toFixed(1)}M`} | 
+                <span className="font-semibold"> Total Purchasers:</span> {`${(parseInt(localMarketData.actual_purchasers?.replace(/[,]/g, '') || '0') / 1000000).toFixed(1)}M`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* High-Value Customers */}
@@ -369,13 +474,19 @@ const MarketResearch: React.FC<MarketResearchProps> = ({
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Total Market Size</p>
                     <p className="text-2xl font-bold text-gray-800">
-                      ₹18.0M - ₹46.3M
+                      {localMarketData ? 
+                        `${(parseInt(localMarketData.market_size?.replace(/[₹,]/g, '') || '0') / 1000000).toFixed(1)}M` : 
+                        '₹18.0M - ₹46.3M'
+                      }
                     </p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-gray-600">Total Purchasers</p>
                     <p className="text-2xl font-bold text-gray-800">
-                      12.0M - 16.0M
+                      {localMarketData ? 
+                        `${(parseInt(localMarketData.actual_purchasers?.replace(/[,]/g, '') || '0') / 1000000).toFixed(1)}M` : 
+                        '12.0M - 16.0M'
+                      }
                     </p>
                   </div>
                 </div>

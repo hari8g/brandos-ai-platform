@@ -1,9 +1,7 @@
-import React, { useState, useRef, Suspense, useEffect } from 'react';
-import keepaliveService from './services/keepalive';
-import DeploymentStatusBanner from './components/DeploymentStatusBanner';
+import React, { useState, useRef, Suspense } from 'react';
+import { PromptInput } from './components/FormulationEngine';
 // Code splitting with React.lazy for large components
 const LandingPage = React.lazy(() => import('./components/LandingPage'));
-const PromptInput = React.lazy(() => import('./components/FormulationEngine/PromptInput'));
 
 // Loading component for Suspense fallback
 const LoadingSpinner = () => (
@@ -20,19 +18,6 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const promptInputRef = useRef<HTMLDivElement>(null);
-
-  // Initialize keepalive service for production
-  useEffect(() => {
-    const isProduction = window.location.hostname !== 'localhost';
-    if (isProduction) {
-      console.log('🚀 Initializing keepalive service for production environment');
-      keepaliveService.startKeepalive();
-    }
-    
-    return () => {
-      keepaliveService.stopKeepalive();
-    };
-  }, []);
 
   // Function to handle category selection with smooth scrolling
   const handleCategorySelection = (category: string) => {
@@ -57,19 +42,15 @@ function App() {
   // If showing landing page, render LandingPage component
   if (showLanding) {
     return (
-      <div>
-        <DeploymentStatusBanner show={true} />
-        <Suspense fallback={<LoadingSpinner />}>
-          <LandingPage onComplete={handleLandingComplete} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<LoadingSpinner />}>
+        <LandingPage onComplete={handleLandingComplete} />
+      </Suspense>
     );
   }
 
   // Main app UI (only shown after landing page completion)
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 flex flex-col items-center">
-      <DeploymentStatusBanner show={true} />
       <div className="w-full max-w-4xl space-y-8">
         {/* Header */}
         <header className="text-center">
@@ -117,14 +98,12 @@ function App() {
         {/* Prompt Input - Only Text Mode */}
         {selectedCategory ? (
           <div ref={promptInputRef}>
-            <Suspense fallback={<LoadingSpinner />}>
-              <PromptInput
-                onResult={(data) => {
-                  // Handle text-only formulation if needed
-                }}
-                selectedCategory={selectedCategory}
-              />
-            </Suspense>
+            <PromptInput
+              onResult={(data) => {
+                // Handle text-only formulation if needed
+              }}
+              selectedCategory={selectedCategory}
+            />
           </div>
         ) : (
           <div className="text-center py-12">

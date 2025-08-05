@@ -139,7 +139,7 @@ export default function PromptInput({
   const [loadingType, setLoadingType] = useState<'assess' | 'generate'>('assess');
   const [queryQuality, setQueryQuality] = useState<QueryQualityResponse | null>(null);
   const [showQualityFeedback, setShowQualityFeedback] = useState(false);
-
+  const [location, setLocation] = useState("");
   const [currentStep, setCurrentStep] = useState<Step>('draft');
   const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
   const { suggestions, generateSuggestions: fetchSuggestions } = useSuggestions();
@@ -372,92 +372,63 @@ export default function PromptInput({
     }
   };
 
-  // Enhanced function to directly generate formulation using streaming for better UX
+  // New function to directly generate formulation from suggestion
   const handleGenerateFormulation = async (suggestionPrompt: string, category: string | null) => {
     setLoading(true);
     setLoadingType('generate');
     setLoadingProgress(0);
-    setLoadingStep('🚀 Starting your formulation...');
+    setLoadingStep('🧪 Processing your suggestion...');
+    
+    const formulationSteps = [
+      { step: '🧪 Processing your suggestion...', progress: 0 },
+      { step: '🔬 Analyzing requirements...', progress: 15 },
+      { step: '⚗️ Formulating ingredients...', progress: 30 },
+      { step: '🧬 Optimizing composition...', progress: 50 },
+      { step: '⚡ Adding finishing touches...', progress: 70 },
+      { step: '🎯 Finalizing formulation...', progress: 90 },
+      { step: '✨ Your formulation is ready!', progress: 100 }
+    ];
+    
+    let currentStepIndex = 0;
+    
+    const progressInterval = setInterval(() => {
+      if (currentStepIndex < formulationSteps.length - 1) {
+        currentStepIndex++;
+        setLoadingStep(formulationSteps[currentStepIndex].step);
+        setLoadingProgress(formulationSteps[currentStepIndex].progress);
+      }
+    }, 1500); // Update every 1.5 seconds for detailed steps
     
     try {
-      // Use Server-Sent Events for real-time progress updates
-      const response = await fetch('/api/v1/formulation/generate/stream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          prompt: suggestionPrompt, 
-          category: category || selectedCategory,
-          detailed_steps: true 
-        }),
+      const resp = await apiClient.post("/formulation/generate", { 
+        prompt: suggestionPrompt, 
+        category: category || selectedCategory,
+        detailed_steps: true // Flag for detailed step-by-step formulation
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
       
-      if (!reader) {
-        throw new Error('Failed to get response reader');
-      }
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          
-          if (done) break;
-          
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                
-                if (data.status === 'complete') {
-                  setLoadingProgress(100);
-                  setLoadingStep('🎉 Your formulation is ready!');
-                  
-                  setTimeout(() => {
-                    setLoading(false);
-                    setLoadingProgress(0);
-                    setLoadingStep('');
-                    setDetailedFormulation(data.data);
-                    setStage('detailed-formulation');
-                    onResult(data.data);
-                  }, 1000);
-                  return;
-                } else if (data.status === 'error') {
-                  throw new Error(data.message || 'Generation failed');
-                } else {
-                  // Update progress from streaming
-                  setLoadingProgress(data.progress || 0);
-                  setLoadingStep(data.message || 'Processing...');
-                }
-              } catch (jsonError) {
-                console.warn('Failed to parse SSE data:', jsonError);
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-      
-    } catch (error) {
-      console.error('Formulation generation error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
-      setLoadingStep(`❌ ${errorMessage.includes('timeout') ? 'Request took too long - try a simpler description' : 'Generation failed - please try again'}`);
+      // Complete the progress
+      setLoadingProgress(100);
+      setLoadingStep('✨ Your detailed formulation is ready!');
       
       setTimeout(() => {
         setLoading(false);
         setLoadingProgress(0);
         setLoadingStep('');
-      }, 3000);
+        setDetailedFormulation(resp.data);
+        setStage('detailed-formulation');
+        // Also call onResult for parent component handling if needed
+        onResult(resp.data);
+      }, 1000);
+    } catch (error) {
+      console.error('Formulation generation error:', error);
+      setLoadingStep('😅 Oops! Something went wrong...');
+      setTimeout(() => {
+        setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStep('');
+      }, 2000);
+    } finally {
+      clearInterval(progressInterval);
     }
   };
 
@@ -503,7 +474,20 @@ export default function PromptInput({
             </div>
           </div>
 
-
+          {/* Location Input */}
+          <div className="space-y-2">
+          <label className={`block text-lg font-semibold font-sans ${colors.text}`}>
+              Location (optional)
+            </label>
+            <input
+              type="text"
+              className={`w-full p-3 rounded-lg border ${colors.border} bg-white/90 placeholder-gray-400
+                       ${colors.focus} focus:outline-none transition-all duration-200`}
+              placeholder="e.g. Mumbai, Bangalore, Delhi"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+          </div>
 
           {/* Get Suggestions Button */}
           <button

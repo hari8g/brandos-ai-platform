@@ -1,27 +1,15 @@
-import React, { useState, Suspense } from "react";
+import React, { useState } from "react";
 import { useCosting } from "../../hooks/useCosting";
 import { useBranding } from "../../hooks/useBranding";
+import ManufacturingInsights from "./ManufacturingInsights";
+import ScientificReasoning from "../ScientificReasoning";
+import MarketResearch from "../MarketResearch";
+import ManufacturingSteps from "./ManufacturingSteps";
+import Branding from "../Branding";
 import { getCategoryColors } from "@/lib/colorUtils";
 import type { GenerateResponse, IngredientDetail, SupplierInfo } from "../../types/formulation";
 import { useMarketSize } from '@/hooks/useMarketSize';
-
-// Code splitting - load heavy components only when needed
-const ManufacturingInsights = React.lazy(() => import("./ManufacturingInsights"));
-const ScientificReasoning = React.lazy(() => import("../ScientificReasoning"));
-const MarketResearch = React.lazy(() => import("../MarketResearch"));
-const ManufacturingSteps = React.lazy(() => import("./ManufacturingSteps"));
-const Branding = React.lazy(() => import("../Branding"));
-const IngredientList = React.lazy(() => import("./IngredientList"));
-
-// Loading component for heavy sections
-const SectionLoader = ({ colors }: { colors: any }) => (
-  <div className="flex items-center justify-center py-8">
-    <div className="flex items-center space-x-2">
-      <div className={`animate-spin rounded-full h-5 w-5 border-b-2 ${colors.primary.replace('bg-', 'border-')}`} />
-      <span className={`text-sm ${colors.textSecondary}`}>Loading section...</span>
-    </div>
-  </div>
-);
+import IngredientList from "./IngredientList";
 
 // ─── Modern AccordionSection component ─────────────────────────────────
 interface AccordionSectionProps {
@@ -366,12 +354,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         badge={`${data.ingredients.length} ingredients`}
         badgeColor="bg-indigo-100 text-indigo-800"
       >
-        <Suspense fallback={<SectionLoader colors={colors} />}>
-          <IngredientList 
-            ingredients={data.ingredients} 
-            selectedCategory={selectedCategory}
-          />
-        </Suspense>
+        <IngredientList 
+          ingredients={data.ingredients} 
+          selectedCategory={selectedCategory}
+        />
       </AccordionSection>
 
       {/* Manufacturing Steps Section */}
@@ -384,12 +370,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
         badge="Production guide"
         badgeColor="bg-orange-100 text-orange-800"
       >
-        <Suspense fallback={<SectionLoader colors={colors} />}>
-          <ManufacturingSteps 
-            steps={data.manufacturing_steps} 
-            selectedCategory={selectedCategory}
-          />
-        </Suspense>
+        <ManufacturingSteps 
+          steps={data.manufacturing_steps} 
+          selectedCategory={selectedCategory}
+        />
       </AccordionSection>
 
       {/* Scientific Reasoning Component */}
@@ -403,20 +387,18 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
           badge="Research insights"
           badgeColor="bg-purple-100 text-purple-800"
         >
-          <Suspense fallback={<SectionLoader colors={colors} />}>
-            <ScientificReasoning
-              keyComponents={data.scientific_reasoning.keyComponents || []}
-              impliedDesire={data.scientific_reasoning.impliedDesire || ""}
-              psychologicalDrivers={data.scientific_reasoning.psychologicalDrivers || []}
-              valueProposition={data.scientific_reasoning.valueProposition || []}
-              targetAudience={data.scientific_reasoning.targetAudience || ""}
-              indiaTrends={data.scientific_reasoning.indiaTrends || []}
-              regulatoryStandards={data.scientific_reasoning.regulatoryStandards || []}
-              demographicBreakdown={data.scientific_reasoning.demographicBreakdown}
-              psychographicProfile={data.scientific_reasoning.psychographicProfile}
-              selectedCategory={selectedCategory}
-            />
-          </Suspense>
+          <ScientificReasoning
+            keyComponents={data.scientific_reasoning.keyComponents || []}
+            impliedDesire={data.scientific_reasoning.impliedDesire || ""}
+            psychologicalDrivers={data.scientific_reasoning.psychologicalDrivers || []}
+            valueProposition={data.scientific_reasoning.valueProposition || []}
+            targetAudience={data.scientific_reasoning.targetAudience || ""}
+            indiaTrends={data.scientific_reasoning.indiaTrends || []}
+            regulatoryStandards={data.scientific_reasoning.regulatoryStandards || []}
+            demographicBreakdown={data.scientific_reasoning.demographicBreakdown}
+            psychographicProfile={data.scientific_reasoning.psychographicProfile}
+            selectedCategory={selectedCategory}
+          />
         </AccordionSection>
       )}
 
@@ -446,12 +428,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
             )}
 
             {/* Market Research */}
-            <Suspense fallback={<SectionLoader colors={colors} />}>
-              <MarketResearch
-                selectedCategory={selectedCategory || null}
-                marketResearchData={data.market_research}
-              />
-            </Suspense>
+            <MarketResearch
+              selectedCategory={selectedCategory || null}
+              marketResearchData={data.market_research}
+            />
 
             {/* Market Size Error */}
             {marketSizeError && (
@@ -489,17 +469,15 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
           {/* Manufacturing Insights */}
           {costEstimate && costEstimate.manufacturing_insights && (
-            <Suspense fallback={<SectionLoader colors={colors} />}>
-              <ManufacturingInsights
-                small_scale={costEstimate.manufacturing_insights.small_scale}
-                medium_scale={costEstimate.manufacturing_insights.medium_scale}
-                large_scale={costEstimate.manufacturing_insights.large_scale}
-                scaling_benefits={costEstimate.manufacturing_insights.scaling_benefits}
-                risk_factors={costEstimate.manufacturing_insights.risk_factors}
-                market_opportunity={costEstimate.manufacturing_insights.market_opportunity}
-                selectedCategory={selectedCategory}
-              />
-            </Suspense>
+            <ManufacturingInsights
+              small_scale={costEstimate.manufacturing_insights.small_scale}
+              medium_scale={costEstimate.manufacturing_insights.medium_scale}
+              large_scale={costEstimate.manufacturing_insights.large_scale}
+              scaling_benefits={costEstimate.manufacturing_insights.scaling_benefits}
+              risk_factors={costEstimate.manufacturing_insights.risk_factors}
+              market_opportunity={costEstimate.manufacturing_insights.market_opportunity}
+              selectedCategory={selectedCategory}
+            />
           )}
         </div>
       </AccordionSection>
@@ -777,12 +755,10 @@ const FormulationCard: React.FC<FormulationCardProps> = ({
 
           {/* Branding Strategy */}
           {brandingStrategy && (
-            <Suspense fallback={<SectionLoader colors={colors} />}>
-              <Branding
-                brandingStrategy={brandingStrategy}
-                selectedCategory={selectedCategory}
-              />
-            </Suspense>
+            <Branding
+              brandingStrategy={brandingStrategy}
+              selectedCategory={selectedCategory}
+            />
           )}
 
           {/* Branding Error */}
